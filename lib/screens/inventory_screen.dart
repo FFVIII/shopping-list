@@ -28,14 +28,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
   String _query = '';
 
   @override
-  void didUpdateWidget(InventoryScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // items is mutated in-place by the parent; force a rebuild so the list
-    // always reflects the latest contents.
-    setState(() {});
-  }
-
-  @override
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();
@@ -937,26 +929,26 @@ class _ProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, constraints) {
-      return Stack(
-        children: [
-          Container(
-            height: 4,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(2),
-            ),
+    return Stack(
+      children: [
+        Container(
+          height: 4,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(2),
           ),
-          Container(
+        ),
+        FractionallySizedBox(
+          widthFactor: ratio.clamp(0.0, 1.0),
+          child: Container(
             height: 4,
-            width: constraints.maxWidth * ratio,
             decoration: BoxDecoration(
               color: color,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-        ],
-      );
-    });
+        ),
+      ],
+    );
   }
 }

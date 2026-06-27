@@ -140,16 +140,20 @@ class _AppShellState extends State<AppShell> {
         // Reset the timer
         _inventory[invIdx].purchasedAt = DateTime.now();
         _inventory[invIdx].estimatedDays = estimatedDays;
+        _inventory = List<InventoryItem>.from(_inventory);
       } else {
-        _inventory.add(InventoryItem(
-          id: 'inv_${DateTime.now().millisecondsSinceEpoch}',
-          name: shoppingItem.name,
-          category: shoppingItem.category,
-          shelfZone: shoppingItem.shelfZone,
-          shelfCode: shoppingItem.shelfCode,
-          purchasedAt: DateTime.now(),
-          estimatedDays: estimatedDays,
-        ));
+        _inventory = [
+          ..._inventory,
+          InventoryItem(
+            id: 'inv_${DateTime.now().millisecondsSinceEpoch}',
+            name: shoppingItem.name,
+            category: shoppingItem.category,
+            shelfZone: shoppingItem.shelfZone,
+            shelfCode: shoppingItem.shelfCode,
+            purchasedAt: DateTime.now(),
+            estimatedDays: estimatedDays,
+          ),
+        ];
       }
     });
   }
@@ -240,21 +244,24 @@ class _AppShellState extends State<AppShell> {
   void _addToListFromReminder(InventoryItem inv) {
     if (_shopping.any((s) => s.name == inv.name && !s.checked)) return;
     setState(() {
-      _shopping.add(ShoppingItem(
-        id: 'r_${DateTime.now().millisecondsSinceEpoch}',
-        name: inv.name,
-        category: inv.category,
-        quantityLabel: '1件',
-        shelfZone: inv.shelfZone,
-        shelfCode: inv.shelfCode,
-      ));
+      _shopping = [
+        ..._shopping,
+        ShoppingItem(
+          id: 'r_${DateTime.now().millisecondsSinceEpoch}',
+          name: inv.name,
+          category: inv.category,
+          quantityLabel: '1件',
+          shelfZone: inv.shelfZone,
+          shelfCode: inv.shelfCode,
+        ),
+      ];
     });
   }
 
   // ── 库存 CRUD ──────────────────────────────────────────────────────────────
 
   void _addInventoryItem(InventoryItem item) {
-    setState(() => _inventory.add(item));
+    setState(() => _inventory = [..._inventory, item]);
   }
 
   void _restockInventoryItem(String id, int days) {
@@ -263,12 +270,13 @@ class _AppShellState extends State<AppShell> {
       if (idx != -1) {
         _inventory[idx].purchasedAt = DateTime.now();
         _inventory[idx].estimatedDays = days;
+        _inventory = List<InventoryItem>.from(_inventory);
       }
     });
   }
 
   void _deleteInventoryItem(String id) {
-    setState(() => _inventory.removeWhere((i) => i.id == id));
+    setState(() => _inventory = _inventory.where((i) => i.id != id).toList());
   }
 
   void _addAllToList() {
