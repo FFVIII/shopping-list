@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import '../models/item.dart';
+import '../l10n/l10n.dart';
 
 class ListScreen extends StatefulWidget {
   final List<ShoppingItem> simpleItems;
@@ -115,14 +116,13 @@ class _ListScreenState extends State<ListScreen> {
   @override
   Widget build(BuildContext context) {
     final today = DateTime.now();
-    final dateLabel = '${today.month}月${today.day}日';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2ED),
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(dateLabel),
+            _buildHeader(today),
             _buildModeToggle(),
             if (_isSmartMode) _buildSmartSubToggle(),
             const SizedBox(height: 4),
@@ -142,7 +142,8 @@ class _ListScreenState extends State<ListScreen> {
 
   // ── Header ──────────────────────────────────────────────────────────────────
 
-  Widget _buildHeader(String dateLabel) {
+  Widget _buildHeader(DateTime today) {
+    final l = L10n.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 16, 4),
       child: Row(
@@ -151,9 +152,9 @@ class _ListScreenState extends State<ListScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  '购物清单',
-                  style: TextStyle(
+                Text(
+                  l.shoppingListTitle,
+                  style: const TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF1A1A1A),
@@ -163,8 +164,8 @@ class _ListScreenState extends State<ListScreen> {
                 const SizedBox(height: 4),
                 Text(
                   _pendingCount > 0
-                      ? '还差 $_pendingCount 件 · $dateLabel'
-                      : '今天买齐啦 🎉 · $dateLabel',
+                      ? l.listSubtitlePending(_pendingCount, today)
+                      : l.listSubtitleDone(today),
                   style: const TextStyle(
                       fontSize: 13, color: Color(0xFF9E9E9E)),
                 ),
@@ -181,9 +182,9 @@ class _ListScreenState extends State<ListScreen> {
                   color: const Color(0xFF4CAF50),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Text(
-                  '完成购物',
-                  style: TextStyle(
+                child: Text(
+                  l.completeTrip,
+                  style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
@@ -206,6 +207,7 @@ class _ListScreenState extends State<ListScreen> {
   // ── 简单 / 智能 main toggle ─────────────────────────────────────────────────
 
   Widget _buildModeToggle() {
+    final l = L10n.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
       child: Container(
@@ -217,12 +219,12 @@ class _ListScreenState extends State<ListScreen> {
         child: Row(
           children: [
             _SegmentBtn(
-              label: '简单',
+              label: l.modeSimple,
               selected: !_isSmartMode,
               onTap: () => setState(() => _isSmartMode = false),
             ),
             _SegmentBtn(
-              label: '智能',
+              label: l.modeSmart,
               selected: _isSmartMode,
               onTap: () => setState(() => _isSmartMode = true),
             ),
@@ -235,18 +237,19 @@ class _ListScreenState extends State<ListScreen> {
   // ── 按货架 / 按分类 sub-toggle (smart mode only) ────────────────────────────
 
   Widget _buildSmartSubToggle() {
+    final l = L10n.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
       child: Row(
         children: [
           _TextToggleBtn(
-            label: '按货架',
+            label: l.byShelf,
             selected: _byShelf,
             onTap: () => setState(() => _byShelf = true),
           ),
           const SizedBox(width: 4),
           _TextToggleBtn(
-            label: '按分类',
+            label: l.byCategory,
             selected: !_byShelf,
             onTap: () => setState(() => _byShelf = false),
           ),
@@ -258,6 +261,7 @@ class _ListScreenState extends State<ListScreen> {
   // ── Simple list ─────────────────────────────────────────────────────────────
 
   Widget _buildSimpleList() {
+    final l = L10n.of(context);
     final pending = widget.simpleItems.where((i) => !i.checked).toList();
     final done = widget.simpleItems.where((i) => i.checked).toList();
 
@@ -302,9 +306,9 @@ class _ListScreenState extends State<ListScreen> {
                       const Icon(Icons.check_circle_outline_rounded,
                           size: 14, color: Color(0xFFBDBDBD)),
                       const SizedBox(width: 6),
-                      const Text(
-                        '已购',
-                        style: TextStyle(
+                      Text(
+                        l.purchasedSection,
+                        style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFFAAAAAA),
@@ -319,7 +323,7 @@ class _ListScreenState extends State<ListScreen> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          '${done.length}件',
+                          l.itemCountChip(done.length),
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
@@ -457,6 +461,7 @@ class _ListScreenState extends State<ListScreen> {
   }
 
   Widget _buildSectionHeader(String zone, int count, {Key? key}) {
+    final l = L10n.of(context);
     final color = _byShelf
         ? (kShelfZones[zone]?.dotColor ?? const Color(0xFF9E9E9E))
         : const Color(0xFF9E9E9E);
@@ -472,7 +477,7 @@ class _ListScreenState extends State<ListScreen> {
           ),
           const SizedBox(width: 8),
           Text(
-            zone,
+            l.data(zone),
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
@@ -488,7 +493,7 @@ class _ListScreenState extends State<ListScreen> {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
-              '$count件',
+              l.itemCountChip(count),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
@@ -504,6 +509,7 @@ class _ListScreenState extends State<ListScreen> {
   // ── Empty state ─────────────────────────────────────────────────────────────
 
   Widget _emptyState() {
+    final l = L10n.of(context);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -516,18 +522,18 @@ class _ListScreenState extends State<ListScreen> {
             color: const Color(0xFFD8D8D3),
           ),
           const SizedBox(height: 16),
-          const Text(
-            '清单是空的',
-            style: TextStyle(
+          Text(
+            l.listEmptyTitle,
+            style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
               color: Color(0xFF9E9E9E),
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
-            '在下方输入要买的商品',
-            style: TextStyle(fontSize: 13, color: Color(0xFFBDBDBD)),
+          Text(
+            l.listEmptySubtitle,
+            style: const TextStyle(fontSize: 13, color: Color(0xFFBDBDBD)),
           ),
         ],
       ),
@@ -537,6 +543,7 @@ class _ListScreenState extends State<ListScreen> {
   // ── Add bar ─────────────────────────────────────────────────────────────────
 
   Widget _buildAddBar(BuildContext context) {
+    final l = L10n.of(context);
     return Container(
       padding: EdgeInsets.only(
         left: 16,
@@ -563,8 +570,8 @@ class _ListScreenState extends State<ListScreen> {
               style: const TextStyle(fontSize: 15),
               decoration: InputDecoration(
                 hintText: _isListening
-                  ? '正在听，请说商品名称...'
-                  : (_isSmartMode ? '添加商品，选分类后入库...' : '随手记，添加到清单...'),
+                  ? l.listeningHint
+                  : (_isSmartMode ? l.smartAddHint : l.simpleAddHint),
                 hintStyle: const TextStyle(
                     color: Color(0xFFBDBDBD), fontSize: 14),
                 filled: true,
@@ -648,6 +655,7 @@ class _ListScreenState extends State<ListScreen> {
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setModal) {
+            final l = L10n.of(ctx);
             return Padding(
               padding: EdgeInsets.only(
                 left: 20,
@@ -660,14 +668,14 @@ class _ListScreenState extends State<ListScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '添加「$name」',
+                    l.addItemTitle(l.data(name)),
                     style: const TextStyle(
                         fontSize: 17, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 6),
-                  const Text(
-                    '选择分类，方便按货架分组',
-                    style: TextStyle(
+                  Text(
+                    l.chooseCategoryHint,
+                    style: const TextStyle(
                         fontSize: 13, color: Color(0xFF9E9E9E)),
                   ),
                   const SizedBox(height: 16),
@@ -691,7 +699,7 @@ class _ListScreenState extends State<ListScreen> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            cat.label,
+                            l.category(cat),
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -712,7 +720,7 @@ class _ListScreenState extends State<ListScreen> {
                             size: 14, color: Color(0xFFBDBDBD)),
                         const SizedBox(width: 4),
                         Text(
-                          '货架区：$selectedZone',
+                          l.shelfZoneInline(l.data(selectedZone)),
                           style: const TextStyle(
                               fontSize: 12,
                               color: Color(0xFF9E9E9E)),
@@ -738,8 +746,8 @@ class _ListScreenState extends State<ListScreen> {
                             name, selectedCategory, selectedZone);
                         _nameCtrl.clear();
                       },
-                      child: const Text('加入清单',
-                          style: TextStyle(
+                      child: Text(l.addToList,
+                          style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600)),
                     ),
@@ -896,6 +904,7 @@ class _SmartRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = L10n.of(context);
     return Dismissible(
       key: Key('smart_${item.id}'),
       direction: DismissDirection.endToStart,
@@ -943,7 +952,7 @@ class _SmartRow extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          item.name,
+                          l.data(item.name),
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
@@ -958,9 +967,11 @@ class _SmartRow extends StatelessWidget {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          item.shelfCode != null
-                              ? '${item.quantityLabel} · ${item.shelfCode}'
-                              : item.quantityLabel,
+                          l.itemMeta(
+                              l.data(item.quantityLabel),
+                              item.shelfCode != null
+                                  ? l.data(item.shelfCode!)
+                                  : null),
                           style: const TextStyle(
                               fontSize: 12,
                               color: Color(0xFF9E9E9E)),
@@ -979,7 +990,7 @@ class _SmartRow extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      '已记',
+                      l.recordedBadge,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -1228,6 +1239,7 @@ class _RenameSheetState extends State<_RenameSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l = L10n.of(context);
     return Padding(
       padding: EdgeInsets.only(
         left: 20,
@@ -1239,9 +1251,9 @@ class _RenameSheetState extends State<_RenameSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '重命名',
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+          Text(
+            l.rename,
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 14),
           TextField(
@@ -1274,9 +1286,9 @@ class _RenameSheetState extends State<_RenameSheet> {
                 elevation: 0,
               ),
               onPressed: _confirm,
-              child: const Text(
-                '确认修改',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              child: Text(
+                l.confirmEdit,
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
               ),
             ),
           ),
