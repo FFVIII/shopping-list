@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/item.dart';
 import '../l10n/l10n.dart';
 import '../l10n/app_strings.dart';
+import '../widgets/toast.dart';
 
 class ReminderScreen extends StatelessWidget {
   final List<InventoryItem> inventoryItems;
@@ -39,13 +40,7 @@ class ReminderScreen extends StatelessWidget {
   bool _inList(InventoryItem item) => activeListNames.contains(item.name);
 
   void _toast(BuildContext context, String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        content: Text(message),
-        duration: const Duration(milliseconds: 1200),
-        behavior: SnackBarBehavior.floating,
-      ));
+    showAppToast(context, message);
   }
 
   void _handleToggle(BuildContext context, InventoryItem item) {
