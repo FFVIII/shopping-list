@@ -379,6 +379,10 @@ class _AppShellState extends State<AppShell> {
               thresholdDays: threshold,
               onAddToList: _addToListFromReminder,
               onAddAll: _addAllToList,
+              activeListNames: _shopping
+                  .where((s) => !s.checked)
+                  .map((s) => s.name)
+                  .toSet(),
             ),
             SettingsScreen(
               settings: _settings,

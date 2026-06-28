@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/item.dart';
 import '../l10n/l10n.dart';
+import '../l10n/app_strings.dart';
 
 class ReminderScreen extends StatelessWidget {
   final List<InventoryItem> inventoryItems;
@@ -8,12 +9,17 @@ class ReminderScreen extends StatelessWidget {
   final void Function(InventoryItem) onAddToList;
   final VoidCallback onAddAll;
 
+  /// Names of items currently in the (unchecked) shopping list. Used to show
+  /// the "already in list" state and to avoid silent no-op taps.
+  final Set<String> activeListNames;
+
   const ReminderScreen({
     super.key,
     required this.inventoryItems,
     required this.thresholdDays,
     required this.onAddToList,
     required this.onAddAll,
+    required this.activeListNames,
   });
 
   // Items with 0 days → "该补货"
@@ -27,6 +33,37 @@ class ReminderScreen extends StatelessWidget {
       .toList();
 
   bool get _hasAny => _restock.isNotEmpty || _expiringSoon.isNotEmpty;
+
+  bool _inList(InventoryItem item) => activeListNames.contains(item.name);
+
+  void _toast(BuildContext context, String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(message),
+        duration: const Duration(milliseconds: 1200),
+        behavior: SnackBarBehavior.floating,
+      ));
+  }
+
+  void _handleAdd(BuildContext context, InventoryItem item) {
+    if (_inList(item)) return; // already in list; row shows the state
+    onAddToList(item);
+    _toast(context, L10n.of(context).addedToListToast);
+  }
+
+  void _handleAddAll(BuildContext context) {
+    final l = L10n.of(context);
+    final toAddCount = [..._restock, ..._expiringSoon]
+        .where((i) => !_inList(i))
+        .length;
+    if (toAddCount == 0) {
+      _toast(context, l.allAlreadyInList);
+      return;
+    }
+    onAddAll();
+    _toast(context, l.addedAllToListToast(toAddCount));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +113,7 @@ class ReminderScreen extends StatelessWidget {
           ),
           if (_hasAny)
             GestureDetector(
-              onTap: onAddAll,
+              onTap: () => _handleAddAll(context),
               child: Container(
                 padding: const EdgeInsets.symmetric(
                     horizontal: 12, vertical: 7),
@@ -110,7 +147,8 @@ class ReminderScreen extends StatelessWidget {
           ..._restock.map((item) => _ReminderRow(
                 item: item,
                 thresholdDays: thresholdDays,
-                onAddToList: () => onAddToList(item),
+                inList: _inList(item),
+                onTap: () => _handleAdd(context, item),
               )),
           const SizedBox(height: 16),
         ],
@@ -119,7 +157,8 @@ class ReminderScreen extends StatelessWidget {
           ..._expiringSoon.map((item) => _ReminderRow(
                 item: item,
                 thresholdDays: thresholdDays,
-                onAddToList: () => onAddToList(item),
+                inList: _inList(item),
+                onTap: () => _handleAdd(context, item),
               )),
         ],
       ],
@@ -177,12 +216,14 @@ class ReminderScreen extends StatelessWidget {
 class _ReminderRow extends StatelessWidget {
   final InventoryItem item;
   final int thresholdDays;
-  final VoidCallback onAddToList;
+  final bool inList;
+  final VoidCallback onTap;
 
   const _ReminderRow({
     required this.item,
     required this.thresholdDays,
-    required this.onAddToList,
+    required this.inList,
+    required this.onTap,
   });
 
   @override
@@ -192,106 +233,115 @@ class _ReminderRow extends StatelessWidget {
     final remaining = item.daysRemaining;
     final displayName = l.data(item.name);
 
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            // Icon
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: item.category.bgColor,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Center(
+                child: Text(
+                  displayName,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: displayName.length > 2 ? 10 : 13,
+                    fontWeight: FontWeight.w600,
+                    color: item.category.color.withValues(alpha: 0.8),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+
+            // Name + hint
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    displayName,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    status == StockStatus.empty
+                        ? l.usedUpNeedRestock
+                        : l.daysLeftApprox(remaining),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: status.color,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+
+            // Right: "in list" state or "add" action
+            inList ? _inListPill(l) : _addPill(l),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _addPill(AppStrings l) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        color: const Color(0xFF4CAF50),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        l.add,
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  Widget _inListPill(AppStrings l) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEEEEE8),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Icon
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: item.category.bgColor,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Center(
-              child: Text(
-                displayName,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: displayName.length > 2 ? 10 : 13,
-                  fontWeight: FontWeight.w600,
-                  color: item.category.color.withValues(alpha: 0.8),
-                ),
-              ),
+          const Icon(Icons.check_rounded,
+              size: 14, color: Color(0xFF9E9E9E)),
+          const SizedBox(width: 4),
+          Text(
+            l.alreadyInList,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF9E9E9E),
             ),
           ),
-          const SizedBox(width: 12),
-
-          // Name + hint
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  displayName,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1A1A1A),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  status == StockStatus.empty
-                      ? l.usedUpNeedRestock
-                      : l.daysLeftApprox(remaining),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: status.color,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-
-          // Right: button or badge
-          if (status == StockStatus.empty)
-            GestureDetector(
-              onTap: onAddToList,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF4CAF50),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  l.add,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            )
-          else
-            GestureDetector(
-              onTap: onAddToList,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF3E0),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  l.daysShortApprox(remaining),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFFFF9800),
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );

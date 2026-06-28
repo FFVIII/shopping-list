@@ -78,6 +78,10 @@ abstract class AppStrings {
   String get usedUpNeedRestock; // "已用完，需要补货"
   String daysLeftApprox(int n); // "还剩约N天" / "~N days left"
   String get add; // "加入" / "Add"
+  String get alreadyInList; // "已在清单" / "In list"
+  String get addedToListToast; // "已加入清单" / "Added to list"
+  String addedAllToListToast(int n); // "已加入 N 件到清单" / "Added N items"
+  String get allAlreadyInList; // "都已在清单了" / "All already in list"
 
   // ── Settings screen ──
   String get settingsTitle;
@@ -179,6 +183,10 @@ class ZhStrings extends AppStrings {
   @override String get usedUpNeedRestock => '已用完，需要补货';
   @override String daysLeftApprox(int n) => '还剩约$n天';
   @override String get add => '加入';
+  @override String get alreadyInList => '已在清单';
+  @override String get addedToListToast => '已加入清单';
+  @override String addedAllToListToast(int n) => '已加入 $n 件到清单';
+  @override String get allAlreadyInList => '都已在清单了';
 
   @override String get settingsTitle => '设置';
   @override String get proUpgrade => '升级 Pro';
@@ -299,6 +307,10 @@ class EnStrings extends AppStrings {
   @override String get usedUpNeedRestock => 'Used up, needs restocking';
   @override String daysLeftApprox(int n) => '~$n days left';
   @override String get add => 'Add';
+  @override String get alreadyInList => 'In list';
+  @override String get addedToListToast => 'Added to list';
+  @override String addedAllToListToast(int n) => 'Added $n items to list';
+  @override String get allAlreadyInList => 'All already in list';
 
   @override String get settingsTitle => 'Settings';
   @override String get proUpgrade => 'Upgrade to Pro';
