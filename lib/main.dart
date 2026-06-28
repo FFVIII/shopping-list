@@ -350,6 +350,17 @@ class _AppShellState extends State<AppShell> {
     setState(() => _inventory = _inventory.where((i) => i.id != id).toList());
   }
 
+  void _reorderInventory(
+      String movedId, String newZone, List<String> orderedIds) {
+    setState(() {
+      final idx = _inventory.indexWhere((i) => i.id == movedId);
+      if (idx != -1) _inventory[idx].shelfZone = newZone;
+      _inventory = orderedIds
+          .map((id) => _inventory.firstWhere((i) => i.id == id))
+          .toList();
+    });
+  }
+
   void _addAllToList() {
     final threshold = _settings.reminderThresholdDays;
     final needRestock = _inventory
@@ -397,6 +408,7 @@ class _AppShellState extends State<AppShell> {
               onRestock: _restockInventoryItem,
               onDelete: _deleteInventoryItem,
               onAddToShoppingList: _addToListFromReminder,
+              onReorder: _reorderInventory,
             ),
             ReminderScreen(
               inventoryItems: _inventory,

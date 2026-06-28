@@ -9,6 +9,8 @@ class InventoryScreen extends StatefulWidget {
   final void Function(String id, int newEstimatedDays) onRestock;
   final void Function(String id) onDelete;
   final void Function(InventoryItem item) onAddToShoppingList;
+  final void Function(String movedId, String newZone, List<String> orderedIds)
+      onReorder;
 
   const InventoryScreen({
     super.key,
@@ -18,6 +20,7 @@ class InventoryScreen extends StatefulWidget {
     required this.onRestock,
     required this.onDelete,
     required this.onAddToShoppingList,
+    required this.onReorder,
   });
 
   @override
@@ -352,7 +355,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
             Expanded(
               child: _filtered.isEmpty
                   ? _emptyState()
-                  : _buildGroupedList(),
+                  : _query.isEmpty
+                      ? _buildReorderableGroupedList()
+                      : _buildGroupedList(),
             ),
           ],
         ),
@@ -479,11 +484,93 @@ class _InventoryScreenState extends State<InventoryScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String zone, int count) {
+  // Drag-to-reorder list (used when not searching). Items can be dragged
+  // within a zone or into another zone (which updates their shelf zone).
+  Widget _buildReorderableGroupedList() {
+    final groups = _grouped;
+    final flat = <_InvEntry>[];
+    for (final entry in groups.entries) {
+      flat.add(_InvEntry.header(entry.key));
+      for (final item in entry.value) {
+        flat.add(_InvEntry.forItem(item, entry.key));
+      }
+    }
+    final groupCounts = {
+      for (final e in groups.entries) e.key: e.value.length
+    };
+
+    return ReorderableListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+      buildDefaultDragHandles: false,
+      itemCount: flat.length,
+      itemBuilder: (ctx, i) {
+        final entry = flat[i];
+        if (entry.isHeader) {
+          return _buildSectionHeader(
+            entry.groupKey,
+            groupCounts[entry.groupKey] ?? 0,
+            key: Key('invh_${entry.groupKey}'),
+          );
+        }
+        final item = entry.item!;
+        return _InventoryCard(
+          key: Key('invc_${item.id}'),
+          item: item,
+          thresholdDays: widget.thresholdDays,
+          onTap: () => _showDetailSheet(item),
+          onDelete: () => widget.onDelete(item.id),
+          reorderIndex: i,
+        );
+      },
+      onReorderItem: (oldIndex, newIndex) =>
+          _onInvReorder(oldIndex, newIndex, flat),
+      proxyDecorator: (child, index, animation) => Material(
+        color: Colors.transparent,
+        elevation: 6,
+        borderRadius: BorderRadius.circular(14),
+        shadowColor: Colors.black26,
+        child: child,
+      ),
+    );
+  }
+
+  void _onInvReorder(int oldIndex, int newIndex, List<_InvEntry> flat) {
+    if (flat[oldIndex].isHeader) return;
+    final movedItem = flat[oldIndex].item!;
+
+    final mutable = List<_InvEntry>.from(flat);
+    final moved = mutable.removeAt(oldIndex);
+    mutable.insert(newIndex, moved);
+
+    // Nearest preceding header determines the new zone.
+    String newZone = '';
+    for (int i = newIndex; i >= 0; i--) {
+      if (mutable[i].isHeader) {
+        newZone = mutable[i].groupKey;
+        break;
+      }
+    }
+    if (newZone.isEmpty) {
+      for (final e in mutable) {
+        if (e.isHeader) {
+          newZone = e.groupKey;
+          break;
+        }
+      }
+    }
+    if (newZone.isEmpty) return;
+
+    final orderedIds =
+        mutable.where((e) => !e.isHeader).map((e) => e.item!.id).toList();
+    widget.onReorder(movedItem.id, newZone, orderedIds);
+  }
+
+  Widget _buildSectionHeader(String zone, int count, {Key? key}) {
     final l = L10n.of(context);
     final color =
         kShelfZones[zone]?.dotColor ?? const Color(0xFF9E9E9E);
     return Padding(
+      key: key,
       padding: const EdgeInsets.fromLTRB(4, 14, 0, 6),
       child: Row(
         children: [
@@ -590,12 +677,15 @@ class _InventoryCard extends StatelessWidget {
   final int thresholdDays;
   final VoidCallback onTap;
   final VoidCallback onDelete;
+  final int? reorderIndex;
 
   const _InventoryCard({
+    super.key,
     required this.item,
     required this.thresholdDays,
     required this.onTap,
     required this.onDelete,
+    this.reorderIndex,
   });
 
   @override
@@ -712,7 +802,7 @@ class _InventoryCard extends StatelessWidget {
                 const SizedBox(width: 10),
                 // Status badge
                 Container(
-                  margin: const EdgeInsets.only(right: 14),
+                  margin: EdgeInsets.only(right: reorderIndex == null ? 14 : 6),
                   padding: const EdgeInsets.symmetric(
                       horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
@@ -728,6 +818,16 @@ class _InventoryCard extends StatelessWidget {
                     ),
                   ),
                 ),
+                // Drag handle (only in reorderable mode)
+                if (reorderIndex != null)
+                  ReorderableDragStartListener(
+                    index: reorderIndex!,
+                    child: const Padding(
+                      padding: EdgeInsets.only(right: 10, left: 2),
+                      child: Icon(Icons.drag_handle_rounded,
+                          size: 20, color: Color(0xFFD0D0D0)),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -735,6 +835,16 @@ class _InventoryCard extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Flat list entry for drag-reorder (header or item) ───────────────────────────
+
+class _InvEntry {
+  final String groupKey;
+  final InventoryItem? item;
+  _InvEntry.header(this.groupKey) : item = null;
+  _InvEntry.forItem(this.item, this.groupKey);
+  bool get isHeader => item == null;
 }
 
 // ── Add Inventory Sheet ────────────────────────────────────────────────────────
