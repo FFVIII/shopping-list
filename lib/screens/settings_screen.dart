@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 import '../models/item.dart';
+import '../l10n/l10n.dart';
+import '../l10n/app_language.dart';
+import '../l10n/app_strings.dart';
 
 class SettingsScreen extends StatefulWidget {
   final AppSettings settings;
   final void Function(AppSettings) onChanged;
+  final AppLanguage language;
+  final void Function(AppLanguage) onLanguageChanged;
 
   const SettingsScreen({
     super.key,
     required this.settings,
     required this.onChanged,
+    required this.language,
+    required this.onLanguageChanged,
   });
 
   @override
@@ -35,24 +42,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = L10n.of(context);
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2ED),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(0, 0, 0, 40),
           children: [
-            _buildHeader(),
+            _buildHeader(l),
             const SizedBox(height: 4),
-            _buildProCard(),
+            _buildProCard(l),
             const SizedBox(height: 24),
-            _buildSection('分类与货架', [
-              _navRow('管理分类', trailing: '12类'),
-              _navRow('货架顺序'),
+            _buildSection(l.sectionCategoryShelf, [
+              _navRow(l.manageCategories, trailing: l.categoriesCount(12)),
+              _navRow(l.shelfOrder),
             ]),
             const SizedBox(height: 16),
-            _buildSection('提醒', [
+            _buildSection(l.language, [
+              _navRow(
+                l.language,
+                trailing: l.labelForLanguage(widget.language),
+                onTap: () => _showLanguageSheet(l),
+              ),
+            ]),
+            const SizedBox(height: 16),
+            _buildSection(l.sectionReminder, [
               _switchRow(
-                '补货提醒',
+                l.restockReminder,
                 _settings.restockReminderEnabled,
                 (v) => _update(AppSettings(
                   reminderThresholdDays: _settings.reminderThresholdDays,
@@ -60,18 +76,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   reminderTime: _settings.reminderTime,
                 )),
               ),
-              _navRow('提醒时间', trailing: _settings.reminderTime),
+              _navRow(l.reminderTimeLabel, trailing: l.data(_settings.reminderTime)),
               _thresholdRow(),
             ]),
             const SizedBox(height: 16),
-            _buildSection('数据', [
-              _navRow('备份导出'),
-              _navRow('导入恢复'),
+            _buildSection(l.sectionData, [
+              _navRow(l.backupExport),
+              _navRow(l.importRestore),
             ]),
             const SizedBox(height: 32),
             Center(
               child: Text(
-                '购物清单 v1.0 · 本地优先',
+                l.appFooter,
                 style:
                     TextStyle(fontSize: 12, color: Colors.grey[400]),
               ),
@@ -82,12 +98,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildHeader() {
-    return const Padding(
-      padding: EdgeInsets.fromLTRB(20, 16, 20, 12),
+  Widget _buildHeader(AppStrings l) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
       child: Text(
-        '设置',
-        style: TextStyle(
+        l.settingsTitle,
+        style: const TextStyle(
           fontSize: 26,
           fontWeight: FontWeight.w800,
           color: Color(0xFF1A1A1A),
@@ -97,7 +113,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildProCard() {
+  Widget _buildProCard(AppStrings l) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
@@ -115,9 +131,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Row(
               children: [
-                const Text(
-                  '升级 Pro',
-                  style: TextStyle(
+                Text(
+                  l.proUpgrade,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
@@ -145,7 +161,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              '拍照识别配图 · 快捷加项组件 · 多设备同步备份',
+              l.proDesc,
               style: TextStyle(
                 fontSize: 13,
                 color: Colors.white.withValues(alpha: 0.85),
@@ -159,9 +175,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Text(
-                '查看 Pro 功能 →',
-                style: TextStyle(
+              child: Text(
+                l.proCta,
+                style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: Color(0xFF388E3C),
@@ -213,8 +229,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _navRow(String label, {String? trailing}) {
+  Widget _navRow(String label, {String? trailing, VoidCallback? onTap}) {
     return ListTile(
+      onTap: onTap,
       contentPadding:
           const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
       dense: true,
@@ -254,6 +271,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _thresholdRow() {
+    final l = L10n.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -262,15 +280,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const EdgeInsets.fromLTRB(16, 12, 16, 4),
           child: Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
-                  '提前天数',
-                  style: TextStyle(
+                  l.advanceDays,
+                  style: const TextStyle(
                       fontSize: 15, color: Color(0xFF1A1A1A)),
                 ),
               ),
               Text(
-                '${_settings.reminderThresholdDays}天',
+                l.days(_settings.reminderThresholdDays),
                 style: const TextStyle(
                     fontSize: 14,
                     color: Color(0xFF4CAF50),
@@ -311,19 +329,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('1天',
+              Text(l.scale1Day,
                   style: TextStyle(
                       fontSize: 11, color: Colors.grey[400])),
-              Text('1周',
+              Text(l.scale1Week,
                   style: TextStyle(
                       fontSize: 11, color: Colors.grey[400])),
-              Text('2周',
+              Text(l.scale2Week,
                   style: TextStyle(
                       fontSize: 11, color: Colors.grey[400])),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  void _showLanguageSheet(AppStrings l) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            for (final entry in <AppLanguage, String>{
+              AppLanguage.system: l.languageSystem,
+              AppLanguage.zh: l.languageZh,
+              AppLanguage.en: l.languageEn,
+            }.entries)
+              ListTile(
+                title: Text(entry.value),
+                trailing: widget.language == entry.key
+                    ? const Icon(Icons.check_rounded, color: Color(0xFF4CAF50))
+                    : null,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  widget.onLanguageChanged(entry.key);
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
     );
   }
 }
