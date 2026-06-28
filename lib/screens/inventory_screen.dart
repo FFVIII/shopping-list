@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/item.dart';
+import '../l10n/l10n.dart';
 
 class InventoryScreen extends StatefulWidget {
   final List<InventoryItem> items;
@@ -88,7 +89,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModal) => Padding(
+        builder: (ctx, setModal) {
+          final l = L10n.of(ctx);
+          return Padding(
           padding: EdgeInsets.only(
             left: 20,
             right: 20,
@@ -104,7 +107,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      item.name,
+                      l.data(item.name),
                       style: const TextStyle(
                           fontSize: 18, fontWeight: FontWeight.w700),
                     ),
@@ -117,7 +120,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Text(
-                      item.category.label,
+                      l.category(item.category),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -134,7 +137,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       size: 13, color: Color(0xFFBDBDBD)),
                   const SizedBox(width: 3),
                   Text(
-                    item.shelfZone,
+                    l.data(item.shelfZone),
                     style: const TextStyle(
                         fontSize: 12, color: Color(0xFF9E9E9E)),
                   ),
@@ -162,7 +165,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      status.label,
+                      l.stockStatus(status),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -173,8 +176,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   const SizedBox(width: 10),
                   Text(
                     status == StockStatus.empty
-                        ? '已用完'
-                        : '还剩约 ${item.daysRemaining} 天',
+                        ? l.usedUp
+                        : l.daysRemainingLong(item.daysRemaining),
                     style: TextStyle(fontSize: 13, color: status.color),
                   ),
                 ],
@@ -183,9 +186,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
               const Divider(height: 1, color: Color(0xFFF0F0EA)),
               const SizedBox(height: 16),
               // Reset section
-              const Text(
-                '重新购买，重置计时',
-                style: TextStyle(
+              Text(
+                l.resetTimerSection,
+                style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: Color(0xFF6B6B6B),
@@ -210,7 +213,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        '$d天',
+                        l.days(d),
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -239,7 +242,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   min: 1,
                   max: 60,
                   divisions: 59,
-                  label: '$selectedDays天',
+                  label: l.days(selectedDays),
                   onChanged: (v) =>
                       setModal(() => selectedDays = v.round()),
                 ),
@@ -261,7 +264,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     widget.onRestock(item.id, selectedDays);
                   },
                   child: Text(
-                    '重置计时（$selectedDays天）',
+                    l.resetTimer(selectedDays),
                     style: const TextStyle(
                         fontSize: 15, fontWeight: FontWeight.w600),
                   ),
@@ -283,9 +286,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     Navigator.pop(ctx);
                     widget.onAddToShoppingList(item);
                   },
-                  child: const Text(
-                    '加入补货清单',
-                    style: TextStyle(
+                  child: Text(
+                    l.addToRestockList,
+                    style: const TextStyle(
                         fontSize: 14, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -302,16 +305,17 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     Navigator.pop(ctx);
                     widget.onDelete(item.id);
                   },
-                  child: const Text(
-                    '从库存删除',
-                    style: TextStyle(
+                  child: Text(
+                    l.deleteFromInventory,
+                    style: const TextStyle(
                         fontSize: 14, fontWeight: FontWeight.w500),
                   ),
                 ),
               ),
             ],
           ),
-        ),
+        );
+        },
       ),
     );
   }
@@ -357,6 +361,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   Widget _buildHeader() {
+    final l = L10n.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 16, 10),
       child: Row(
@@ -365,9 +370,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  '库存',
-                  style: TextStyle(
+                Text(
+                  l.inventoryTitle,
+                  style: const TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF1A1A1A),
@@ -376,7 +381,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${widget.items.length}件常备 · $_needRestockCount件需补货',
+                  l.inventorySummary(widget.items.length, _needRestockCount),
                   style: const TextStyle(
                       fontSize: 13, color: Color(0xFF9E9E9E)),
                 ),
@@ -410,6 +415,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   Widget _buildSearchBar() {
+    final l = L10n.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
@@ -430,7 +436,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
           onChanged: (v) => setState(() => _query = v),
           style: const TextStyle(fontSize: 14),
           decoration: InputDecoration(
-            hintText: '搜索商品或货架',
+            hintText: l.searchHint,
             hintStyle:
                 const TextStyle(color: Color(0xFFBDBDBD), fontSize: 14),
             prefixIcon: const Icon(Icons.search_rounded,
@@ -474,6 +480,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   Widget _buildSectionHeader(String zone, int count) {
+    final l = L10n.of(context);
     final color =
         kShelfZones[zone]?.dotColor ?? const Color(0xFF9E9E9E);
     return Padding(
@@ -488,7 +495,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
           ),
           const SizedBox(width: 8),
           Text(
-            zone,
+            l.data(zone),
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
@@ -505,7 +512,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
-              '$count件',
+              l.itemCountChip(count),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
@@ -519,6 +526,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   Widget _emptyState() {
+    final l = L10n.of(context);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -530,7 +538,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            _query.isEmpty ? '库存还是空的' : '没有找到「$_query」',
+            _query.isEmpty
+                ? l.inventoryEmptyTitle
+                : l.inventoryNoResults(_query),
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
@@ -539,7 +549,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            _query.isEmpty ? '先从清单购买并记录到库存' : '试试其他关键词',
+            _query.isEmpty
+                ? l.inventoryEmptySubtitle
+                : l.inventoryEmptySubtitleQuery,
             style: const TextStyle(
                 fontSize: 13, color: Color(0xFFBDBDBD)),
           ),
@@ -554,9 +566,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   color: const Color(0xFF4CAF50),
                   borderRadius: BorderRadius.circular(24),
                 ),
-                child: const Text(
-                  '手动添加商品',
-                  style: TextStyle(
+                child: Text(
+                  l.addManually,
+                  style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
@@ -588,8 +600,10 @@ class _InventoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = L10n.of(context);
     final status = item.statusFor(thresholdDays);
     final remaining = item.daysRemaining;
+    final dn = l.data(item.name);
     final barColor =
         kShelfZones[item.shelfZone]?.dotColor ?? item.category.color;
 
@@ -647,9 +661,7 @@ class _InventoryCard extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      item.name.length > 2
-                          ? item.name.substring(0, 2)
-                          : item.name,
+                      dn.length > 2 ? dn.substring(0, 2) : dn,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 13,
@@ -669,7 +681,7 @@ class _InventoryCard extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          item.name,
+                          dn,
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
@@ -684,10 +696,10 @@ class _InventoryCard extends StatelessWidget {
                         const SizedBox(height: 5),
                         Text(
                           status == StockStatus.empty
-                              ? '已用完'
+                              ? l.usedUp
                               : (remaining <= 3
-                                  ? '约$remaining天'
-                                  : '$remaining天'),
+                                  ? l.daysShortApprox(remaining)
+                                  : l.daysShort(remaining)),
                           style: TextStyle(
                             fontSize: 12,
                             color: status.color,
@@ -708,7 +720,7 @@ class _InventoryCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    status.label,
+                    l.stockStatus(status),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -764,6 +776,7 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l = L10n.of(context);
     return Padding(
       padding: EdgeInsets.only(
         left: 20,
@@ -775,9 +788,9 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '添加到库存',
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+          Text(
+            l.addToInventoryTitle,
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 16),
           TextField(
@@ -785,7 +798,7 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
             autofocus: true,
             style: const TextStyle(fontSize: 15),
             decoration: InputDecoration(
-              hintText: '商品名称',
+              hintText: l.productNameHint,
               hintStyle: const TextStyle(color: Color(0xFFBDBDBD)),
               filled: true,
               fillColor: const Color(0xFFF5F5F0),
@@ -801,9 +814,9 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
             onSubmitted: (_) => _submit(),
           ),
           const SizedBox(height: 14),
-          const Text(
-            '分类',
-            style: TextStyle(
+          Text(
+            l.categoryLabel,
+            style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: Color(0xFF6B6B6B),
@@ -826,7 +839,7 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    cat.label,
+                    l.category(cat),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -838,9 +851,9 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
             }).toList(),
           ),
           const SizedBox(height: 14),
-          const Text(
-            '预计使用天数',
-            style: TextStyle(
+          Text(
+            l.estimatedUseDays,
+            style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: Color(0xFF6B6B6B),
@@ -865,7 +878,7 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    '$d天',
+                    l.days(d),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -891,7 +904,7 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
               min: 1,
               max: 60,
               divisions: 59,
-              label: '$_days天',
+              label: l.days(_days),
               onChanged: (v) => setState(() => _days = v.round()),
             ),
           ),
@@ -908,9 +921,9 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
                 elevation: 0,
               ),
               onPressed: _nameCtrl.text.trim().isEmpty ? null : _submit,
-              child: const Text(
-                '加入库存',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              child: Text(
+                l.addToInventoryBtn,
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
               ),
             ),
           ),
