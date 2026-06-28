@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'theme/app_colors.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'models/item.dart';
 import 'l10n/app_language.dart';
@@ -9,6 +10,8 @@ import 'screens/list_screen.dart';
 import 'screens/inventory_screen.dart';
 import 'screens/reminder_screen.dart';
 import 'screens/settings_screen.dart';
+
+part 'main.widgets.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,11 +58,11 @@ class _ShoppingListAppState extends State<ShoppingListApp> {
         theme: ThemeData(
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF4CAF50),
-            primary: const Color(0xFF4CAF50),
-            surface: const Color(0xFFF2F2ED),
+            seedColor: AppColors.brand,
+            primary: AppColors.brand,
+            surface: AppColors.scaffoldBg,
           ),
-          scaffoldBackgroundColor: const Color(0xFFF2F2ED),
+          scaffoldBackgroundColor: AppColors.scaffoldBg,
         ),
         home: AppShell(
           language: _language,
@@ -88,6 +91,7 @@ class _AppShellState extends State<AppShell> {
   late List<ShoppingItem> _shoppingSimple;
   late List<ShoppingItem> _shopping;
   late List<InventoryItem> _inventory;
+  late List<BudgetItem> _budget;
   late AppSettings _settings;
 
   @override
@@ -96,7 +100,41 @@ class _AppShellState extends State<AppShell> {
     _shoppingSimple = [];
     _shopping = buildSampleShopping();
     _inventory = buildSampleInventory();
+    _budget = buildSampleBudget();
     _settings = AppSettings();
+  }
+
+  // ── 清单：记账模式增 / 改 / 删 ───────────────────────────────────────────────
+
+  void _addBudgetItem(String name, int quantity, double unitPrice) {
+    setState(() {
+      _budget = [
+        ..._budget,
+        BudgetItem(
+          id: 'bud_${DateTime.now().millisecondsSinceEpoch}',
+          name: name,
+          quantity: quantity,
+          unitPrice: unitPrice,
+        ),
+      ];
+    });
+  }
+
+  void _editBudgetItem(
+      String id, String name, int quantity, double unitPrice) {
+    setState(() {
+      final idx = _budget.indexWhere((i) => i.id == id);
+      if (idx == -1) return;
+      _budget[idx]
+        ..name = name
+        ..quantity = quantity
+        ..unitPrice = unitPrice;
+      _budget = List<BudgetItem>.from(_budget);
+    });
+  }
+
+  void _deleteBudgetItem(String id) {
+    setState(() => _budget = _budget.where((i) => i.id != id).toList());
   }
 
   // ── 清单：简单模式添加（无分类）────────────────────────────────────────────
@@ -426,6 +464,10 @@ class _AppShellState extends State<AppShell> {
               onReorderSmart: _reorderSmart,
               onRenameSimple: _renameSimpleItem,
               onEditSmart: _editSmartItem,
+              budgetItems: _budget,
+              onAddBudget: _addBudgetItem,
+              onEditBudget: _editBudgetItem,
+              onDeleteBudget: _deleteBudgetItem,
             ),
             InventoryScreen(
               items: _inventory,
@@ -461,302 +503,6 @@ class _AppShellState extends State<AppShell> {
         currentIndex: _tab,
         onTap: (i) => setState(() => _tab = i),
         reminderBadge: reminderCount,
-      ),
-    );
-  }
-}
-
-// ── Days Sheet ────────────────────────────────────────────────────────────────
-
-class _DaysSheet extends StatefulWidget {
-  final ShoppingItem item;
-  final int initialDays;
-  final void Function(int days) onConfirm;
-
-  const _DaysSheet({
-    required this.item,
-    required this.initialDays,
-    required this.onConfirm,
-  });
-
-  @override
-  State<_DaysSheet> createState() => _DaysSheetState();
-}
-
-class _DaysSheetState extends State<_DaysSheet> {
-  late int _days;
-
-  @override
-  void initState() {
-    super.initState();
-    _days = widget.initialDays;
-  }
-
-  void _confirm() {
-    Navigator.pop(context);
-    widget.onConfirm(_days);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l = L10n.of(context);
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 24,
-        right: 24,
-        top: 24,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 32,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l.boughtTitle(l.data(widget.item.name)),
-            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            l.estimatedDaysQuestion,
-            style: const TextStyle(fontSize: 14, color: Color(0xFF9E9E9E)),
-          ),
-          const SizedBox(height: 20),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [3, 5, 7, 14, 30].map((d) {
-              final sel = _days == d;
-              return GestureDetector(
-                onTap: () => setState(() => _days = d),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 9),
-                  decoration: BoxDecoration(
-                    color: sel
-                        ? const Color(0xFF4CAF50)
-                        : const Color(0xFFF5F5F0),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    l.days(d),
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: sel ? Colors.white : const Color(0xFF424242),
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 8),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: const Color(0xFF4CAF50),
-              inactiveTrackColor: const Color(0xFFE0E0E0),
-              thumbColor: const Color(0xFF4CAF50),
-              overlayColor: const Color(0xFF4CAF50).withValues(alpha: 0.15),
-              trackHeight: 3,
-              thumbShape:
-                  const RoundSliderThumbShape(enabledThumbRadius: 10),
-            ),
-            child: Slider(
-              value: _days.toDouble().clamp(1, 60),
-              min: 1,
-              max: 60,
-              divisions: 59,
-              label: l.days(_days),
-              onChanged: (v) => setState(() => _days = v.round()),
-            ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4CAF50),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-                elevation: 0,
-              ),
-              onPressed: _confirm,
-              child: Text(
-                l.recordToInventory(_days),
-                style: const TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Bottom Navigation ─────────────────────────────────────────────────────────
-
-class _BottomNav extends StatelessWidget {
-  final int currentIndex;
-  final ValueChanged<int> onTap;
-  final int reminderBadge;
-
-  const _BottomNav({
-    required this.currentIndex,
-    required this.onTap,
-    this.reminderBadge = 0,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final l = L10n.of(context);
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x10000000),
-            blurRadius: 8,
-            offset: Offset(0, -1),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 60,
-          child: Row(
-            children: [
-              _NavItem(
-                icon: Icons.format_list_bulleted_rounded,
-                label: l.navList,
-                index: 0,
-                currentIndex: currentIndex,
-                onTap: onTap,
-              ),
-              _NavItem(
-                icon: Icons.inventory_2_outlined,
-                activeIcon: Icons.inventory_2_rounded,
-                label: l.navInventory,
-                index: 1,
-                currentIndex: currentIndex,
-                onTap: onTap,
-              ),
-              _NavItem(
-                icon: Icons.notifications_outlined,
-                activeIcon: Icons.notifications_rounded,
-                label: l.navReminder,
-                index: 2,
-                currentIndex: currentIndex,
-                onTap: onTap,
-                badge: reminderBadge,
-              ),
-              _NavItem(
-                icon: Icons.settings_outlined,
-                activeIcon: Icons.settings_rounded,
-                label: l.navSettings,
-                index: 3,
-                currentIndex: currentIndex,
-                onTap: onTap,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final IconData? activeIcon;
-  final String label;
-  final int index;
-  final int currentIndex;
-  final ValueChanged<int> onTap;
-  final int badge;
-
-  const _NavItem({
-    required this.icon,
-    this.activeIcon,
-    required this.label,
-    required this.index,
-    required this.currentIndex,
-    required this.onTap,
-    this.badge = 0,
-  });
-
-  bool get _selected => index == currentIndex;
-
-  @override
-  Widget build(BuildContext context) {
-    const green = Color(0xFF4CAF50);
-    const inactive = Color(0xFF9E9E9E);
-
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => onTap(index),
-        behavior: HitTestBehavior.opaque,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: _selected
-                        ? green.withValues(alpha: 0.12)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Icon(
-                    _selected ? (activeIcon ?? icon) : icon,
-                    size: 22,
-                    color: _selected ? green : inactive,
-                  ),
-                ),
-                if (badge > 0)
-                  Positioned(
-                    top: -2,
-                    right: -2,
-                    child: Container(
-                      width: 16,
-                      height: 16,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFE53935),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          badge > 9 ? '9+' : '$badge',
-                          style: const TextStyle(
-                            fontSize: 9,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight:
-                    _selected ? FontWeight.w600 : FontWeight.normal,
-                color: _selected ? green : inactive,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import '../models/item.dart';
 import '../l10n/l10n.dart';
 import '../l10n/app_strings.dart';
@@ -70,7 +71,7 @@ class ReminderScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2ED),
+      backgroundColor: AppColors.scaffoldBg,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -100,7 +101,7 @@ class ReminderScreen extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF1A1A1A),
+                    color: AppColors.textPrimary,
                     height: 1.1,
                   ),
                 ),
@@ -108,7 +109,7 @@ class ReminderScreen extends StatelessWidget {
                 Text(
                   l.reminderSummary(_restock.length, _expiringSoon.length),
                   style: const TextStyle(
-                      fontSize: 13, color: Color(0xFF9E9E9E)),
+                      fontSize: 13, color: AppColors.textMuted),
                 ),
               ],
             ),
@@ -128,7 +129,7 @@ class ReminderScreen extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF424242),
+                    color: AppColors.textChip,
                   ),
                 ),
               ),
@@ -145,7 +146,7 @@ class ReminderScreen extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
       children: [
         if (_restock.isNotEmpty) ...[
-          _sectionHeader(l.sectionRestock, const Color(0xFFE53935)),
+          _sectionHeader(l.sectionRestock, AppColors.danger),
           ..._restock.map((item) => _ReminderRow(
                 item: item,
                 thresholdDays: thresholdDays,
@@ -184,7 +185,7 @@ class ReminderScreen extends StatelessWidget {
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF1A1A1A),
+              color: AppColors.textPrimary,
             ),
           ),
         ],
@@ -202,12 +203,12 @@ class ReminderScreen extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             l.reminderEmptyTitle,
-            style: const TextStyle(fontSize: 15, color: Color(0xFF9E9E9E)),
+            style: const TextStyle(fontSize: 15, color: AppColors.textMuted),
           ),
           const SizedBox(height: 4),
           Text(
             l.reminderEmptySubtitle,
-            style: const TextStyle(fontSize: 13, color: Color(0xFFBDBDBD)),
+            style: const TextStyle(fontSize: 13, color: AppColors.textDisabled),
           ),
         ],
       ),
@@ -279,7 +280,7 @@ class _ReminderRow extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF1A1A1A),
+                      color: AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -309,7 +310,7 @@ class _ReminderRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF4CAF50),
+        color: AppColors.brand,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
@@ -334,14 +335,14 @@ class _ReminderRow extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.check_rounded,
-              size: 14, color: Color(0xFF9E9E9E)),
+              size: 14, color: AppColors.textMuted),
           const SizedBox(width: 4),
           Text(
             l.alreadyInList,
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF9E9E9E),
+              color: AppColors.textMuted,
             ),
           ),
         ],

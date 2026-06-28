@@ -161,6 +161,24 @@ class InventoryItem {
   }
 }
 
+// ─── Budget Item (记账) ────────────────────────────────────────────────────────
+
+class BudgetItem {
+  final String id;
+  String name;
+  int quantity;      // count, ≥ 1
+  double unitPrice;  // price per unit
+
+  BudgetItem({
+    required this.id,
+    required this.name,
+    this.quantity = 1,
+    this.unitPrice = 0,
+  });
+
+  double get lineTotal => quantity * unitPrice;
+}
+
 // ─── App Settings ─────────────────────────────────────────────────────────────
 
 class AppSettings {
@@ -218,6 +236,12 @@ List<ShoppingItem> buildSampleShopping() => [
         shelfZone: '冷藏/乳制品',
         shelfCode: '冷柜C1',
       ),
+    ];
+
+List<BudgetItem> buildSampleBudget() => [
+      BudgetItem(id: 'b1', name: '牛奶', quantity: 2, unitPrice: 8.5),
+      BudgetItem(id: 'b2', name: '鸡蛋', quantity: 1, unitPrice: 15),
+      BudgetItem(id: 'b3', name: '香蕉', quantity: 3, unitPrice: 2.5),
     ];
 
 List<InventoryItem> buildSampleInventory() {

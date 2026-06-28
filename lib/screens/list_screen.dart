@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import '../models/item.dart';
 import '../l10n/l10n.dart';
+
+part 'list_screen.widgets.dart';
+
+/// List page modes, in display order: Simple · Budget · Smart.
+enum ListMode { simple, budget, smart }
 
 class ListScreen extends StatefulWidget {
   final List<ShoppingItem> simpleItems;
@@ -32,6 +38,12 @@ class ListScreen extends StatefulWidget {
     Category category,
     String shelfZone,
   ) onEditSmart;
+  // Budget mode (记账)
+  final List<BudgetItem> budgetItems;
+  final void Function(String name, int quantity, double unitPrice) onAddBudget;
+  final void Function(String id, String name, int quantity, double unitPrice)
+      onEditBudget;
+  final void Function(String id) onDeleteBudget;
 
   const ListScreen({
     super.key,
@@ -49,6 +61,10 @@ class ListScreen extends StatefulWidget {
     required this.onReorderSmart,
     required this.onRenameSimple,
     required this.onEditSmart,
+    required this.budgetItems,
+    required this.onAddBudget,
+    required this.onEditBudget,
+    required this.onDeleteBudget,
   });
 
   @override
@@ -56,9 +72,12 @@ class ListScreen extends StatefulWidget {
 }
 
 class _ListScreenState extends State<ListScreen> {
-  bool _isSmartMode = false;
+  ListMode _mode = ListMode.simple;
   bool _byShelf = true;
   bool _smartHintDismissed = false;
+
+  bool get _isSmart => _mode == ListMode.smart;
+  bool get _isBudget => _mode == ListMode.budget;
   final _nameCtrl = TextEditingController();
 
   // ── Speech-to-text ──────────────────────────────────────────────────────────
@@ -117,7 +136,7 @@ class _ListScreenState extends State<ListScreen> {
   }
 
   List<ShoppingItem> get _activeItems =>
-      _isSmartMode ? widget.smartItems : widget.simpleItems;
+      _isSmart ? widget.smartItems : widget.simpleItems;
   int get _pendingCount => _activeItems.where((i) => !i.checked).length;
   bool get _hasChecked => _activeItems.any((i) => i.checked);
   int get _checkedCount => _activeItems.where((i) => i.checked).length;
@@ -137,7 +156,7 @@ class _ListScreenState extends State<ListScreen> {
           ),
           TextButton(
             style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF4CAF50)),
+                foregroundColor: AppColors.brand),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(l.completeTrip),
           ),
@@ -145,7 +164,7 @@ class _ListScreenState extends State<ListScreen> {
       ),
     );
     if (ok != true) return;
-    if (_isSmartMode) {
+    if (_isSmart) {
       widget.onCompleteSmart();
     } else {
       widget.onCompleteSimple();
@@ -157,22 +176,28 @@ class _ListScreenState extends State<ListScreen> {
     final today = DateTime.now();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2ED),
+      backgroundColor: AppColors.scaffoldBg,
       body: SafeArea(
         child: Column(
           children: [
             _buildHeader(today),
             _buildModeToggle(),
-            if (_isSmartMode) _buildSmartSubToggle(),
-            if (_isSmartMode && !_smartHintDismissed) _buildSmartHint(),
+            if (_isSmart) _buildSmartSubToggle(),
+            if (_isSmart && !_smartHintDismissed) _buildSmartHint(),
             const SizedBox(height: 4),
             Expanded(
-              child: _activeItems.isEmpty
-                  ? _emptyState()
-                  : _isSmartMode
-                      ? _buildSmartList()
-                      : _buildSimpleList(),
+              child: _isBudget
+                  ? (widget.budgetItems.isEmpty
+                      ? _budgetEmptyState()
+                      : _buildBudgetList())
+                  : _activeItems.isEmpty
+                      ? _emptyState()
+                      : _isSmart
+                          ? _buildSmartList()
+                          : _buildSimpleList(),
             ),
+            if (_isBudget && widget.budgetItems.isNotEmpty)
+              _buildBudgetTotalBar(),
             _buildAddBar(context),
           ],
         ),
@@ -197,17 +222,19 @@ class _ListScreenState extends State<ListScreen> {
                   style: const TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF1A1A1A),
+                    color: AppColors.textPrimary,
                     height: 1.1,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _pendingCount > 0
-                      ? l.listSubtitlePending(_pendingCount, today)
-                      : l.listSubtitleDone(today),
+                  _isBudget
+                      ? l.budgetCount(widget.budgetItems.length)
+                      : _pendingCount > 0
+                          ? l.listSubtitlePending(_pendingCount, today)
+                          : l.listSubtitleDone(today),
                   style: const TextStyle(
-                      fontSize: 13, color: Color(0xFF9E9E9E)),
+                      fontSize: 13, color: AppColors.textMuted),
                 ),
               ],
             ),
@@ -219,7 +246,7 @@ class _ListScreenState extends State<ListScreen> {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 12, vertical: 7),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF4CAF50),
+                  color: AppColors.brand,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -232,7 +259,7 @@ class _ListScreenState extends State<ListScreen> {
                 ),
               ),
             )
-          else
+          else if (!_isBudget)
             _MicButton(
               isListening: _isListening,
               available: _speechAvailable,
@@ -252,14 +279,14 @@ class _ListScreenState extends State<ListScreen> {
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       padding: const EdgeInsets.fromLTRB(12, 10, 6, 10),
       decoration: BoxDecoration(
-        color: const Color(0xFF4CAF50).withValues(alpha: 0.10),
+        color: AppColors.brand.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Icon(Icons.lightbulb_outline_rounded,
-              size: 16, color: Color(0xFF4CAF50)),
+              size: 16, color: AppColors.brand),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -274,7 +301,7 @@ class _ListScreenState extends State<ListScreen> {
             child: const Padding(
               padding: EdgeInsets.all(4),
               child: Icon(Icons.close_rounded,
-                  size: 16, color: Color(0xFF9E9E9E)),
+                  size: 16, color: AppColors.textMuted),
             ),
           ),
         ],
@@ -298,13 +325,18 @@ class _ListScreenState extends State<ListScreen> {
           children: [
             _SegmentBtn(
               label: l.modeSimple,
-              selected: !_isSmartMode,
-              onTap: () => setState(() => _isSmartMode = false),
+              selected: _mode == ListMode.simple,
+              onTap: () => setState(() => _mode = ListMode.simple),
+            ),
+            _SegmentBtn(
+              label: l.budgetMode,
+              selected: _mode == ListMode.budget,
+              onTap: () => setState(() => _mode = ListMode.budget),
             ),
             _SegmentBtn(
               label: l.modeSmart,
-              selected: _isSmartMode,
-              onTap: () => setState(() => _isSmartMode = true),
+              selected: _mode == ListMode.smart,
+              onTap: () => setState(() => _mode = ListMode.smart),
             ),
           ],
         ),
@@ -382,7 +414,7 @@ class _ListScreenState extends State<ListScreen> {
                   child: Row(
                     children: [
                       const Icon(Icons.check_circle_outline_rounded,
-                          size: 14, color: Color(0xFFBDBDBD)),
+                          size: 14, color: AppColors.textDisabled),
                       const SizedBox(width: 6),
                       Text(
                         l.purchasedSection,
@@ -541,8 +573,8 @@ class _ListScreenState extends State<ListScreen> {
   Widget _buildSectionHeader(String zone, int count, {Key? key}) {
     final l = L10n.of(context);
     final color = _byShelf
-        ? (kShelfZones[zone]?.dotColor ?? const Color(0xFF9E9E9E))
-        : const Color(0xFF9E9E9E);
+        ? (kShelfZones[zone]?.dotColor ?? AppColors.textMuted)
+        : AppColors.textMuted;
     return Padding(
       key: key,
       padding: const EdgeInsets.fromLTRB(4, 14, 0, 6),
@@ -559,7 +591,7 @@ class _ListScreenState extends State<ListScreen> {
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF1A1A1A),
+              color: AppColors.textPrimary,
               letterSpacing: 0.1,
             ),
           ),
@@ -593,7 +625,7 @@ class _ListScreenState extends State<ListScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            _isSmartMode
+            _isSmart
                 ? Icons.inventory_2_outlined
                 : Icons.format_list_bulleted_rounded,
             size: 56,
@@ -605,13 +637,13 @@ class _ListScreenState extends State<ListScreen> {
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF9E9E9E),
+              color: AppColors.textMuted,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             l.listEmptySubtitle,
-            style: const TextStyle(fontSize: 13, color: Color(0xFFBDBDBD)),
+            style: const TextStyle(fontSize: 13, color: AppColors.textDisabled),
           ),
         ],
       ),
@@ -649,11 +681,13 @@ class _ListScreenState extends State<ListScreen> {
               decoration: InputDecoration(
                 hintText: _isListening
                   ? l.listeningHint
-                  : (_isSmartMode ? l.smartAddHint : l.simpleAddHint),
+                  : _isBudget
+                      ? l.budgetAddHint
+                      : (_isSmart ? l.smartAddHint : l.simpleAddHint),
                 hintStyle: const TextStyle(
-                    color: Color(0xFFBDBDBD), fontSize: 14),
+                    color: AppColors.textDisabled, fontSize: 14),
                 filled: true,
-                fillColor: const Color(0xFFF5F5F0),
+                fillColor: AppColors.fieldBg,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -672,7 +706,7 @@ class _ListScreenState extends State<ListScreen> {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50),
+                color: AppColors.brand,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(Icons.add_rounded,
@@ -710,16 +744,126 @@ class _ListScreenState extends State<ListScreen> {
 
   void _submitAdd(BuildContext context) {
     final name = _nameCtrl.text.trim();
+
+    if (_isBudget) {
+      // Budget: open the expense sheet (name prefilled from the bar).
+      _showBudgetSheet(initialName: name);
+      _nameCtrl.clear();
+      return;
+    }
+
     if (name.isEmpty) return;
 
-    if (!_isSmartMode) {
+    if (_isSmart) {
+      // Smart: show category picker sheet
+      _showSmartAddSheet(context, name);
+    } else {
       // Simple: just add directly, no category needed
       widget.onAddSimple(name);
       _nameCtrl.clear();
-    } else {
-      // Smart: show category picker sheet
-      _showSmartAddSheet(context, name);
     }
+  }
+
+  // ── Budget (记账) mode ───────────────────────────────────────────────────────
+
+  void _showBudgetSheet({BudgetItem? item, String initialName = ''}) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => _BudgetSheet(
+        item: item,
+        initialName: initialName,
+        onConfirm: (name, qty, price) {
+          if (item != null) {
+            widget.onEditBudget(item.id, name, qty, price);
+          } else {
+            widget.onAddBudget(name, qty, price);
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildBudgetList() {
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      itemCount: widget.budgetItems.length,
+      itemBuilder: (ctx, i) {
+        final item = widget.budgetItems[i];
+        return _BudgetRow(
+          item: item,
+          onTap: () => _showBudgetSheet(item: item),
+          onDelete: () => widget.onDeleteBudget(item.id),
+        );
+      },
+    );
+  }
+
+  Widget _buildBudgetTotalBar() {
+    final l = L10n.of(context);
+    final total =
+        widget.budgetItems.fold<double>(0, (s, i) => s + i.lineTotal);
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.brand.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Text(
+            l.budgetTotalLabel,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            l.money(total),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: AppColors.brand,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _budgetEmptyState() {
+    final l = L10n.of(context);
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.receipt_long_outlined,
+              size: 56, color: Color(0xFFD8D8D3)),
+          const SizedBox(height: 16),
+          Text(
+            l.budgetEmptyTitle,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textMuted,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            l.budgetEmptySubtitle,
+            style: const TextStyle(
+                fontSize: 13, color: AppColors.textDisabled),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showSmartAddSheet(BuildContext context, String name) {
@@ -757,7 +901,7 @@ class _ListScreenState extends State<ListScreen> {
                   Text(
                     l.chooseCategoryHint,
                     style: const TextStyle(
-                        fontSize: 13, color: Color(0xFF9E9E9E)),
+                        fontSize: 13, color: AppColors.textMuted),
                   ),
                   const SizedBox(height: 16),
                   Wrap(
@@ -798,13 +942,13 @@ class _ListScreenState extends State<ListScreen> {
                     child: Row(
                       children: [
                         const Icon(Icons.location_on_outlined,
-                            size: 14, color: Color(0xFFBDBDBD)),
+                            size: 14, color: AppColors.textDisabled),
                         const SizedBox(width: 4),
                         Text(
                           l.shelfZoneInline(l.data(selectedZone)),
                           style: const TextStyle(
                               fontSize: 12,
-                              color: Color(0xFF9E9E9E)),
+                              color: AppColors.textMuted),
                         ),
                       ],
                     ),
@@ -815,7 +959,7 @@ class _ListScreenState extends State<ListScreen> {
                     height: 48,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF4CAF50),
+                        backgroundColor: AppColors.brand,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14)),
@@ -856,765 +1000,5 @@ class _ListScreenState extends State<ListScreen> {
       default:
         return '其他';
     }
-  }
-}
-
-// ── Flat list entry for smart-mode drag ──────────────────────────────────────
-
-class _FlatEntry {
-  final String groupKey;
-  final ShoppingItem? item;
-  _FlatEntry.header(this.groupKey) : item = null;
-  _FlatEntry.forItem(this.item, this.groupKey);
-  bool get isHeader => item == null;
-}
-
-// ── Simple Row ────────────────────────────────────────────────────────────────
-
-class _SimpleRow extends StatelessWidget {
-  final ShoppingItem item;
-  final VoidCallback onToggle;
-  final VoidCallback onDelete;
-  final VoidCallback? onLongPress;
-  final bool showDragHandle;
-  final int? reorderIndex;
-
-  const _SimpleRow({
-    super.key,
-    required this.item,
-    required this.onToggle,
-    required this.onDelete,
-    this.onLongPress,
-    this.showDragHandle = false,
-    this.reorderIndex,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Dismissible(
-      key: Key('simple_${item.id}'),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 18),
-        margin: const EdgeInsets.only(bottom: 4),
-        decoration: BoxDecoration(
-          color: const Color(0xFFE53935),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: const Icon(Icons.delete_outline_rounded,
-            color: Colors.white, size: 22),
-      ),
-      onDismissed: (_) => onDelete(),
-      child: GestureDetector(
-        onTap: onToggle,
-        onLongPress: onLongPress,
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 4),
-          padding: const EdgeInsets.symmetric(
-              horizontal: 16, vertical: 15),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x09000000),
-                blurRadius: 8,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              _Checkbox(checked: item.checked),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  item.name,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: item.checked
-                        ? const Color(0xFFBDBDBD)
-                        : const Color(0xFF1A1A1A),
-                    decoration: item.checked
-                        ? TextDecoration.lineThrough
-                        : null,
-                    decorationColor: const Color(0xFFBDBDBD),
-                  ),
-                ),
-              ),
-              if (showDragHandle && !item.checked && reorderIndex != null)
-                ReorderableDragStartListener(
-                  index: reorderIndex!,
-                  child: const Padding(
-                    padding: EdgeInsets.only(left: 6),
-                    child: Icon(Icons.drag_handle_rounded,
-                        size: 20, color: Color(0xFFD0D0D0)),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Smart Row ─────────────────────────────────────────────────────────────────
-
-class _SmartRow extends StatelessWidget {
-  final ShoppingItem item;
-  final Color zoneColor;
-  final VoidCallback onToggle;
-  final VoidCallback onDelete;
-  final VoidCallback? onLongPress;
-  final bool showDragHandle;
-  final int? reorderIndex;
-
-  const _SmartRow({
-    super.key,
-    required this.item,
-    required this.zoneColor,
-    required this.onToggle,
-    required this.onDelete,
-    this.onLongPress,
-    this.showDragHandle = false,
-    this.reorderIndex,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final l = L10n.of(context);
-    return Dismissible(
-      key: Key('smart_${item.id}'),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 18),
-        margin: const EdgeInsets.only(bottom: 4),
-        decoration: BoxDecoration(
-          color: const Color(0xFFE53935),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: const Icon(Icons.delete_outline_rounded,
-            color: Colors.white, size: 22),
-      ),
-      onDismissed: (_) => onDelete(),
-      child: GestureDetector(
-        onTap: onToggle,
-        onLongPress: onLongPress,
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 4),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x09000000),
-                blurRadius: 8,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: IntrinsicHeight(
-            child: Row(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 15),
-                  child: _Checkbox(checked: item.checked),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          l.data(item.name),
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: item.checked
-                                ? const Color(0xFFBDBDBD)
-                                : const Color(0xFF1A1A1A),
-                            decoration: item.checked
-                                ? TextDecoration.lineThrough
-                                : null,
-                            decorationColor: const Color(0xFFBDBDBD),
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          l.itemMeta(
-                              l.data(item.quantityLabel),
-                              item.shelfCode != null
-                                  ? l.data(item.shelfCode!)
-                                  : null),
-                          style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF9E9E9E)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                if (item.addedToInventory)
-                  Container(
-                    margin: const EdgeInsets.only(right: 10),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: zoneColor.withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      l.recordedBadge,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: zoneColor,
-                      ),
-                    ),
-                  ),
-                if (showDragHandle && !item.checked && reorderIndex != null)
-                  ReorderableDragStartListener(
-                    index: reorderIndex!,
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 6),
-                      child: Icon(Icons.drag_handle_rounded,
-                          size: 20, color: Color(0xFFD0D0D0)),
-                    ),
-                  ),
-                // Right color bar
-                Container(
-                  width: 5,
-                  decoration: BoxDecoration(
-                    color: item.checked
-                        ? const Color(0xFFE8E8E8)
-                        : zoneColor,
-                    borderRadius: const BorderRadius.horizontal(
-                        right: Radius.circular(14)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Shared widgets ────────────────────────────────────────────────────────────
-
-class _Checkbox extends StatelessWidget {
-  final bool checked;
-  const _Checkbox({required this.checked});
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      width: 24,
-      height: 24,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color:
-            checked ? const Color(0xFF4CAF50) : Colors.transparent,
-        border: checked
-            ? null
-            : Border.all(
-                color: const Color(0xFFD0D0D0), width: 1.5),
-      ),
-      child: checked
-          ? const Icon(Icons.check_rounded,
-              color: Colors.white, size: 15)
-          : null,
-    );
-  }
-}
-
-// ── Mic Button ────────────────────────────────────────────────────────────────
-
-class _MicButton extends StatefulWidget {
-  final bool isListening;
-  final bool available;
-  final VoidCallback onTap;
-
-  const _MicButton({
-    required this.isListening,
-    required this.available,
-    required this.onTap,
-  });
-
-  @override
-  State<_MicButton> createState() => _MicButtonState();
-}
-
-class _MicButtonState extends State<_MicButton>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _pulse;
-
-  @override
-  void initState() {
-    super.initState();
-    _pulse = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _pulse.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (widget.isListening) {
-      return GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedBuilder(
-          animation: _pulse,
-          builder: (context, child) => Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Color.lerp(
-                const Color(0xFFE53935),
-                const Color(0xFFEF9A9A),
-                _pulse.value,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFE53935)
-                      .withValues(alpha: 0.30),
-                  blurRadius: 12,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: const Icon(Icons.mic_rounded,
-                size: 22, color: Colors.white),
-          ),
-        ),
-      );
-    }
-
-    return GestureDetector(
-      onTap: widget.available ? widget.onTap : null,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.09),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Icon(
-          Icons.mic_none_rounded,
-          size: 22,
-          color: widget.available
-              ? const Color(0xFF4CAF50)
-              : const Color(0xFFD0D0D0),
-        ),
-      ),
-    );
-  }
-}
-
-class _SegmentBtn extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _SegmentBtn(
-      {required this.label,
-      required this.selected,
-      required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          margin: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-            color: selected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    )
-                  ]
-                : null,
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: selected
-                  ? FontWeight.w600
-                  : FontWeight.normal,
-              color: selected
-                  ? const Color(0xFF1A1A1A)
-                  : const Color(0xFF8A8A8A),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Rename Sheet ──────────────────────────────────────────────────────────────
-
-class _RenameSheet extends StatefulWidget {
-  final String initialName;
-  final ValueChanged<String> onConfirm;
-
-  const _RenameSheet({required this.initialName, required this.onConfirm});
-
-  @override
-  State<_RenameSheet> createState() => _RenameSheetState();
-}
-
-class _RenameSheetState extends State<_RenameSheet> {
-  late final TextEditingController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = TextEditingController(text: widget.initialName);
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  void _confirm() {
-    final name = _ctrl.text.trim();
-    if (name.isEmpty) return;
-    Navigator.pop(context);
-    widget.onConfirm(name);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l = L10n.of(context);
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l.rename,
-            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 14),
-          TextField(
-            controller: _ctrl,
-            autofocus: true,
-            style: const TextStyle(fontSize: 15),
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: const Color(0xFFF5F5F0),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14, vertical: 12),
-              isDense: true,
-            ),
-            onSubmitted: (_) => _confirm(),
-          ),
-          const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4CAF50),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-                elevation: 0,
-              ),
-              onPressed: _confirm,
-              child: Text(
-                l.confirmEdit,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Edit Smart Item Sheet (name + quantity + shelf code + category) ──────────
-
-class _EditSmartSheet extends StatefulWidget {
-  final ShoppingItem item;
-  final String Function(Category) zoneFor;
-  final void Function(
-    String name,
-    String quantityLabel,
-    String? shelfCode,
-    Category category,
-    String shelfZone,
-  ) onConfirm;
-
-  const _EditSmartSheet({
-    required this.item,
-    required this.zoneFor,
-    required this.onConfirm,
-  });
-
-  @override
-  State<_EditSmartSheet> createState() => _EditSmartSheetState();
-}
-
-class _EditSmartSheetState extends State<_EditSmartSheet> {
-  late final TextEditingController _nameCtrl;
-  late final TextEditingController _qtyCtrl;
-  late final TextEditingController _shelfCtrl;
-  late Category _category;
-  late String _zone;
-
-  @override
-  void initState() {
-    super.initState();
-    _nameCtrl = TextEditingController(text: widget.item.name);
-    _qtyCtrl = TextEditingController(text: widget.item.quantityLabel);
-    _shelfCtrl = TextEditingController(text: widget.item.shelfCode ?? '');
-    _category = widget.item.category;
-    _zone = widget.item.shelfZone;
-  }
-
-  @override
-  void dispose() {
-    _nameCtrl.dispose();
-    _qtyCtrl.dispose();
-    _shelfCtrl.dispose();
-    super.dispose();
-  }
-
-  void _confirm() {
-    final name = _nameCtrl.text.trim();
-    if (name.isEmpty) return;
-    final shelf = _shelfCtrl.text.trim();
-    Navigator.pop(context);
-    widget.onConfirm(
-      name,
-      _qtyCtrl.text.trim(),
-      shelf.isEmpty ? null : shelf,
-      _category,
-      _zone,
-    );
-  }
-
-  InputDecoration _fieldDecoration(String hint) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(color: Color(0xFFBDBDBD)),
-      filled: true,
-      fillColor: const Color(0xFFF5F5F0),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
-      ),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      isDense: true,
-    );
-  }
-
-  Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 6, top: 14),
-        child: Text(
-          text,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF6B6B6B),
-          ),
-        ),
-      );
-
-  @override
-  Widget build(BuildContext context) {
-    final l = L10n.of(context);
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l.editItem,
-              style:
-                  const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: _nameCtrl,
-              autofocus: true,
-              style: const TextStyle(fontSize: 15),
-              decoration: _fieldDecoration(''),
-              onSubmitted: (_) => _confirm(),
-            ),
-            _label(l.quantityFieldLabel),
-            TextField(
-              controller: _qtyCtrl,
-              style: const TextStyle(fontSize: 15),
-              decoration: _fieldDecoration('1'),
-            ),
-            _label(l.shelfCodeFieldLabel),
-            TextField(
-              controller: _shelfCtrl,
-              style: const TextStyle(fontSize: 15),
-              decoration: _fieldDecoration(''),
-            ),
-            _label(l.categoryLabel),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: Category.values.map((cat) {
-                final sel = _category == cat;
-                return GestureDetector(
-                  onTap: () => setState(() {
-                    _category = cat;
-                    _zone = widget.zoneFor(cat);
-                  }),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: sel ? cat.color : cat.bgColor,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      l.category(cat),
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: sel ? Colors.white : cat.color,
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.location_on_outlined,
-                    size: 14, color: Color(0xFFBDBDBD)),
-                const SizedBox(width: 4),
-                Text(
-                  l.shelfZoneInline(l.data(_zone)),
-                  style: const TextStyle(
-                      fontSize: 12, color: Color(0xFF9E9E9E)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4CAF50),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                  elevation: 0,
-                ),
-                onPressed: _confirm,
-                child: Text(
-                  l.confirmEdit,
-                  style: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w600),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TextToggleBtn extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _TextToggleBtn(
-      {required this.label,
-      required this.selected,
-      required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-        decoration: BoxDecoration(
-          color: selected
-              ? const Color(0xFF4CAF50).withValues(alpha: 0.12)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight:
-                selected ? FontWeight.w600 : FontWeight.normal,
-            color: selected
-                ? const Color(0xFF4CAF50)
-                : const Color(0xFF9E9E9E),
-          ),
-        ),
-      ),
-    );
   }
 }

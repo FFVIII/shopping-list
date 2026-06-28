@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import '../models/item.dart';
 import '../l10n/l10n.dart';
 import '../l10n/app_language.dart';
@@ -44,7 +45,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final l = L10n.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2ED),
+      backgroundColor: AppColors.scaffoldBg,
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(0, 0, 0, 40),
@@ -106,7 +107,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         style: const TextStyle(
           fontSize: 26,
           fontWeight: FontWeight.w800,
-          color: Color(0xFF1A1A1A),
+          color: AppColors.textPrimary,
           height: 1.1,
         ),
       ),
@@ -120,7 +121,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [Color(0xFF388E3C), Color(0xFF4CAF50)],
+            colors: [Color(0xFF388E3C), AppColors.brand],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -200,7 +201,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title,
             style: const TextStyle(
               fontSize: 12,
-              color: Color(0xFF9E9E9E),
+              color: AppColors.textMuted,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -237,17 +238,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
       dense: true,
       title: Text(label,
-          style: const TextStyle(fontSize: 15, color: Color(0xFF1A1A1A))),
+          style: const TextStyle(fontSize: 15, color: AppColors.textPrimary)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (trailing != null)
             Text(trailing,
                 style: const TextStyle(
-                    fontSize: 14, color: Color(0xFF9E9E9E))),
+                    fontSize: 14, color: AppColors.textMuted)),
           const SizedBox(width: 4),
           const Icon(Icons.chevron_right_rounded,
-              color: Color(0xFFBDBDBD), size: 20),
+              color: AppColors.textDisabled, size: 20),
         ],
       ),
     );
@@ -260,12 +261,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
       dense: true,
       title: Text(label,
-          style: const TextStyle(fontSize: 15, color: Color(0xFF1A1A1A))),
+          style: const TextStyle(fontSize: 15, color: AppColors.textPrimary)),
       trailing: Switch(
         value: value,
         onChanged: onChanged,
         activeThumbColor: Colors.white,
-        activeTrackColor: const Color(0xFF4CAF50),
+        activeTrackColor: AppColors.brand,
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
     );
@@ -285,14 +286,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Text(
                   l.advanceDays,
                   style: const TextStyle(
-                      fontSize: 15, color: Color(0xFF1A1A1A)),
+                      fontSize: 15, color: AppColors.textPrimary),
                 ),
               ),
               Text(
                 l.days(_settings.reminderThresholdDays),
                 style: const TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF4CAF50),
+                    color: AppColors.brand,
                     fontWeight: FontWeight.w600),
               ),
             ],
@@ -302,11 +303,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
           child: SliderTheme(
             data: SliderTheme.of(context).copyWith(
-              activeTrackColor: const Color(0xFF4CAF50),
-              inactiveTrackColor: const Color(0xFFE0E0E0),
-              thumbColor: const Color(0xFF4CAF50),
+              activeTrackColor: AppColors.brand,
+              inactiveTrackColor: AppColors.divider,
+              thumbColor: AppColors.brand,
               overlayColor:
-                  const Color(0xFF4CAF50).withValues(alpha: 0.15),
+                  AppColors.brand.withValues(alpha: 0.15),
               trackHeight: 3,
               thumbShape:
                   const RoundSliderThumbShape(enabledThumbRadius: 10),
@@ -366,7 +367,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ListTile(
                 title: Text(entry.value),
                 trailing: widget.language == entry.key
-                    ? const Icon(Icons.check_rounded, color: Color(0xFF4CAF50))
+                    ? const Icon(Icons.check_rounded, color: AppColors.brand)
                     : null,
                 onTap: () {
                   Navigator.pop(ctx);

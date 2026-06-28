@@ -23,6 +23,18 @@ abstract class AppStrings {
   String get smartHint; // smart-mode explanation banner
   String get modeSimple;
   String get modeSmart;
+  String get budgetMode; // "记账" / "Budget"
+  String get unitPriceFieldLabel; // "单价" / "Unit price"
+  String get budgetTotalLabel; // "合计" / "Total"
+  String budgetCount(int n); // "共 N 项" / "N items"
+  String get addBudgetTitle; // "记一笔" / "Add expense"
+  String get editBudgetTitle; // "编辑记录" / "Edit expense"
+  String get budgetAddHint; // add-bar hint
+  String get budgetEmptyTitle;
+  String get budgetEmptySubtitle;
+  String get save; // "保存" / "Save"
+  String get currencySymbol; // "¥" / "$"
+  String money(double v); // "¥12.50" / "$12.50"
   String get byShelf;
   String get byCategory;
   String get purchasedSection;
@@ -141,6 +153,18 @@ class ZhStrings extends AppStrings {
       '智能模式按货架分组方便采购。勾选商品 = 已买到，会记录到库存并开始用量计时；点「完成购物」后已买到的会从清单移除。';
   @override String get modeSimple => '简单';
   @override String get modeSmart => '智能';
+  @override String get budgetMode => '记账';
+  @override String get unitPriceFieldLabel => '单价';
+  @override String get budgetTotalLabel => '合计';
+  @override String budgetCount(int n) => '共 $n 项';
+  @override String get addBudgetTitle => '记一笔';
+  @override String get editBudgetTitle => '编辑记录';
+  @override String get budgetAddHint => '记一笔花费…';
+  @override String get budgetEmptyTitle => '还没有记账';
+  @override String get budgetEmptySubtitle => '在下方记一笔花费';
+  @override String get save => '保存';
+  @override String get currencySymbol => '¥';
+  @override String money(double v) => '¥${v.toStringAsFixed(2)}';
   @override String get byShelf => '按货架';
   @override String get byCategory => '按分类';
   @override String get purchasedSection => '已购';
@@ -275,6 +299,18 @@ class EnStrings extends AppStrings {
       'Smart mode groups items by aisle for easier shopping. Checking an item = bought: it is logged to inventory and starts a usage timer. "Done" removes bought items from the list.';
   @override String get modeSimple => 'Simple';
   @override String get modeSmart => 'Smart';
+  @override String get budgetMode => 'Budget';
+  @override String get unitPriceFieldLabel => 'Unit price';
+  @override String get budgetTotalLabel => 'Total';
+  @override String budgetCount(int n) => '$n items';
+  @override String get addBudgetTitle => 'Add expense';
+  @override String get editBudgetTitle => 'Edit expense';
+  @override String get budgetAddHint => 'Add an expense…';
+  @override String get budgetEmptyTitle => 'No expenses yet';
+  @override String get budgetEmptySubtitle => 'Add an expense below';
+  @override String get save => 'Save';
+  @override String get currencySymbol => '\$';
+  @override String money(double v) => '\$${v.toStringAsFixed(2)}';
   @override String get byShelf => 'By aisle';
   @override String get byCategory => 'By category';
   @override String get purchasedSection => 'Bought';
