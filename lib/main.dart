@@ -269,10 +269,24 @@ class _AppShellState extends State<AppShell> {
     });
   }
 
-  void _renameSmartItem(String id, String newName) {
+  void _editSmartItem(
+    String id,
+    String name,
+    String quantityLabel,
+    String? shelfCode,
+    Category category,
+    String shelfZone,
+  ) {
     setState(() {
       final idx = _shopping.indexWhere((i) => i.id == id);
-      if (idx != -1) _shopping[idx].name = newName;
+      if (idx == -1) return;
+      _shopping[idx]
+        ..name = name
+        ..quantityLabel = quantityLabel
+        ..shelfCode = shelfCode
+        ..category = category
+        ..shelfZone = shelfZone;
+      _shopping = List<ShoppingItem>.from(_shopping);
     });
   }
 
@@ -374,7 +388,7 @@ class _AppShellState extends State<AppShell> {
               onReorderSimple: _reorderSimple,
               onReorderSmart: _reorderSmart,
               onRenameSimple: _renameSimpleItem,
-              onRenameSmart: _renameSmartItem,
+              onEditSmart: _editSmartItem,
             ),
             InventoryScreen(
               items: _inventory,

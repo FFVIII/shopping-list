@@ -34,6 +34,9 @@ abstract class AppStrings {
   String get addToList;
   String get rename;
   String get confirmEdit;
+  String get editItem; // "编辑商品" / "Edit item"
+  String get quantityFieldLabel; // "数量" / "Quantity"
+  String get shelfCodeFieldLabel; // "货架码" / "Shelf code"
   String get recordedBadge; // "已记" / "Logged"
   String itemMeta(String quantity, String? shelfCode); // "1串 · 货架B3"
 
@@ -143,6 +146,9 @@ class ZhStrings extends AppStrings {
   @override String get addToList => '加入清单';
   @override String get rename => '重命名';
   @override String get confirmEdit => '确认修改';
+  @override String get editItem => '编辑商品';
+  @override String get quantityFieldLabel => '数量';
+  @override String get shelfCodeFieldLabel => '货架码';
   @override String get recordedBadge => '已记';
   @override String itemMeta(String q, String? code) => code != null ? '$q · $code' : q;
 
@@ -268,6 +274,9 @@ class EnStrings extends AppStrings {
   @override String get addToList => 'Add to list';
   @override String get rename => 'Rename';
   @override String get confirmEdit => 'Save';
+  @override String get editItem => 'Edit item';
+  @override String get quantityFieldLabel => 'Quantity';
+  @override String get shelfCodeFieldLabel => 'Shelf code';
   @override String get recordedBadge => 'Logged';
   @override String itemMeta(String q, String? code) => code != null ? '$q · $code' : q;
 
