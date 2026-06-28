@@ -207,22 +207,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
+          child: Material(
             color: Colors.white,
             borderRadius: BorderRadius.circular(14),
-          ),
-          child: Column(
-            children: [
-              for (int i = 0; i < rows.length; i++) ...[
-                rows[i],
-                if (i < rows.length - 1)
-                  const Divider(
-                      height: 1,
-                      indent: 16,
-                      endIndent: 0,
-                      color: Color(0xFFF0F0F0)),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                for (int i = 0; i < rows.length; i++) ...[
+                  rows[i],
+                  if (i < rows.length - 1)
+                    const Divider(
+                        height: 1,
+                        indent: 16,
+                        endIndent: 0,
+                        color: Color(0xFFF0F0F0)),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ],

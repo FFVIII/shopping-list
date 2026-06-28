@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'models/item.dart';
 import 'l10n/app_language.dart';
 import 'l10n/app_strings.dart';
@@ -46,6 +47,11 @@ class _ShoppingListAppState extends State<ShoppingListApp> {
         debugShowCheckedModeBanner: false,
         locale: lang == Lang.zh ? const Locale('zh') : const Locale('en'),
         supportedLocales: const [Locale('zh'), Locale('en')],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
         theme: ThemeData(
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
