@@ -80,6 +80,7 @@ abstract class AppStrings {
   String get add; // "加入" / "Add"
   String get alreadyInList; // "已在清单" / "In list"
   String get addedToListToast; // "已加入清单" / "Added to list"
+  String get removedFromListToast; // "已从清单移除" / "Removed from list"
   String addedAllToListToast(int n); // "已加入 N 件到清单" / "Added N items"
   String get allAlreadyInList; // "都已在清单了" / "All already in list"
 
@@ -185,6 +186,7 @@ class ZhStrings extends AppStrings {
   @override String get add => '加入';
   @override String get alreadyInList => '已在清单';
   @override String get addedToListToast => '已加入清单';
+  @override String get removedFromListToast => '已从清单移除';
   @override String addedAllToListToast(int n) => '已加入 $n 件到清单';
   @override String get allAlreadyInList => '都已在清单了';
 
@@ -309,6 +311,7 @@ class EnStrings extends AppStrings {
   @override String get add => 'Add';
   @override String get alreadyInList => 'In list';
   @override String get addedToListToast => 'Added to list';
+  @override String get removedFromListToast => 'Removed from list';
   @override String addedAllToListToast(int n) => 'Added $n items to list';
   @override String get allAlreadyInList => 'All already in list';
 

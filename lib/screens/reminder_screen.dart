@@ -7,6 +7,7 @@ class ReminderScreen extends StatelessWidget {
   final List<InventoryItem> inventoryItems;
   final int thresholdDays;
   final void Function(InventoryItem) onAddToList;
+  final void Function(InventoryItem) onRemoveFromList;
   final VoidCallback onAddAll;
 
   /// Names of items currently in the (unchecked) shopping list. Used to show
@@ -18,6 +19,7 @@ class ReminderScreen extends StatelessWidget {
     required this.inventoryItems,
     required this.thresholdDays,
     required this.onAddToList,
+    required this.onRemoveFromList,
     required this.onAddAll,
     required this.activeListNames,
   });
@@ -46,10 +48,15 @@ class ReminderScreen extends StatelessWidget {
       ));
   }
 
-  void _handleAdd(BuildContext context, InventoryItem item) {
-    if (_inList(item)) return; // already in list; row shows the state
-    onAddToList(item);
-    _toast(context, L10n.of(context).addedToListToast);
+  void _handleToggle(BuildContext context, InventoryItem item) {
+    final l = L10n.of(context);
+    if (_inList(item)) {
+      onRemoveFromList(item);
+      _toast(context, l.removedFromListToast);
+    } else {
+      onAddToList(item);
+      _toast(context, l.addedToListToast);
+    }
   }
 
   void _handleAddAll(BuildContext context) {
@@ -148,7 +155,7 @@ class ReminderScreen extends StatelessWidget {
                 item: item,
                 thresholdDays: thresholdDays,
                 inList: _inList(item),
-                onTap: () => _handleAdd(context, item),
+                onTap: () => _handleToggle(context, item),
               )),
           const SizedBox(height: 16),
         ],
@@ -158,7 +165,7 @@ class ReminderScreen extends StatelessWidget {
                 item: item,
                 thresholdDays: thresholdDays,
                 inList: _inList(item),
-                onTap: () => _handleAdd(context, item),
+                onTap: () => _handleToggle(context, item),
               )),
         ],
       ],

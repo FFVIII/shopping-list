@@ -305,6 +305,16 @@ class _AppShellState extends State<AppShell> {
     });
   }
 
+  // ── 提醒：从清单移除（取消加入）──────────────────────────────────────────────
+
+  void _removeFromListByReminder(InventoryItem inv) {
+    setState(() {
+      _shopping = _shopping
+          .where((s) => !(s.name == inv.name && !s.checked))
+          .toList();
+    });
+  }
+
   // ── 库存 CRUD ──────────────────────────────────────────────────────────────
 
   void _addInventoryItem(InventoryItem item) {
@@ -378,6 +388,7 @@ class _AppShellState extends State<AppShell> {
               inventoryItems: _inventory,
               thresholdDays: threshold,
               onAddToList: _addToListFromReminder,
+              onRemoveFromList: _removeFromListByReminder,
               onAddAll: _addAllToList,
               activeListNames: _shopping
                   .where((s) => !s.checked)
