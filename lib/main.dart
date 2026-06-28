@@ -184,9 +184,13 @@ class _AppShellState extends State<AppShell> {
       final invIdx =
           _inventory.indexWhere((i) => i.name == shoppingItem.name);
       if (invIdx != -1) {
-        // Reset the timer
+        // Reset the timer and refresh quantity / shelf from the purchase
         _inventory[invIdx].purchasedAt = DateTime.now();
         _inventory[invIdx].estimatedDays = estimatedDays;
+        _inventory[invIdx].quantityLabel = shoppingItem.quantityLabel;
+        if (shoppingItem.shelfCode != null) {
+          _inventory[invIdx].shelfCode = shoppingItem.shelfCode;
+        }
         _inventory = List<InventoryItem>.from(_inventory);
       } else {
         _inventory = [
@@ -197,6 +201,7 @@ class _AppShellState extends State<AppShell> {
             category: shoppingItem.category,
             shelfZone: shoppingItem.shelfZone,
             shelfCode: shoppingItem.shelfCode,
+            quantityLabel: shoppingItem.quantityLabel,
             purchasedAt: DateTime.now(),
             estimatedDays: estimatedDays,
           ),

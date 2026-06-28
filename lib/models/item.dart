@@ -128,6 +128,7 @@ class InventoryItem {
   Category category;
   String shelfZone;
   String? shelfCode;
+  String quantityLabel; // e.g. "2盒" — may be empty
   DateTime purchasedAt;
   int estimatedDays;   // how long this purchase lasts
 
@@ -137,6 +138,7 @@ class InventoryItem {
     required this.category,
     required this.shelfZone,
     this.shelfCode,
+    this.quantityLabel = '',
     required this.purchasedAt,
     required this.estimatedDays,
   });
@@ -227,6 +229,7 @@ List<InventoryItem> buildSampleInventory() {
       category: Category.dairy,
       shelfZone: '冷藏/乳制品',
       shelfCode: '冷柜C2',
+      quantityLabel: '2盒',
       purchasedAt: now.subtract(const Duration(days: 1)),
       estimatedDays: 6,
     ),
@@ -236,6 +239,7 @@ List<InventoryItem> buildSampleInventory() {
       category: Category.produce,
       shelfZone: '果蔬区',
       shelfCode: '货架B1',
+      quantityLabel: '1打',
       purchasedAt: now.subtract(const Duration(days: 8)),
       estimatedDays: 9,
     ),
@@ -244,6 +248,8 @@ List<InventoryItem> buildSampleInventory() {
       name: '洗洁精',
       category: Category.cleaning,
       shelfZone: '日用品',
+      shelfCode: '货架D1',
+      quantityLabel: '1瓶',
       purchasedAt: now.subtract(const Duration(days: 30)),
       estimatedDays: 30,
     ),
@@ -252,6 +258,8 @@ List<InventoryItem> buildSampleInventory() {
       name: '大米',
       category: Category.grain,
       shelfZone: '粮油区',
+      shelfCode: '货架E2',
+      quantityLabel: '1袋',
       purchasedAt: now.subtract(const Duration(days: 10)),
       estimatedDays: 30,
     ),
@@ -260,6 +268,8 @@ List<InventoryItem> buildSampleInventory() {
       name: '酸奶',
       category: Category.dairy,
       shelfZone: '冷藏/乳制品',
+      shelfCode: '冷柜C3',
+      quantityLabel: '4杯',
       purchasedAt: now.subtract(const Duration(days: 8)),
       estimatedDays: 10,
     ),

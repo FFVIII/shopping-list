@@ -418,12 +418,18 @@ const Map<String, String> _enData = {
   '1把': '1 bunch',
   '2盒': '2 boxes',
   '1打': '1 dozen',
+  '1瓶': '1 bottle',
+  '1袋': '1 bag',
+  '4杯': '4 cups',
   // sample shelf codes
   '货架B3': 'Shelf B3',
   '货架B1': 'Shelf B1',
   '货架B2': 'Shelf B2',
+  '货架D1': 'Shelf D1',
+  '货架E2': 'Shelf E2',
   '冷柜C2': 'Fridge C2',
   '冷柜C1': 'Fridge C1',
+  '冷柜C3': 'Fridge C3',
   // default reminder time
   '每天 18:00': 'Daily 18:00',
 };

@@ -140,7 +140,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       size: 13, color: Color(0xFFBDBDBD)),
                   const SizedBox(width: 3),
                   Text(
-                    l.data(item.shelfZone),
+                    [
+                      l.data(item.shelfZone),
+                      if (item.shelfCode != null) l.data(item.shelfCode!),
+                      if (item.quantityLabel.isNotEmpty)
+                        l.data(item.quantityLabel),
+                    ].join(' · '),
                     style: const TextStyle(
                         fontSize: 12, color: Color(0xFF9E9E9E)),
                   ),
@@ -696,6 +701,12 @@ class _InventoryCard extends StatelessWidget {
     final dn = l.data(item.name);
     final barColor =
         kShelfZones[item.shelfZone]?.dotColor ?? item.category.color;
+    final q = l.data(item.quantityLabel);
+    final code = item.shelfCode != null ? l.data(item.shelfCode!) : '';
+    final meta = [
+      if (q.isNotEmpty) q,
+      if (code.isNotEmpty) code,
+    ].join(' · ');
 
     return Dismissible(
       key: Key('inv_${item.id}'),
@@ -778,6 +789,16 @@ class _InventoryCard extends StatelessWidget {
                             color: Color(0xFF1A1A1A),
                           ),
                         ),
+                        if (meta.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            meta,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF9E9E9E),
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 8),
                         _ProgressBar(
                           ratio: item.progressRatio,
@@ -861,28 +882,49 @@ class _AddInventorySheet extends StatefulWidget {
 
 class _AddInventorySheetState extends State<_AddInventorySheet> {
   final _nameCtrl = TextEditingController();
+  final _qtyCtrl = TextEditingController();
+  final _shelfCtrl = TextEditingController();
   Category _category = Category.produce;
   int _days = 7;
 
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _qtyCtrl.dispose();
+    _shelfCtrl.dispose();
     super.dispose();
   }
 
   void _submit() {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) return;
+    final shelf = _shelfCtrl.text.trim();
     Navigator.pop(context);
     widget.onAdd(InventoryItem(
       id: 'inv_${DateTime.now().millisecondsSinceEpoch}',
       name: name,
       category: _category,
       shelfZone: widget.zoneFor(_category),
+      shelfCode: shelf.isEmpty ? null : shelf,
+      quantityLabel: _qtyCtrl.text.trim(),
       purchasedAt: DateTime.now(),
       estimatedDays: _days,
     ));
   }
+
+  InputDecoration _fieldDecoration(String hint) => InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(color: Color(0xFFBDBDBD)),
+        filled: true,
+        fillColor: const Color(0xFFF5F5F0),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        isDense: true,
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -922,6 +964,26 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
             ),
             onChanged: (_) => setState(() {}),
             onSubmitted: (_) => _submit(),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _qtyCtrl,
+                  style: const TextStyle(fontSize: 15),
+                  decoration: _fieldDecoration(l.quantityFieldLabel),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextField(
+                  controller: _shelfCtrl,
+                  style: const TextStyle(fontSize: 15),
+                  decoration: _fieldDecoration(l.shelfCodeFieldLabel),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 14),
           Text(
