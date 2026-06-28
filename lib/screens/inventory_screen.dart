@@ -11,6 +11,14 @@ class InventoryScreen extends StatefulWidget {
   final void Function(InventoryItem item) onAddToShoppingList;
   final void Function(String movedId, String newZone, List<String> orderedIds)
       onReorder;
+  final void Function(
+    String id,
+    String name,
+    String quantityLabel,
+    String? shelfCode,
+    Category category,
+    String shelfZone,
+  ) onEdit;
 
   const InventoryScreen({
     super.key,
@@ -21,6 +29,7 @@ class InventoryScreen extends StatefulWidget {
     required this.onDelete,
     required this.onAddToShoppingList,
     required this.onReorder,
+    required this.onEdit,
   });
 
   @override
@@ -78,6 +87,26 @@ class _InventoryScreenState extends State<InventoryScreen> {
     );
   }
 
+  // ── Edit item info (name / quantity / shelf / category) ──────────────────────
+
+  void _showEditSheet(InventoryItem item) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => _EditInventorySheet(
+        item: item,
+        zoneFor: _zoneFor,
+        onConfirm: (name, quantity, shelfCode, category, zone) {
+          widget.onEdit(item.id, name, quantity, shelfCode, category, zone);
+        },
+      ),
+    );
+  }
+
   // ── Item detail / reset sheet ────────────────────────────────────────────────
 
   void _showDetailSheet(InventoryItem item) {
@@ -105,7 +134,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Name + category chip
+              // Name + edit button + category chip
               Row(
                 children: [
                   Expanded(
@@ -115,6 +144,19 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           fontSize: 18, fontWeight: FontWeight.w700),
                     ),
                   ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _showEditSheet(item);
+                    },
+                    behavior: HitTestBehavior.opaque,
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 6),
+                      child: Icon(Icons.edit_outlined,
+                          size: 18, color: Color(0xFF9E9E9E)),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
                   Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 5),
@@ -866,6 +908,204 @@ class _InvEntry {
   _InvEntry.header(this.groupKey) : item = null;
   _InvEntry.forItem(this.item, this.groupKey);
   bool get isHeader => item == null;
+}
+
+// ── Edit Inventory Sheet (name + quantity + shelf code + category) ───────────
+
+class _EditInventorySheet extends StatefulWidget {
+  final InventoryItem item;
+  final String Function(Category) zoneFor;
+  final void Function(
+    String name,
+    String quantityLabel,
+    String? shelfCode,
+    Category category,
+    String shelfZone,
+  ) onConfirm;
+
+  const _EditInventorySheet({
+    required this.item,
+    required this.zoneFor,
+    required this.onConfirm,
+  });
+
+  @override
+  State<_EditInventorySheet> createState() => _EditInventorySheetState();
+}
+
+class _EditInventorySheetState extends State<_EditInventorySheet> {
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _qtyCtrl;
+  late final TextEditingController _shelfCtrl;
+  late Category _category;
+  late String _zone;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController(text: widget.item.name);
+    _qtyCtrl = TextEditingController(text: widget.item.quantityLabel);
+    _shelfCtrl = TextEditingController(text: widget.item.shelfCode ?? '');
+    _category = widget.item.category;
+    _zone = widget.item.shelfZone;
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _qtyCtrl.dispose();
+    _shelfCtrl.dispose();
+    super.dispose();
+  }
+
+  void _confirm() {
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty) return;
+    final shelf = _shelfCtrl.text.trim();
+    Navigator.pop(context);
+    widget.onConfirm(
+      name,
+      _qtyCtrl.text.trim(),
+      shelf.isEmpty ? null : shelf,
+      _category,
+      _zone,
+    );
+  }
+
+  InputDecoration _dec(String hint) => InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(color: Color(0xFFBDBDBD)),
+        filled: true,
+        fillColor: const Color(0xFFF5F5F0),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        isDense: true,
+      );
+
+  Widget _label(String text) => Padding(
+        padding: const EdgeInsets.only(bottom: 6, top: 14),
+        child: Text(
+          text,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF6B6B6B),
+          ),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final l = L10n.of(context);
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l.editItem,
+              style:
+                  const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: _nameCtrl,
+              autofocus: true,
+              style: const TextStyle(fontSize: 15),
+              decoration: _dec(l.productNameHint),
+              onSubmitted: (_) => _confirm(),
+            ),
+            _label(l.quantityFieldLabel),
+            TextField(
+              controller: _qtyCtrl,
+              style: const TextStyle(fontSize: 15),
+              decoration: _dec(l.quantityFieldLabel),
+            ),
+            _label(l.shelfCodeFieldLabel),
+            TextField(
+              controller: _shelfCtrl,
+              style: const TextStyle(fontSize: 15),
+              decoration: _dec(l.shelfCodeFieldLabel),
+            ),
+            _label(l.categoryLabel),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: Category.values.map((cat) {
+                final sel = _category == cat;
+                return GestureDetector(
+                  onTap: () => setState(() {
+                    _category = cat;
+                    _zone = widget.zoneFor(cat);
+                  }),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: sel ? cat.color : cat.bgColor,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      l.category(cat),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: sel ? Colors.white : cat.color,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.location_on_outlined,
+                    size: 14, color: Color(0xFFBDBDBD)),
+                const SizedBox(width: 4),
+                Text(
+                  l.shelfZoneInline(l.data(_zone)),
+                  style: const TextStyle(
+                      fontSize: 12, color: Color(0xFF9E9E9E)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4CAF50),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                ),
+                onPressed: _confirm,
+                child: Text(
+                  l.confirmEdit,
+                  style: const TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // ── Add Inventory Sheet ────────────────────────────────────────────────────────

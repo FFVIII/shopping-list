@@ -355,6 +355,27 @@ class _AppShellState extends State<AppShell> {
     setState(() => _inventory = _inventory.where((i) => i.id != id).toList());
   }
 
+  void _editInventoryItem(
+    String id,
+    String name,
+    String quantityLabel,
+    String? shelfCode,
+    Category category,
+    String shelfZone,
+  ) {
+    setState(() {
+      final idx = _inventory.indexWhere((i) => i.id == id);
+      if (idx == -1) return;
+      _inventory[idx]
+        ..name = name
+        ..quantityLabel = quantityLabel
+        ..shelfCode = shelfCode
+        ..category = category
+        ..shelfZone = shelfZone;
+      _inventory = List<InventoryItem>.from(_inventory);
+    });
+  }
+
   void _reorderInventory(
       String movedId, String newZone, List<String> orderedIds) {
     setState(() {
@@ -414,6 +435,7 @@ class _AppShellState extends State<AppShell> {
               onDelete: _deleteInventoryItem,
               onAddToShoppingList: _addToListFromReminder,
               onReorder: _reorderInventory,
+              onEdit: _editInventoryItem,
             ),
             ReminderScreen(
               inventoryItems: _inventory,
