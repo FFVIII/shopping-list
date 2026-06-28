@@ -1,36 +1,77 @@
 import 'package:flutter/material.dart';
 import 'models/item.dart';
+import 'l10n/app_language.dart';
+import 'l10n/app_strings.dart';
+import 'l10n/l10n.dart';
+import 'l10n/language_store.dart';
 import 'screens/list_screen.dart';
 import 'screens/inventory_screen.dart';
 import 'screens/reminder_screen.dart';
 import 'screens/settings_screen.dart';
 
-void main() => runApp(const ShoppingListApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final lang = await LanguageStore.load();
+  runApp(ShoppingListApp(initialLanguage: lang));
+}
 
-class ShoppingListApp extends StatelessWidget {
-  const ShoppingListApp({super.key});
+class ShoppingListApp extends StatefulWidget {
+  final AppLanguage initialLanguage;
+  const ShoppingListApp({super.key, required this.initialLanguage});
+
+  @override
+  State<ShoppingListApp> createState() => _ShoppingListAppState();
+}
+
+class _ShoppingListAppState extends State<ShoppingListApp> {
+  late AppLanguage _language = widget.initialLanguage;
+
+  void _setLanguage(AppLanguage lang) {
+    setState(() => _language = lang);
+    LanguageStore.save(lang);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: '购物清单',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF4CAF50),
-          primary: const Color(0xFF4CAF50),
-          surface: const Color(0xFFF2F2ED),
+    final deviceLocale =
+        WidgetsBinding.instance.platformDispatcher.locale;
+    final lang = resolveLang(_language, deviceLocale);
+    final AppStrings strings = lang == Lang.zh ? ZhStrings() : EnStrings();
+
+    return L10n(
+      strings: strings,
+      language: _language,
+      child: MaterialApp(
+        title: strings.shoppingListTitle,
+        debugShowCheckedModeBanner: false,
+        locale: lang == Lang.zh ? const Locale('zh') : const Locale('en'),
+        supportedLocales: const [Locale('zh'), Locale('en')],
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF4CAF50),
+            primary: const Color(0xFF4CAF50),
+            surface: const Color(0xFFF2F2ED),
+          ),
+          scaffoldBackgroundColor: const Color(0xFFF2F2ED),
         ),
-        scaffoldBackgroundColor: const Color(0xFFF2F2ED),
+        home: AppShell(
+          language: _language,
+          onLanguageChanged: _setLanguage,
+        ),
       ),
-      home: const AppShell(),
     );
   }
 }
 
 class AppShell extends StatefulWidget {
-  const AppShell({super.key});
+  final AppLanguage language;
+  final void Function(AppLanguage) onLanguageChanged;
+  const AppShell({
+    super.key,
+    required this.language,
+    required this.onLanguageChanged,
+  });
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -336,6 +377,8 @@ class _AppShellState extends State<AppShell> {
             SettingsScreen(
               settings: _settings,
               onChanged: (s) => setState(() => _settings = s),
+              language: widget.language,
+              onLanguageChanged: widget.onLanguageChanged,
             ),
           ],
         ),
@@ -382,6 +425,7 @@ class _DaysSheetState extends State<_DaysSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l = L10n.of(context);
     return Padding(
       padding: EdgeInsets.only(
         left: 24,
@@ -394,13 +438,13 @@ class _DaysSheetState extends State<_DaysSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '「${widget.item.name}」买到了！',
+            l.boughtTitle(l.data(widget.item.name)),
             style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 6),
-          const Text(
-            '预计能用几天？',
-            style: TextStyle(fontSize: 14, color: Color(0xFF9E9E9E)),
+          Text(
+            l.estimatedDaysQuestion,
+            style: const TextStyle(fontSize: 14, color: Color(0xFF9E9E9E)),
           ),
           const SizedBox(height: 20),
           Wrap(
@@ -420,7 +464,7 @@ class _DaysSheetState extends State<_DaysSheet> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    '$d天',
+                    l.days(d),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -447,7 +491,7 @@ class _DaysSheetState extends State<_DaysSheet> {
               min: 1,
               max: 60,
               divisions: 59,
-              label: '$_days天',
+              label: l.days(_days),
               onChanged: (v) => setState(() => _days = v.round()),
             ),
           ),
@@ -465,7 +509,7 @@ class _DaysSheetState extends State<_DaysSheet> {
               ),
               onPressed: _confirm,
               child: Text(
-                '记录到库存（$_days天）',
+                l.recordToInventory(_days),
                 style: const TextStyle(
                     fontSize: 15, fontWeight: FontWeight.w600),
               ),
@@ -492,6 +536,7 @@ class _BottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = L10n.of(context);
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -511,7 +556,7 @@ class _BottomNav extends StatelessWidget {
             children: [
               _NavItem(
                 icon: Icons.format_list_bulleted_rounded,
-                label: '清单',
+                label: l.navList,
                 index: 0,
                 currentIndex: currentIndex,
                 onTap: onTap,
@@ -519,7 +564,7 @@ class _BottomNav extends StatelessWidget {
               _NavItem(
                 icon: Icons.inventory_2_outlined,
                 activeIcon: Icons.inventory_2_rounded,
-                label: '库存',
+                label: l.navInventory,
                 index: 1,
                 currentIndex: currentIndex,
                 onTap: onTap,
@@ -527,7 +572,7 @@ class _BottomNav extends StatelessWidget {
               _NavItem(
                 icon: Icons.notifications_outlined,
                 activeIcon: Icons.notifications_rounded,
-                label: '提醒',
+                label: l.navReminder,
                 index: 2,
                 currentIndex: currentIndex,
                 onTap: onTap,
@@ -536,7 +581,7 @@ class _BottomNav extends StatelessWidget {
               _NavItem(
                 icon: Icons.settings_outlined,
                 activeIcon: Icons.settings_rounded,
-                label: '设置',
+                label: l.navSettings,
                 index: 3,
                 currentIndex: currentIndex,
                 onTap: onTap,
