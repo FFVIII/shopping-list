@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/item.dart';
+import '../l10n/l10n.dart';
 
 class ReminderScreen extends StatelessWidget {
   final List<InventoryItem> inventoryItems;
@@ -37,7 +38,7 @@ class ReminderScreen extends StatelessWidget {
           children: [
             _buildHeader(context),
             Expanded(
-              child: _hasAny ? _buildList() : _emptyState(),
+              child: _hasAny ? _buildList(context) : _emptyState(context),
             ),
           ],
         ),
@@ -46,6 +47,7 @@ class ReminderScreen extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final l = L10n.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 16, 12),
       child: Row(
@@ -54,9 +56,9 @@ class ReminderScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  '提醒',
-                  style: TextStyle(
+                Text(
+                  l.reminderTitle,
+                  style: const TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF1A1A1A),
@@ -65,7 +67,7 @@ class ReminderScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${_restock.length}件该补货 · ${_expiringSoon.length}件即将用完',
+                  l.reminderSummary(_restock.length, _expiringSoon.length),
                   style: const TextStyle(
                       fontSize: 13, color: Color(0xFF9E9E9E)),
                 ),
@@ -82,9 +84,9 @@ class ReminderScreen extends StatelessWidget {
                   color: const Color(0xFFEEEEE8),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Text(
-                  '全部加入',
-                  style: TextStyle(
+                child: Text(
+                  l.addAll,
+                  style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                     color: Color(0xFF424242),
@@ -98,12 +100,13 @@ class ReminderScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildList() {
+  Widget _buildList(BuildContext context) {
+    final l = L10n.of(context);
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
       children: [
         if (_restock.isNotEmpty) ...[
-          _sectionHeader('该补货', const Color(0xFFE53935)),
+          _sectionHeader(l.sectionRestock, const Color(0xFFE53935)),
           ..._restock.map((item) => _ReminderRow(
                 item: item,
                 thresholdDays: thresholdDays,
@@ -112,7 +115,7 @@ class ReminderScreen extends StatelessWidget {
           const SizedBox(height: 16),
         ],
         if (_expiringSoon.isNotEmpty) ...[
-          _sectionHeader('即将用完', const Color(0xFFFF9800)),
+          _sectionHeader(l.sectionExpiringSoon, const Color(0xFFFF9800)),
           ..._expiringSoon.map((item) => _ReminderRow(
                 item: item,
                 thresholdDays: thresholdDays,
@@ -148,21 +151,22 @@ class ReminderScreen extends StatelessWidget {
     );
   }
 
-  Widget _emptyState() {
-    return const Center(
+  Widget _emptyState(BuildContext context) {
+    final l = L10n.of(context);
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('🌿', style: TextStyle(fontSize: 48)),
-          SizedBox(height: 12),
+          const Text('🌿', style: TextStyle(fontSize: 48)),
+          const SizedBox(height: 12),
           Text(
-            '库存都很充足',
-            style: TextStyle(fontSize: 15, color: Color(0xFF9E9E9E)),
+            l.reminderEmptyTitle,
+            style: const TextStyle(fontSize: 15, color: Color(0xFF9E9E9E)),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
-            '没有需要补货的商品',
-            style: TextStyle(fontSize: 13, color: Color(0xFFBDBDBD)),
+            l.reminderEmptySubtitle,
+            style: const TextStyle(fontSize: 13, color: Color(0xFFBDBDBD)),
           ),
         ],
       ),
@@ -183,8 +187,10 @@ class _ReminderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = L10n.of(context);
     final status = item.statusFor(thresholdDays);
     final remaining = item.daysRemaining;
+    final displayName = l.data(item.name);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
@@ -205,10 +211,10 @@ class _ReminderRow extends StatelessWidget {
             ),
             child: Center(
               child: Text(
-                item.name,
+                displayName,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: item.name.length > 2 ? 10 : 13,
+                  fontSize: displayName.length > 2 ? 10 : 13,
                   fontWeight: FontWeight.w600,
                   color: item.category.color.withValues(alpha: 0.8),
                 ),
@@ -223,7 +229,7 @@ class _ReminderRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.name,
+                  displayName,
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -233,8 +239,8 @@ class _ReminderRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   status == StockStatus.empty
-                      ? '已用完，需要补货'
-                      : '还剩约$remaining天',
+                      ? l.usedUpNeedRestock
+                      : l.daysLeftApprox(remaining),
                   style: TextStyle(
                     fontSize: 12,
                     color: status.color,
@@ -256,9 +262,9 @@ class _ReminderRow extends StatelessWidget {
                   color: const Color(0xFF4CAF50),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Text(
-                  '加入',
-                  style: TextStyle(
+                child: Text(
+                  l.add,
+                  style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
@@ -277,7 +283,7 @@ class _ReminderRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  '约$remaining天',
+                  l.daysShortApprox(remaining),
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
