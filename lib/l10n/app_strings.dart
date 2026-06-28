@@ -17,6 +17,10 @@ abstract class AppStrings {
   String listSubtitlePending(int remaining, DateTime date);
   String listSubtitleDone(DateTime date);
   String get completeTrip;
+  String get completeTripTitle; // "完成购物？" / "Finish shopping?"
+  String completeTripMessage(int bought); // explains what completing does
+  String get cancel; // "取消" / "Cancel"
+  String get smartHint; // smart-mode explanation banner
   String get modeSimple;
   String get modeSmart;
   String get byShelf;
@@ -129,6 +133,12 @@ class ZhStrings extends AppStrings {
   @override String listSubtitlePending(int r, DateTime d) => '还差 $r 件 · ${_zhDate(d)}';
   @override String listSubtitleDone(DateTime d) => '今天买齐啦 🎉 · ${_zhDate(d)}';
   @override String get completeTrip => '完成购物';
+  @override String get completeTripTitle => '完成购物？';
+  @override String completeTripMessage(int bought) =>
+      '已买到的 $bought 件会从清单移除，未买到的会保留在清单里。';
+  @override String get cancel => '取消';
+  @override String get smartHint =>
+      '智能模式按货架分组方便采购。勾选商品 = 已买到，会记录到库存并开始用量计时；点「完成购物」后已买到的会从清单移除。';
   @override String get modeSimple => '简单';
   @override String get modeSmart => '智能';
   @override String get byShelf => '按货架';
@@ -257,6 +267,12 @@ class EnStrings extends AppStrings {
   @override String listSubtitlePending(int r, DateTime d) => '$r left · ${_enDate(d)}';
   @override String listSubtitleDone(DateTime d) => 'All done 🎉 · ${_enDate(d)}';
   @override String get completeTrip => 'Done';
+  @override String get completeTripTitle => 'Finish shopping?';
+  @override String completeTripMessage(int bought) =>
+      '$bought bought item(s) will be removed from the list; unbought ones stay.';
+  @override String get cancel => 'Cancel';
+  @override String get smartHint =>
+      'Smart mode groups items by aisle for easier shopping. Checking an item = bought: it is logged to inventory and starts a usage timer. "Done" removes bought items from the list.';
   @override String get modeSimple => 'Simple';
   @override String get modeSmart => 'Smart';
   @override String get byShelf => 'By aisle';

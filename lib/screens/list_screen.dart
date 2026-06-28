@@ -58,6 +58,7 @@ class ListScreen extends StatefulWidget {
 class _ListScreenState extends State<ListScreen> {
   bool _isSmartMode = false;
   bool _byShelf = true;
+  bool _smartHintDismissed = false;
   final _nameCtrl = TextEditingController();
 
   // ── Speech-to-text ──────────────────────────────────────────────────────────
@@ -119,6 +120,37 @@ class _ListScreenState extends State<ListScreen> {
       _isSmartMode ? widget.smartItems : widget.simpleItems;
   int get _pendingCount => _activeItems.where((i) => !i.checked).length;
   bool get _hasChecked => _activeItems.any((i) => i.checked);
+  int get _checkedCount => _activeItems.where((i) => i.checked).length;
+
+  Future<void> _confirmCompleteTrip() async {
+    final l = L10n.of(context);
+    final bought = _checkedCount;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.completeTripTitle),
+        content: Text(l.completeTripMessage(bought)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.cancel),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF4CAF50)),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.completeTrip),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    if (_isSmartMode) {
+      widget.onCompleteSmart();
+    } else {
+      widget.onCompleteSimple();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -132,6 +164,7 @@ class _ListScreenState extends State<ListScreen> {
             _buildHeader(today),
             _buildModeToggle(),
             if (_isSmartMode) _buildSmartSubToggle(),
+            if (_isSmartMode && !_smartHintDismissed) _buildSmartHint(),
             const SizedBox(height: 4),
             Expanded(
               child: _activeItems.isEmpty
@@ -181,7 +214,7 @@ class _ListScreenState extends State<ListScreen> {
           ),
           if (_hasChecked)
             GestureDetector(
-              onTap: _isSmartMode ? widget.onCompleteSmart : widget.onCompleteSimple,
+              onTap: _confirmCompleteTrip,
               child: Container(
                 padding: const EdgeInsets.symmetric(
                     horizontal: 12, vertical: 7),
@@ -206,6 +239,44 @@ class _ListScreenState extends State<ListScreen> {
               onTap: _toggleListening,
             ),
           const SizedBox(width: 4),
+        ],
+      ),
+    );
+  }
+
+  // ── Smart-mode explanation banner ───────────────────────────────────────────
+
+  Widget _buildSmartHint() {
+    final l = L10n.of(context);
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: const EdgeInsets.fromLTRB(12, 10, 6, 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF4CAF50).withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.lightbulb_outline_rounded,
+              size: 16, color: Color(0xFF4CAF50)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              l.smartHint,
+              style: const TextStyle(
+                  fontSize: 12, height: 1.4, color: Color(0xFF4B6B4D)),
+            ),
+          ),
+          GestureDetector(
+            onTap: () => setState(() => _smartHintDismissed = true),
+            behavior: HitTestBehavior.opaque,
+            child: const Padding(
+              padding: EdgeInsets.all(4),
+              child: Icon(Icons.close_rounded,
+                  size: 16, color: Color(0xFF9E9E9E)),
+            ),
+          ),
         ],
       ),
     );
