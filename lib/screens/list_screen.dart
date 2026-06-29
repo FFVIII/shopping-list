@@ -12,6 +12,7 @@ enum ListMode { simple, budget, smart }
 class ListScreen extends StatefulWidget {
   final List<ShoppingItem> simpleItems;
   final List<ShoppingItem> smartItems;
+  final List<Category> categories;
   // Simple mode: just mark checked, no inventory
   final void Function(String id) onToggleSimple;
   // Smart mode: triggers "how many days?" sheet → inventory
@@ -49,6 +50,7 @@ class ListScreen extends StatefulWidget {
     super.key,
     required this.simpleItems,
     required this.smartItems,
+    required this.categories,
     required this.onToggleSimple,
     required this.onToggleSmart,
     required this.onAddSimple,
@@ -377,8 +379,22 @@ class _ListScreenState extends State<ListScreen> {
 
     return CustomScrollView(
       slivers: [
+        if (pending.isNotEmpty)
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+            sliver: SliverToBoxAdapter(
+              child: _simpleSectionHeader(
+                icon: Icons.shopping_cart_outlined,
+                label: l.pendingSection,
+                count: pending.length,
+                color: AppColors.textSecondary,
+                chipBg: AppColors.fieldBg,
+                topPad: 4,
+              ),
+            ),
+          ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
           sliver: SliverReorderableList(
             itemCount: pending.length,
             itemBuilder: (ctx, i) {
@@ -409,40 +425,13 @@ class _ListScreenState extends State<ListScreen> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(4, 18, 4, 6),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.check_circle_outline_rounded,
-                          size: 14, color: AppColors.textDisabled),
-                      const SizedBox(width: 6),
-                      Text(
-                        l.purchasedSection,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFFAAAAAA),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 7, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF0F0EA),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          l.itemCountChip(done.length),
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFFAAAAAA),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                _simpleSectionHeader(
+                  icon: Icons.check_circle_outline_rounded,
+                  label: l.purchasedSection,
+                  count: done.length,
+                  color: const Color(0xFFAAAAAA),
+                  chipBg: const Color(0xFFF0F0EA),
+                  topPad: 18,
                 ),
                 ...done.map((item) => _SimpleRow(
                       item: item,
@@ -454,6 +443,51 @@ class _ListScreenState extends State<ListScreen> {
             ),
           ),
       ],
+    );
+  }
+
+  /// Section header for simple-mode "待购 / 已购" groups (icon · label · count).
+  Widget _simpleSectionHeader({
+    required IconData icon,
+    required String label,
+    required int count,
+    required Color color,
+    required Color chipBg,
+    required double topPad,
+  }) {
+    final l = L10n.of(context);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(4, topPad, 4, 6),
+      child: Row(
+        children: [
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            decoration: BoxDecoration(
+              color: chipBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              l.itemCountChip(count),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -470,7 +504,7 @@ class _ListScreenState extends State<ListScreen> {
   Map<String, List<ShoppingItem>> _groupByCategory() {
     final map = <String, List<ShoppingItem>>{};
     for (final item in widget.smartItems) {
-      map.putIfAbsent(item.category.label, () => []).add(item);
+      map.putIfAbsent(item.category.name, () => []).add(item);
     }
     return map;
   }
@@ -519,8 +553,8 @@ class _ListScreenState extends State<ListScreen> {
     if (_byShelf) {
       widget.onReorderSmart(movedItem.id, newGroup, null, orderedIds);
     } else {
-      final newCat = Category.values.firstWhere(
-        (c) => c.label == newGroup,
+      final newCat = widget.categories.firstWhere(
+        (c) => c.name == newGroup,
         orElse: () => movedItem.category,
       );
       widget.onReorderSmart(movedItem.id, null, newCat, orderedIds);
@@ -547,7 +581,7 @@ class _ListScreenState extends State<ListScreen> {
         }
         final item = entry.item!;
         final zoneColor = _byShelf
-            ? (kShelfZones[item.shelfZone]?.dotColor ?? item.category.color)
+            ? (defaultShelfZones.findByName(item.shelfZone)?.dotColor ?? item.category.color)
             : item.category.color;
         return _SmartRow(
           key: Key('si_${item.id}'),
@@ -573,7 +607,7 @@ class _ListScreenState extends State<ListScreen> {
   Widget _buildSectionHeader(String zone, int count, {Key? key}) {
     final l = L10n.of(context);
     final color = _byShelf
-        ? (kShelfZones[zone]?.dotColor ?? AppColors.textMuted)
+        ? (defaultShelfZones.findByName(zone)?.dotColor ?? AppColors.textMuted)
         : AppColors.textMuted;
     return Padding(
       key: key,
@@ -729,7 +763,7 @@ class _ListScreenState extends State<ListScreen> {
       builder: (ctx) => isSmart
           ? _EditSmartSheet(
               item: item,
-              zoneFor: _zoneFor,
+              categories: widget.categories,
               onConfirm: (name, quantity, shelfCode, category, zone) {
                 widget.onEditSmart(
                     item.id, name, quantity, shelfCode, category, zone);
@@ -867,8 +901,8 @@ class _ListScreenState extends State<ListScreen> {
   }
 
   void _showSmartAddSheet(BuildContext context, String name) {
-    Category selectedCategory = Category.produce;
-    String selectedZone = '果蔬区';
+    Category selectedCategory = widget.categories.first;
+    String selectedZone = selectedCategory.shelfZone;
 
     showModalBottomSheet(
       context: context,
@@ -907,13 +941,13 @@ class _ListScreenState extends State<ListScreen> {
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: Category.values.map((cat) {
+                    children: widget.categories.map((cat) {
                       final sel = selectedCategory == cat;
                       return GestureDetector(
                         onTap: () {
                           setModal(() {
                             selectedCategory = cat;
-                            selectedZone = _zoneFor(cat);
+                            selectedZone = cat.shelfZone;
                           });
                         },
                         child: Container(
@@ -924,7 +958,7 @@ class _ListScreenState extends State<ListScreen> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            l.category(cat),
+                            cat.name,
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -986,19 +1020,4 @@ class _ListScreenState extends State<ListScreen> {
     );
   }
 
-  String _zoneFor(Category cat) {
-    switch (cat) {
-      case Category.produce:
-        return '果蔬区';
-      case Category.dairy:
-      case Category.meat:
-        return '冷藏/乳制品';
-      case Category.grain:
-        return '粮油区';
-      case Category.cleaning:
-        return '日用品';
-      default:
-        return '其他';
-    }
-  }
 }

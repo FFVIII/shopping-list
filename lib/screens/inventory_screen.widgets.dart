@@ -25,7 +25,7 @@ class _InventoryCard extends StatelessWidget {
     final remaining = item.daysRemaining;
     final dn = l.data(item.name);
     final barColor =
-        kShelfZones[item.shelfZone]?.dotColor ?? item.category.color;
+        defaultShelfZones.findByName(item.shelfZone)?.dotColor ?? item.category.color;
     final q = l.data(item.quantityLabel);
     final code = item.shelfCode != null ? l.data(item.shelfCode!) : '';
     final meta = [
@@ -193,44 +193,73 @@ class _InvEntry {
   bool get isHeader => item == null;
 }
 
-// ── Edit Inventory Sheet (name + quantity + shelf code + category) ───────────
+// ── Detail draft (edits committed on sheet close) ────────────────────────────
 
-class _EditInventorySheet extends StatefulWidget {
+class _DetailDraft {
+  String name;
+  String quantity;
+  String shelfCode;
+  Category category;
+  String zone;
+  bool dirty = false;
+
+  _DetailDraft({
+    required this.name,
+    required this.quantity,
+    required this.shelfCode,
+    required this.category,
+    required this.zone,
+  });
+
+  factory _DetailDraft.from(InventoryItem item) => _DetailDraft(
+        name: item.name,
+        quantity: item.quantityLabel,
+        shelfCode: item.shelfCode ?? '',
+        category: item.category,
+        zone: item.shelfZone,
+      );
+}
+
+// ── Inventory detail sheet (inline-editable header + reset / restock / delete) ─
+
+class _InventoryDetailSheet extends StatefulWidget {
   final InventoryItem item;
-  final String Function(Category) zoneFor;
-  final void Function(
-    String name,
-    String quantityLabel,
-    String? shelfCode,
-    Category category,
-    String shelfZone,
-  ) onConfirm;
+  final List<Category> categories;
+  final int thresholdDays;
+  final _DetailDraft draft;
+  final void Function(int days) onRestock;
+  final VoidCallback onAddToList;
+  final VoidCallback onDelete;
 
-  const _EditInventorySheet({
+  const _InventoryDetailSheet({
     required this.item,
-    required this.zoneFor,
-    required this.onConfirm,
+    required this.categories,
+    required this.thresholdDays,
+    required this.draft,
+    required this.onRestock,
+    required this.onAddToList,
+    required this.onDelete,
   });
 
   @override
-  State<_EditInventorySheet> createState() => _EditInventorySheetState();
+  State<_InventoryDetailSheet> createState() => _InventoryDetailSheetState();
 }
 
-class _EditInventorySheetState extends State<_EditInventorySheet> {
+class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
   late final TextEditingController _nameCtrl;
   late final TextEditingController _qtyCtrl;
   late final TextEditingController _shelfCtrl;
-  late Category _category;
-  late String _zone;
+  late int _selectedDays;
+
+  _DetailDraft get _draft => widget.draft;
 
   @override
   void initState() {
     super.initState();
-    _nameCtrl = TextEditingController(text: widget.item.name);
-    _qtyCtrl = TextEditingController(text: widget.item.quantityLabel);
-    _shelfCtrl = TextEditingController(text: widget.item.shelfCode ?? '');
-    _category = widget.item.category;
-    _zone = widget.item.shelfZone;
+    _nameCtrl = TextEditingController(text: _draft.name);
+    _qtyCtrl = TextEditingController(text: _draft.quantity);
+    _shelfCtrl = TextEditingController(text: _draft.shelfCode);
+    _selectedDays = widget.item.estimatedDays;
   }
 
   @override
@@ -239,20 +268,6 @@ class _EditInventorySheetState extends State<_EditInventorySheet> {
     _qtyCtrl.dispose();
     _shelfCtrl.dispose();
     super.dispose();
-  }
-
-  void _confirm() {
-    final name = _nameCtrl.text.trim();
-    if (name.isEmpty) return;
-    final shelf = _shelfCtrl.text.trim();
-    Navigator.pop(context);
-    widget.onConfirm(
-      name,
-      _qtyCtrl.text.trim(),
-      shelf.isEmpty ? null : shelf,
-      _category,
-      _zone,
-    );
   }
 
   InputDecoration _dec(String hint) => InputDecoration(
@@ -265,12 +280,12 @@ class _EditInventorySheetState extends State<_EditInventorySheet> {
           borderSide: BorderSide.none,
         ),
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         isDense: true,
       );
 
   Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 6, top: 14),
+        padding: const EdgeInsets.only(bottom: 6, top: 12),
         child: Text(
           text,
           style: const TextStyle(
@@ -284,53 +299,76 @@ class _EditInventorySheetState extends State<_EditInventorySheet> {
   @override
   Widget build(BuildContext context) {
     final l = L10n.of(context);
+    final status = widget.item.statusFor(widget.thresholdDays);
     return Padding(
       padding: EdgeInsets.only(
         left: 20,
         right: 20,
         top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 28,
       ),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              l.editItem,
-              style:
-                  const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 14),
+            // ── Editable header ──
             TextField(
               controller: _nameCtrl,
-              autofocus: true,
-              style: const TextStyle(fontSize: 15),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
               decoration: _dec(l.productNameHint),
-              onSubmitted: (_) => _confirm(),
+              onChanged: (v) {
+                _draft
+                  ..name = v
+                  ..dirty = true;
+              },
             ),
-            _label(l.quantityFieldLabel),
-            TextField(
-              controller: _qtyCtrl,
-              style: const TextStyle(fontSize: 15),
-              decoration: _dec(l.quantityFieldLabel),
-            ),
-            _label(l.shelfCodeFieldLabel),
-            TextField(
-              controller: _shelfCtrl,
-              style: const TextStyle(fontSize: 15),
-              decoration: _dec(l.shelfCodeFieldLabel),
+            Row(
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 5),
+                    child: TextField(
+                      controller: _qtyCtrl,
+                      style: const TextStyle(fontSize: 15),
+                      decoration: _dec(l.quantityFieldLabel),
+                      onChanged: (v) {
+                        _draft
+                          ..quantity = v
+                          ..dirty = true;
+                      },
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 5, top: 10),
+                    child: TextField(
+                      controller: _shelfCtrl,
+                      style: const TextStyle(fontSize: 15),
+                      decoration: _dec(l.shelfCodeFieldLabel),
+                      onChanged: (v) {
+                        _draft
+                          ..shelfCode = v
+                          ..dirty = true;
+                      },
+                    ),
+                  ),
+                ),
+              ],
             ),
             _label(l.categoryLabel),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: Category.values.map((cat) {
-                final sel = _category == cat;
+              children: widget.categories.map((cat) {
+                final sel = _draft.category == cat;
                 return GestureDetector(
                   onTap: () => setState(() {
-                    _category = cat;
-                    _zone = widget.zoneFor(cat);
+                    _draft
+                      ..category = cat
+                      ..zone = cat.shelfZone
+                      ..dirty = true;
                   }),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
@@ -340,7 +378,7 @@ class _EditInventorySheetState extends State<_EditInventorySheet> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      l.category(cat),
+                      cat.name,
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -358,13 +396,111 @@ class _EditInventorySheetState extends State<_EditInventorySheet> {
                     size: 14, color: AppColors.textDisabled),
                 const SizedBox(width: 4),
                 Text(
-                  l.shelfZoneInline(l.data(_zone)),
+                  l.shelfZoneInline(l.data(_draft.zone)),
                   style: const TextStyle(
                       fontSize: 12, color: AppColors.textMuted),
                 ),
               ],
             ),
+            const SizedBox(height: 16),
+            // ── Progress + status (read-only) ──
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: LinearProgressIndicator(
+                value: widget.item.progressRatio,
+                backgroundColor: status.color.withValues(alpha: 0.12),
+                color: status.color,
+                minHeight: 8,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: status.bgColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    l.stockStatus(status),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: status.color,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  status == StockStatus.empty
+                      ? l.usedUp
+                      : l.daysRemainingLong(widget.item.daysRemaining),
+                  style: TextStyle(fontSize: 13, color: status.color),
+                ),
+              ],
+            ),
             const SizedBox(height: 20),
+            const Divider(height: 1, color: Color(0xFFF0F0EA)),
+            const SizedBox(height: 16),
+            // ── Reset section ──
+            Text(
+              l.resetTimerSection,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: [3, 5, 7, 14, 30].map((d) {
+                final sel = _selectedDays == d;
+                return GestureDetector(
+                  onTap: () => setState(() => _selectedDays = d),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: sel ? AppColors.brand : AppColors.fieldBg,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      l.days(d),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: sel ? Colors.white : AppColors.textChip,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                activeTrackColor: AppColors.brand,
+                inactiveTrackColor: AppColors.divider,
+                thumbColor: AppColors.brand,
+                overlayColor: AppColors.brand.withValues(alpha: 0.15),
+                trackHeight: 3,
+                thumbShape:
+                    const RoundSliderThumbShape(enabledThumbRadius: 10),
+              ),
+              child: Slider(
+                value: _selectedDays.toDouble().clamp(1, 60),
+                min: 1,
+                max: 60,
+                divisions: 59,
+                label: l.days(_selectedDays),
+                onChanged: (v) => setState(() => _selectedDays = v.round()),
+              ),
+            ),
+            const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
               height: 48,
@@ -376,11 +512,55 @@ class _EditInventorySheetState extends State<_EditInventorySheet> {
                       borderRadius: BorderRadius.circular(14)),
                   elevation: 0,
                 ),
-                onPressed: _confirm,
+                onPressed: () {
+                  Navigator.pop(context);
+                  widget.onRestock(_selectedDays);
+                },
                 child: Text(
-                  l.confirmEdit,
+                  l.resetTimer(_selectedDays),
                   style: const TextStyle(
                       fontSize: 15, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.brand,
+                  side: const BorderSide(color: AppColors.brand, width: 1.5),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                  widget.onAddToList();
+                },
+                child: Text(
+                  l.addToRestockList,
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: TextButton(
+                style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+                onPressed: () {
+                  // Discard pending edits — the item is being removed.
+                  _draft.dirty = false;
+                  Navigator.pop(context);
+                  widget.onDelete();
+                },
+                child: Text(
+                  l.deleteFromInventory,
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w500),
                 ),
               ),
             ),
@@ -395,9 +575,9 @@ class _EditInventorySheetState extends State<_EditInventorySheet> {
 
 class _AddInventorySheet extends StatefulWidget {
   final void Function(InventoryItem) onAdd;
-  final String Function(Category) zoneFor;
+  final List<Category> categories;
 
-  const _AddInventorySheet({required this.onAdd, required this.zoneFor});
+  const _AddInventorySheet({required this.onAdd, required this.categories});
 
   @override
   State<_AddInventorySheet> createState() => _AddInventorySheetState();
@@ -407,8 +587,8 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
   final _nameCtrl = TextEditingController();
   final _qtyCtrl = TextEditingController();
   final _shelfCtrl = TextEditingController();
-  Category _category = Category.produce;
-  int _days = 7;
+  late Category _category = widget.categories.first;
+  late int _days = _category.defaultDays;
 
   @override
   void dispose() {
@@ -427,7 +607,7 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
       id: 'inv_${DateTime.now().millisecondsSinceEpoch}',
       name: name,
       category: _category,
-      shelfZone: widget.zoneFor(_category),
+      shelfZone: _category.shelfZone,
       shelfCode: shelf.isEmpty ? null : shelf,
       quantityLabel: _qtyCtrl.text.trim(),
       purchasedAt: DateTime.now(),
@@ -521,7 +701,7 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
           Wrap(
             spacing: 8,
             runSpacing: 6,
-            children: Category.values.map((cat) {
+            children: widget.categories.map((cat) {
               final sel = _category == cat;
               return GestureDetector(
                 onTap: () => setState(() => _category = cat),
@@ -534,7 +714,7 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    l.category(cat),
+                    cat.name,
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,

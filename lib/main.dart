@@ -93,15 +93,121 @@ class _AppShellState extends State<AppShell> {
   late List<InventoryItem> _inventory;
   late List<BudgetItem> _budget;
   late AppSettings _settings;
+  late List<ShelfZone> _shelfZones;
+  late List<Category> _categories;
 
   @override
   void initState() {
     super.initState();
     _shoppingSimple = [];
-    _shopping = buildSampleShopping();
-    _inventory = buildSampleInventory();
+    _categories = buildDefaultCategories();
+    // Seed default category names in the active language (English if resolved
+    // to en). After seeding, names are plain user-editable strings.
+    final deviceLocale = WidgetsBinding.instance.platformDispatcher.locale;
+    final lang = resolveLang(widget.language, deviceLocale);
+    if (lang == Lang.en) {
+      final en = EnStrings();
+      for (final c in _categories) {
+        c.name = en.data(c.name);
+      }
+    }
+    _shopping = buildSampleShopping(_categories);
+    _inventory = buildSampleInventory(_categories);
     _budget = buildSampleBudget();
     _settings = AppSettings();
+    _shelfZones = defaultShelfZones.toList();
+  }
+
+  // ── 分类：增 / 改 / 删 / 重排 ─────────────────────────────────────────────────
+
+  void _addCategory(String name, Color color, String shelfZone, int defaultDays) {
+    setState(() {
+      _categories = [
+        ..._categories,
+        Category(
+          id: 'cat_${DateTime.now().millisecondsSinceEpoch}',
+          name: name,
+          color: color,
+          bgColor: Category.tintOf(color),
+          shelfZone: shelfZone,
+          defaultDays: defaultDays,
+        ),
+      ];
+    });
+  }
+
+  void _editCategory(
+    String id,
+    String name,
+    Color color,
+    String shelfZone,
+    int defaultDays,
+  ) {
+    setState(() {
+      final cat = _categories.findById(id);
+      if (cat == null) return;
+      cat
+        ..name = name
+        ..color = color
+        ..bgColor = Category.tintOf(color)
+        ..shelfZone = shelfZone
+        ..defaultDays = defaultDays;
+      _categories = List<Category>.from(_categories);
+    });
+  }
+
+  void _deleteCategory(String id) {
+    if (id == kFallbackCategoryId) return; // never delete fallback
+    setState(() {
+      final fallback = _categories.fallback;
+      // Reassign any items using the deleted category to the fallback.
+      for (final s in _shopping) {
+        if (s.category.id == id) s.category = fallback;
+      }
+      for (final s in _shoppingSimple) {
+        if (s.category.id == id) s.category = fallback;
+      }
+      for (final inv in _inventory) {
+        if (inv.category.id == id) inv.category = fallback;
+      }
+      _categories = _categories.where((c) => c.id != id).toList();
+      _shopping = List<ShoppingItem>.from(_shopping);
+      _shoppingSimple = List<ShoppingItem>.from(_shoppingSimple);
+      _inventory = List<InventoryItem>.from(_inventory);
+    });
+  }
+
+  void _reorderCategories(int oldIndex, int newIndex) {
+    setState(() {
+      final cat = _categories.removeAt(oldIndex);
+      _categories.insert(newIndex, cat);
+      _categories = List<Category>.from(_categories);
+      // Keep "group by category" rendering consistent with the new order.
+      int idx(Category c) => _categories.indexWhere((x) => x.id == c.id);
+      _shopping.sort((a, b) => idx(a.category).compareTo(idx(b.category)));
+      _inventory.sort((a, b) => idx(a.category).compareTo(idx(b.category)));
+      _shopping = List<ShoppingItem>.from(_shopping);
+      _inventory = List<InventoryItem>.from(_inventory);
+    });
+  }
+
+  // ── 货架：重排顺序 → 同步重排清单/库存 ────────────────────────────────────────
+
+  void _reorderShelfZones(int oldIndex, int newIndex) {
+    setState(() {
+      // onReorderItem already adjusts newIndex; no manual correction needed.
+      final zone = _shelfZones.removeAt(oldIndex);
+      _shelfZones.insert(newIndex, zone);
+      // Sort.List is stable: items within the same zone keep their order.
+      _shopping.sort((a, b) => _shelfZones
+          .orderIndexOf(a.shelfZone)
+          .compareTo(_shelfZones.orderIndexOf(b.shelfZone)));
+      _inventory.sort((a, b) => _shelfZones
+          .orderIndexOf(a.shelfZone)
+          .compareTo(_shelfZones.orderIndexOf(b.shelfZone)));
+      _shopping = List<ShoppingItem>.from(_shopping);
+      _inventory = List<InventoryItem>.from(_inventory);
+    });
   }
 
   // ── 清单：记账模式增 / 改 / 删 ───────────────────────────────────────────────
@@ -144,7 +250,7 @@ class _AppShellState extends State<AppShell> {
       _shoppingSimple.add(ShoppingItem(
         id: 's_${DateTime.now().millisecondsSinceEpoch}',
         name: name,
-        category: Category.other,
+        category: _categories.fallback,
         quantityLabel: '',
         shelfZone: '其他',
       ));
@@ -202,7 +308,7 @@ class _AppShellState extends State<AppShell> {
       ),
       builder: (ctx) => _DaysSheet(
         item: item,
-        initialDays: _defaultDays(item.category),
+        initialDays: item.category.defaultDays,
         onConfirm: (days) => _confirmPurchase(item, days),
       ),
     );
@@ -246,18 +352,6 @@ class _AppShellState extends State<AppShell> {
         ];
       }
     });
-  }
-
-  int _defaultDays(Category category) {
-    switch (category) {
-      case Category.produce:  return 7;
-      case Category.dairy:    return 7;
-      case Category.meat:     return 5;
-      case Category.grain:    return 30;
-      case Category.cleaning: return 30;
-      case Category.beverage: return 14;
-      case Category.other:    return 7;
-    }
   }
 
   // ── 清单：拖动排序（简单模式）────────────────────────────────────────────
@@ -452,6 +546,7 @@ class _AppShellState extends State<AppShell> {
             ListScreen(
               simpleItems: _shoppingSimple,
               smartItems: _shopping,
+              categories: _categories,
               onToggleSimple: _toggleSimple,
               onToggleSmart: (id) => _toggleShoppingItem(ctx, id),
               onAddSimple: _addSimple,
@@ -471,6 +566,7 @@ class _AppShellState extends State<AppShell> {
             ),
             InventoryScreen(
               items: _inventory,
+              categories: _categories,
               thresholdDays: threshold,
               onAdd: _addInventoryItem,
               onRestock: _restockInventoryItem,
@@ -495,6 +591,13 @@ class _AppShellState extends State<AppShell> {
               onChanged: (s) => setState(() => _settings = s),
               language: widget.language,
               onLanguageChanged: widget.onLanguageChanged,
+              shelfZones: _shelfZones,
+              onReorderShelfZones: _reorderShelfZones,
+              categories: _categories,
+              onAddCategory: _addCategory,
+              onEditCategory: _editCategory,
+              onDeleteCategory: _deleteCategory,
+              onReorderCategories: _reorderCategories,
             ),
           ],
         ),

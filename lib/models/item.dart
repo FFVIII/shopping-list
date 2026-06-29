@@ -2,52 +2,84 @@ import 'package:flutter/material.dart';
 
 // ─── Category ────────────────────────────────────────────────────────────────
 
-enum Category {
-  produce,
-  dairy,
-  meat,
-  grain,
-  cleaning,
-  beverage,
-  other,
+/// Mutable category model. Identity is `id` (stable across renames).
+class Category {
+  final String id;
+  String name;
+  Color color;
+  Color bgColor;
+  String shelfZone;
+  int defaultDays;
+
+  Category({
+    required this.id,
+    required this.name,
+    required this.color,
+    required this.bgColor,
+    required this.shelfZone,
+    required this.defaultDays,
+  });
+
+  /// Light tint of `color` to use as a chip background.
+  static Color tintOf(Color color) => Color.lerp(color, Colors.white, 0.85)!;
 }
 
-extension CategoryInfo on Category {
-  String get label {
-    switch (this) {
-      case Category.produce:  return '果蔬';
-      case Category.dairy:    return '乳制品';
-      case Category.meat:     return '肉类';
-      case Category.grain:    return '粮油';
-      case Category.cleaning: return '清洁';
-      case Category.beverage: return '饮料';
-      case Category.other:    return '其他';
+/// Fallback category id — always present, never deleted.
+const String kFallbackCategoryId = 'other';
+
+/// Default categories in default order. App state owns a mutable copy.
+List<Category> buildDefaultCategories() => [
+      Category(
+        id: 'produce',
+        name: '果蔬',
+        color: const Color(0xFF4CAF50),
+        bgColor: const Color(0xFFE8F5E9),
+        shelfZone: '果蔬区',
+        defaultDays: 7,
+      ),
+      Category(
+        id: 'dairy',
+        name: '乳制品',
+        color: const Color(0xFF2196F3),
+        bgColor: const Color(0xFFE3F2FD),
+        shelfZone: '冷藏/乳制品',
+        defaultDays: 7,
+      ),
+      Category(
+        id: 'meat',
+        name: '肉类',
+        color: const Color(0xFFE53935),
+        bgColor: const Color(0xFFFFEBEE),
+        shelfZone: '冷藏/乳制品',
+        defaultDays: 5,
+      ),
+      Category(
+        id: 'grain',
+        name: '粮油',
+        color: const Color(0xFF8D6E63),
+        bgColor: const Color(0xFFEFEBE9),
+        shelfZone: '粮油区',
+        defaultDays: 30,
+      ),
+      Category(
+        id: kFallbackCategoryId,
+        name: '其他',
+        color: const Color(0xFF78909C),
+        bgColor: const Color(0xFFECEFF1),
+        shelfZone: '其他',
+        defaultDays: 7,
+      ),
+    ];
+
+extension CategoryListLookup on List<Category> {
+  Category? findById(String id) {
+    for (final c in this) {
+      if (c.id == id) return c;
     }
+    return null;
   }
 
-  Color get color {
-    switch (this) {
-      case Category.produce:  return const Color(0xFF4CAF50);
-      case Category.dairy:    return const Color(0xFF2196F3);
-      case Category.meat:     return const Color(0xFFE53935);
-      case Category.grain:    return const Color(0xFF8D6E63);
-      case Category.cleaning: return const Color(0xFF7B1FA2);
-      case Category.beverage: return const Color(0xFF0288D1);
-      case Category.other:    return const Color(0xFF78909C);
-    }
-  }
-
-  Color get bgColor {
-    switch (this) {
-      case Category.produce:  return const Color(0xFFE8F5E9);
-      case Category.dairy:    return const Color(0xFFE3F2FD);
-      case Category.meat:     return const Color(0xFFFFEBEE);
-      case Category.grain:    return const Color(0xFFEFEBE9);
-      case Category.cleaning: return const Color(0xFFF3E5F5);
-      case Category.beverage: return const Color(0xFFE1F5FE);
-      case Category.other:    return const Color(0xFFECEFF1);
-    }
-  }
+  Category get fallback => findById(kFallbackCategoryId) ?? first;
 }
 
 // ─── Shelf Zone ───────────────────────────────────────────────────────────────
@@ -58,13 +90,30 @@ class ShelfZone {
   const ShelfZone(this.name, this.dotColor);
 }
 
-final kShelfZones = <String, ShelfZone>{
-  '果蔬区':      ShelfZone('果蔬区',      const Color(0xFF4CAF50)),
-  '冷藏/乳制品': ShelfZone('冷藏/乳制品', const Color(0xFF2196F3)),
-  '粮油区':      ShelfZone('粮油区',      const Color(0xFF8D6E63)),
-  '日用品':      ShelfZone('日用品',      const Color(0xFF7B1FA2)),
-  '其他':        ShelfZone('其他',        const Color(0xFF78909C)),
-};
+/// Default shelf zones in default order. App state owns a mutable copy.
+const List<ShelfZone> defaultShelfZones = [
+  ShelfZone('果蔬区',      Color(0xFF4CAF50)),
+  ShelfZone('冷藏/乳制品', Color(0xFF2196F3)),
+  ShelfZone('粮油区',      Color(0xFF8D6E63)),
+  ShelfZone('日用品',      Color(0xFF7B1FA2)),
+  ShelfZone('其他',        Color(0xFF78909C)),
+];
+
+extension ShelfZoneListLookup on List<ShelfZone> {
+  ShelfZone? findByName(String name) {
+    for (final z in this) {
+      if (z.name == name) return z;
+    }
+    return null;
+  }
+
+  int orderIndexOf(String name) {
+    for (int i = 0; i < length; i++) {
+      if (this[i].name == name) return i;
+    }
+    return length; // unknown zones sort last
+  }
+}
 
 // ─── Stock Status ─────────────────────────────────────────────────────────────
 
@@ -184,59 +233,64 @@ class BudgetItem {
 class AppSettings {
   int reminderThresholdDays; // 1–14, default 5
   bool restockReminderEnabled;
-  String reminderTime; // display string
+  int reminderHour;   // 0–23
+  int reminderMinute; // 0–59
 
   AppSettings({
     this.reminderThresholdDays = 5,
     this.restockReminderEnabled = true,
-    this.reminderTime = '每天 18:00',
+    this.reminderHour = 18,
+    this.reminderMinute = 0,
   });
 }
 
 // ─── Sample Data ──────────────────────────────────────────────────────────────
 
-List<ShoppingItem> buildSampleShopping() => [
-      ShoppingItem(
-        id: 's1',
-        name: '香蕉',
-        category: Category.produce,
-        quantityLabel: '1串',
-        shelfZone: '果蔬区',
-        shelfCode: '货架B3',
-      ),
-      ShoppingItem(
-        id: 's2',
-        name: '番茄',
-        category: Category.produce,
-        quantityLabel: '6个',
-        shelfZone: '果蔬区',
-        shelfCode: '货架B1',
-      ),
-      ShoppingItem(
-        id: 's3',
-        name: '藻菜',
-        category: Category.produce,
-        quantityLabel: '1把',
-        shelfZone: '果蔬区',
-        shelfCode: '货架B2',
-      ),
-      ShoppingItem(
-        id: 's4',
-        name: '牛奶',
-        category: Category.dairy,
-        quantityLabel: '2盒',
-        shelfZone: '冷藏/乳制品',
-        shelfCode: '冷柜C2',
-      ),
-      ShoppingItem(
-        id: 's5',
-        name: '鸡蛋',
-        category: Category.dairy,
-        quantityLabel: '1打',
-        shelfZone: '冷藏/乳制品',
-        shelfCode: '冷柜C1',
-      ),
-    ];
+List<ShoppingItem> buildSampleShopping(List<Category> categories) {
+  Category cat(String id) => categories.findById(id) ?? categories.fallback;
+  return [
+    ShoppingItem(
+      id: 's1',
+      name: '香蕉',
+      category: cat('produce'),
+      quantityLabel: '1串',
+      shelfZone: '果蔬区',
+      shelfCode: '货架B3',
+    ),
+    ShoppingItem(
+      id: 's2',
+      name: '番茄',
+      category: cat('produce'),
+      quantityLabel: '6个',
+      shelfZone: '果蔬区',
+      shelfCode: '货架B1',
+    ),
+    ShoppingItem(
+      id: 's3',
+      name: '藻菜',
+      category: cat('produce'),
+      quantityLabel: '1把',
+      shelfZone: '果蔬区',
+      shelfCode: '货架B2',
+    ),
+    ShoppingItem(
+      id: 's4',
+      name: '牛奶',
+      category: cat('dairy'),
+      quantityLabel: '2盒',
+      shelfZone: '冷藏/乳制品',
+      shelfCode: '冷柜C2',
+    ),
+    ShoppingItem(
+      id: 's5',
+      name: '鸡蛋',
+      category: cat('dairy'),
+      quantityLabel: '1打',
+      shelfZone: '冷藏/乳制品',
+      shelfCode: '冷柜C1',
+    ),
+  ];
+}
 
 List<BudgetItem> buildSampleBudget() => [
       BudgetItem(id: 'b1', name: '牛奶', quantity: 2, unitPrice: 8.5),
@@ -244,13 +298,14 @@ List<BudgetItem> buildSampleBudget() => [
       BudgetItem(id: 'b3', name: '香蕉', quantity: 3, unitPrice: 2.5),
     ];
 
-List<InventoryItem> buildSampleInventory() {
+List<InventoryItem> buildSampleInventory(List<Category> categories) {
+  Category cat(String id) => categories.findById(id) ?? categories.fallback;
   final now = DateTime.now();
   return [
     InventoryItem(
       id: 'i1',
       name: '牛奶',
-      category: Category.dairy,
+      category: cat('dairy'),
       shelfZone: '冷藏/乳制品',
       shelfCode: '冷柜C2',
       quantityLabel: '2盒',
@@ -260,7 +315,7 @@ List<InventoryItem> buildSampleInventory() {
     InventoryItem(
       id: 'i2',
       name: '鸡蛋',
-      category: Category.produce,
+      category: cat('produce'),
       shelfZone: '果蔬区',
       shelfCode: '货架B1',
       quantityLabel: '1打',
@@ -270,7 +325,7 @@ List<InventoryItem> buildSampleInventory() {
     InventoryItem(
       id: 'i3',
       name: '洗洁精',
-      category: Category.cleaning,
+      category: cat('cleaning'),
       shelfZone: '日用品',
       shelfCode: '货架D1',
       quantityLabel: '1瓶',
@@ -280,7 +335,7 @@ List<InventoryItem> buildSampleInventory() {
     InventoryItem(
       id: 'i4',
       name: '大米',
-      category: Category.grain,
+      category: cat('grain'),
       shelfZone: '粮油区',
       shelfCode: '货架E2',
       quantityLabel: '1袋',
@@ -290,7 +345,7 @@ List<InventoryItem> buildSampleInventory() {
     InventoryItem(
       id: 'i5',
       name: '酸奶',
-      category: Category.dairy,
+      category: cat('dairy'),
       shelfZone: '冷藏/乳制品',
       shelfCode: '冷柜C3',
       quantityLabel: '4杯',

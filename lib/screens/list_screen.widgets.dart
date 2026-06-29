@@ -524,7 +524,7 @@ class _RenameSheetState extends State<_RenameSheet> {
 
 class _EditSmartSheet extends StatefulWidget {
   final ShoppingItem item;
-  final String Function(Category) zoneFor;
+  final List<Category> categories;
   final void Function(
     String name,
     String quantityLabel,
@@ -535,7 +535,7 @@ class _EditSmartSheet extends StatefulWidget {
 
   const _EditSmartSheet({
     required this.item,
-    required this.zoneFor,
+    required this.categories,
     required this.onConfirm,
   });
 
@@ -654,12 +654,12 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: Category.values.map((cat) {
+              children: widget.categories.map((cat) {
                 final sel = _category == cat;
                 return GestureDetector(
                   onTap: () => setState(() {
                     _category = cat;
-                    _zone = widget.zoneFor(cat);
+                    _zone = cat.shelfZone;
                   }),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
@@ -669,7 +669,7 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      l.category(cat),
+                      cat.name,
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,

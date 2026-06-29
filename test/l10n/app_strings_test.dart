@@ -22,9 +22,11 @@ void main() {
     expect(en.boughtTitle('Banana'), '"Banana" bought!');
   });
 
-  test('category labels localize', () {
-    expect(zh.category(Category.produce), '果蔬');
-    expect(en.category(Category.produce), 'Produce');
+  test('default categories carry plain-text names (no l10n)', () {
+    final cats = buildDefaultCategories();
+    final produce = cats.findById('produce')!;
+    expect(produce.name, '果蔬');
+    expect(cats.fallback.id, 'other');
   });
 
   test('stock status labels localize', () {

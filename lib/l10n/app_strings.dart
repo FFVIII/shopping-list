@@ -37,6 +37,7 @@ abstract class AppStrings {
   String money(double v); // "¥12.50" / "$12.50"
   String get byShelf;
   String get byCategory;
+  String get pendingSection; // "待购" / "To buy"
   String get purchasedSection;
   String itemCountChip(int n); // "3件" / "3"
   String get listEmptyTitle;
@@ -51,6 +52,7 @@ abstract class AppStrings {
   String get rename;
   String get confirmEdit;
   String get editItem; // "编辑商品" / "Edit item"
+  String editItemTitle(String name); // "编辑「鸡蛋」" / 'Edit "Eggs"'
   String get quantityFieldLabel; // "数量" / "Quantity"
   String get shelfCodeFieldLabel; // "货架码" / "Shelf code"
   String get recordedBadge; // "已记" / "Logged"
@@ -110,11 +112,21 @@ abstract class AppStrings {
   String get proCta;
   String get sectionCategoryShelf;
   String get manageCategories;
+  String get addCategoryTitle;
+  String get editCategoryTitle;
+  String get categoryNameLabel;
+  String get categoryColorLabel;
+  String get shelfZoneLabel;
+  String get defaultDaysLabel;
+  String get delete;
+  String deleteCategoryTitle(String name);
+  String get deleteCategoryMessage;
   String categoriesCount(int n); // "12类"
   String get shelfOrder;
   String get sectionReminder;
   String get restockReminder;
   String get reminderTimeLabel;
+  String reminderTimeDisplay(int hour, int minute);
   String get advanceDays; // "提前天数"
   String get sectionData;
   String get backupExport;
@@ -127,7 +139,6 @@ abstract class AppStrings {
   String labelForLanguage(/* AppLanguage */ Object lang); // trailing display
 
   // ── Enum + data lookups ──
-  String category(Category c);
   String stockStatus(StockStatus s);
   String data(String canonical);
   String get scale1Day; // "1天" / "1d"
@@ -167,6 +178,7 @@ class ZhStrings extends AppStrings {
   @override String money(double v) => '¥${v.toStringAsFixed(2)}';
   @override String get byShelf => '按货架';
   @override String get byCategory => '按分类';
+  @override String get pendingSection => '待购';
   @override String get purchasedSection => '已购';
   @override String itemCountChip(int n) => '$n件';
   @override String get listEmptyTitle => '清单是空的';
@@ -181,6 +193,7 @@ class ZhStrings extends AppStrings {
   @override String get rename => '重命名';
   @override String get confirmEdit => '确认修改';
   @override String get editItem => '编辑商品';
+  @override String editItemTitle(String name) => '编辑「$name」';
   @override String get quantityFieldLabel => '数量';
   @override String get shelfCodeFieldLabel => '货架码';
   @override String get recordedBadge => '已记';
@@ -236,11 +249,22 @@ class ZhStrings extends AppStrings {
   @override String get proCta => '查看 Pro 功能 →';
   @override String get sectionCategoryShelf => '分类与货架';
   @override String get manageCategories => '管理分类';
+  @override String get addCategoryTitle => '新建分类';
+  @override String get editCategoryTitle => '编辑分类';
+  @override String get categoryNameLabel => '分类名称';
+  @override String get categoryColorLabel => '颜色';
+  @override String get shelfZoneLabel => '所属货架';
+  @override String get defaultDaysLabel => '默认使用天数';
+  @override String get delete => '删除';
+  @override String deleteCategoryTitle(String name) => '删除「$name」？';
+  @override String get deleteCategoryMessage => '使用此分类的商品会改派到「其他」。';
   @override String categoriesCount(int n) => '$n类';
   @override String get shelfOrder => '货架顺序';
   @override String get sectionReminder => '提醒';
   @override String get restockReminder => '补货提醒';
   @override String get reminderTimeLabel => '提醒时间';
+  @override String reminderTimeDisplay(int h, int m) =>
+      '每天 ${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
   @override String get advanceDays => '提前天数';
   @override String get sectionData => '数据';
   @override String get backupExport => '备份导出';
@@ -255,18 +279,6 @@ class ZhStrings extends AppStrings {
   @override String get scale1Day => '1天';
   @override String get scale1Week => '1周';
   @override String get scale2Week => '2周';
-
-  @override String category(Category c) {
-    switch (c) {
-      case Category.produce:  return '果蔬';
-      case Category.dairy:    return '乳制品';
-      case Category.meat:     return '肉类';
-      case Category.grain:    return '粮油';
-      case Category.cleaning: return '清洁';
-      case Category.beverage: return '饮料';
-      case Category.other:    return '其他';
-    }
-  }
 
   @override String stockStatus(StockStatus s) {
     switch (s) {
@@ -313,6 +325,7 @@ class EnStrings extends AppStrings {
   @override String money(double v) => '\$${v.toStringAsFixed(2)}';
   @override String get byShelf => 'By aisle';
   @override String get byCategory => 'By category';
+  @override String get pendingSection => 'To buy';
   @override String get purchasedSection => 'Bought';
   @override String itemCountChip(int n) => '$n';
   @override String get listEmptyTitle => 'Your list is empty';
@@ -327,6 +340,7 @@ class EnStrings extends AppStrings {
   @override String get rename => 'Rename';
   @override String get confirmEdit => 'Save';
   @override String get editItem => 'Edit item';
+  @override String editItemTitle(String name) => 'Edit "$name"';
   @override String get quantityFieldLabel => 'Quantity';
   @override String get shelfCodeFieldLabel => 'Shelf code';
   @override String get recordedBadge => 'Logged';
@@ -382,11 +396,23 @@ class EnStrings extends AppStrings {
   @override String get proCta => 'See Pro features →';
   @override String get sectionCategoryShelf => 'Categories & aisles';
   @override String get manageCategories => 'Manage categories';
+  @override String get addCategoryTitle => 'New category';
+  @override String get editCategoryTitle => 'Edit category';
+  @override String get categoryNameLabel => 'Name';
+  @override String get categoryColorLabel => 'Color';
+  @override String get shelfZoneLabel => 'Aisle';
+  @override String get defaultDaysLabel => 'Default days';
+  @override String get delete => 'Delete';
+  @override String deleteCategoryTitle(String name) => 'Delete "$name"?';
+  @override String get deleteCategoryMessage =>
+      'Items in this category will be reassigned to "Other".';
   @override String categoriesCount(int n) => '$n';
   @override String get shelfOrder => 'Aisle order';
   @override String get sectionReminder => 'Reminders';
   @override String get restockReminder => 'Restock reminder';
   @override String get reminderTimeLabel => 'Reminder time';
+  @override String reminderTimeDisplay(int h, int m) =>
+      'Daily ${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
   @override String get advanceDays => 'Lead days';
   @override String get sectionData => 'Data';
   @override String get backupExport => 'Backup & export';
@@ -401,18 +427,6 @@ class EnStrings extends AppStrings {
   @override String get scale1Day => '1d';
   @override String get scale1Week => '1wk';
   @override String get scale2Week => '2wk';
-
-  @override String category(Category c) {
-    switch (c) {
-      case Category.produce:  return 'Produce';
-      case Category.dairy:    return 'Dairy';
-      case Category.meat:     return 'Meat';
-      case Category.grain:    return 'Grains';
-      case Category.cleaning: return 'Cleaning';
-      case Category.beverage: return 'Beverage';
-      case Category.other:    return 'Other';
-    }
-  }
 
   @override String stockStatus(StockStatus s) {
     switch (s) {
@@ -439,6 +453,11 @@ const Map<String, String> _enData = {
   '粮油区': 'Pantry',
   '日用品': 'Household',
   '其他': 'Other',
+  // default category names (used only to seed names when app starts in en)
+  '果蔬': 'Produce',
+  '乳制品': 'Dairy',
+  '肉类': 'Meat',
+  '粮油': 'Grains',
   // sample product names
   '香蕉': 'Banana',
   '番茄': 'Tomato',
@@ -466,6 +485,4 @@ const Map<String, String> _enData = {
   '冷柜C2': 'Fridge C2',
   '冷柜C1': 'Fridge C1',
   '冷柜C3': 'Fridge C3',
-  // default reminder time
-  '每天 18:00': 'Daily 18:00',
 };

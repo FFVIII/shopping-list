@@ -7,6 +7,7 @@ part 'inventory_screen.widgets.dart';
 
 class InventoryScreen extends StatefulWidget {
   final List<InventoryItem> items;
+  final List<Category> categories;
   final int thresholdDays;
   final void Function(InventoryItem item) onAdd;
   final void Function(String id, int newEstimatedDays) onRestock;
@@ -26,6 +27,7 @@ class InventoryScreen extends StatefulWidget {
   const InventoryScreen({
     super.key,
     required this.items,
+    required this.categories,
     required this.thresholdDays,
     required this.onAdd,
     required this.onRestock,
@@ -56,7 +58,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
         .where((i) =>
             i.name.contains(q) ||
             i.shelfZone.contains(q) ||
-            i.category.label.contains(q))
+            i.category.name.contains(q))
         .toList();
   }
 
@@ -85,36 +87,16 @@ class _InventoryScreenState extends State<InventoryScreen> {
       ),
       builder: (ctx) => _AddInventorySheet(
         onAdd: widget.onAdd,
-        zoneFor: _zoneFor,
+        categories: widget.categories,
       ),
     );
   }
 
-  // ── Edit item info (name / quantity / shelf / category) ──────────────────────
-
-  void _showEditSheet(InventoryItem item) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => _EditInventorySheet(
-        item: item,
-        zoneFor: _zoneFor,
-        onConfirm: (name, quantity, shelfCode, category, zone) {
-          widget.onEdit(item.id, name, quantity, shelfCode, category, zone);
-        },
-      ),
-    );
-  }
-
-  // ── Item detail / reset sheet ────────────────────────────────────────────────
+  // ── Item detail + inline edit sheet ──────────────────────────────────────────
 
   void _showDetailSheet(InventoryItem item) {
-    final status = item.statusFor(widget.thresholdDays);
-    int selectedDays = item.estimatedDays;
+    // Shared draft mutated by the sheet's editable fields; committed on close.
+    final draft = _DetailDraft.from(item);
 
     showModalBottomSheet(
       context: context,
@@ -123,270 +105,29 @@ class _InventoryScreenState extends State<InventoryScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModal) {
-          final l = L10n.of(ctx);
-          return Padding(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 28,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Name + edit button + category chip
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      l.data(item.name),
-                      style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      _showEditSheet(item);
-                    },
-                    behavior: HitTestBehavior.opaque,
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 6),
-                      child: Icon(Icons.edit_outlined,
-                          size: 18, color: AppColors.textMuted),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: item.category.bgColor,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Text(
-                      l.category(item.category),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: item.category.color,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Icon(Icons.location_on_outlined,
-                      size: 13, color: AppColors.textDisabled),
-                  const SizedBox(width: 3),
-                  Text(
-                    [
-                      l.data(item.shelfZone),
-                      if (item.shelfCode != null) l.data(item.shelfCode!),
-                      if (item.quantityLabel.isNotEmpty)
-                        l.data(item.quantityLabel),
-                    ].join(' · '),
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.textMuted),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // Progress bar + status
-              ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: LinearProgressIndicator(
-                  value: item.progressRatio,
-                  backgroundColor: status.color.withValues(alpha: 0.12),
-                  color: status.color,
-                  minHeight: 8,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: status.bgColor,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      l.stockStatus(status),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: status.color,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    status == StockStatus.empty
-                        ? l.usedUp
-                        : l.daysRemainingLong(item.daysRemaining),
-                    style: TextStyle(fontSize: 13, color: status.color),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              const Divider(height: 1, color: Color(0xFFF0F0EA)),
-              const SizedBox(height: 16),
-              // Reset section
-              Text(
-                l.resetTimerSection,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                children: [3, 5, 7, 14, 30].map((d) {
-                  final sel = selectedDays == d;
-                  return GestureDetector(
-                    onTap: () => setModal(() => selectedDays = d),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: sel
-                            ? AppColors.brand
-                            : AppColors.fieldBg,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        l.days(d),
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: sel
-                              ? Colors.white
-                              : AppColors.textChip,
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-              SliderTheme(
-                data: SliderTheme.of(ctx).copyWith(
-                  activeTrackColor: AppColors.brand,
-                  inactiveTrackColor: AppColors.divider,
-                  thumbColor: AppColors.brand,
-                  overlayColor:
-                      AppColors.brand.withValues(alpha: 0.15),
-                  trackHeight: 3,
-                  thumbShape: const RoundSliderThumbShape(
-                      enabledThumbRadius: 10),
-                ),
-                child: Slider(
-                  value: selectedDays.toDouble().clamp(1, 60),
-                  min: 1,
-                  max: 60,
-                  divisions: 59,
-                  label: l.days(selectedDays),
-                  onChanged: (v) =>
-                      setModal(() => selectedDays = v.round()),
-                ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.brand,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                    elevation: 0,
-                  ),
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    widget.onRestock(item.id, selectedDays);
-                  },
-                  child: Text(
-                    l.resetTimer(selectedDays),
-                    style: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.brand,
-                    side: const BorderSide(
-                        color: AppColors.brand, width: 1.5),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                  ),
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    widget.onAddToShoppingList(item);
-                  },
-                  child: Text(
-                    l.addToRestockList,
-                    style: const TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: TextButton(
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.danger,
-                  ),
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    widget.onDelete(item.id);
-                  },
-                  child: Text(
-                    l.deleteFromInventory,
-                    style: const TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.w500),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-        },
+      builder: (ctx) => _InventoryDetailSheet(
+        item: item,
+        categories: widget.categories,
+        thresholdDays: widget.thresholdDays,
+        draft: draft,
+        onRestock: (days) => widget.onRestock(item.id, days),
+        onAddToList: () => widget.onAddToShoppingList(item),
+        onDelete: () => widget.onDelete(item.id),
       ),
-    );
-  }
-
-  String _zoneFor(Category cat) {
-    switch (cat) {
-      case Category.produce:
-        return '果蔬区';
-      case Category.dairy:
-      case Category.meat:
-        return '冷藏/乳制品';
-      case Category.grain:
-        return '粮油区';
-      case Category.cleaning:
-        return '日用品';
-      default:
-        return '其他';
-    }
+    ).whenComplete(() {
+      if (!draft.dirty) return;
+      final name = draft.name.trim();
+      if (name.isEmpty) return; // ignore invalid edits
+      final shelf = draft.shelfCode.trim();
+      widget.onEdit(
+        item.id,
+        name,
+        draft.quantity.trim(),
+        shelf.isEmpty ? null : shelf,
+        draft.category,
+        draft.zone,
+      );
+    });
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────────
@@ -618,7 +359,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   Widget _buildSectionHeader(String zone, int count, {Key? key}) {
     final l = L10n.of(context);
     final color =
-        kShelfZones[zone]?.dotColor ?? AppColors.textMuted;
+        defaultShelfZones.findByName(zone)?.dotColor ?? AppColors.textMuted;
     return Padding(
       key: key,
       padding: const EdgeInsets.fromLTRB(4, 14, 0, 6),

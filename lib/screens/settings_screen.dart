@@ -4,12 +4,28 @@ import '../models/item.dart';
 import '../l10n/l10n.dart';
 import '../l10n/app_language.dart';
 import '../l10n/app_strings.dart';
+import 'shelf_order_screen.dart';
+import 'category_manage_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   final AppSettings settings;
   final void Function(AppSettings) onChanged;
   final AppLanguage language;
   final void Function(AppLanguage) onLanguageChanged;
+  final List<ShelfZone> shelfZones;
+  final void Function(int oldIndex, int newIndex) onReorderShelfZones;
+  final List<Category> categories;
+  final void Function(String name, Color color, String shelfZone, int defaultDays)
+      onAddCategory;
+  final void Function(
+    String id,
+    String name,
+    Color color,
+    String shelfZone,
+    int defaultDays,
+  ) onEditCategory;
+  final void Function(String id) onDeleteCategory;
+  final void Function(int oldIndex, int newIndex) onReorderCategories;
 
   const SettingsScreen({
     super.key,
@@ -17,6 +33,13 @@ class SettingsScreen extends StatefulWidget {
     required this.onChanged,
     required this.language,
     required this.onLanguageChanged,
+    required this.shelfZones,
+    required this.onReorderShelfZones,
+    required this.categories,
+    required this.onAddCategory,
+    required this.onEditCategory,
+    required this.onDeleteCategory,
+    required this.onReorderCategories,
   });
 
   @override
@@ -32,7 +55,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _settings = AppSettings(
       reminderThresholdDays: widget.settings.reminderThresholdDays,
       restockReminderEnabled: widget.settings.restockReminderEnabled,
-      reminderTime: widget.settings.reminderTime,
+      reminderHour: widget.settings.reminderHour,
+      reminderMinute: widget.settings.reminderMinute,
     );
   }
 
@@ -55,8 +79,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildProCard(l),
             const SizedBox(height: 24),
             _buildSection(l.sectionCategoryShelf, [
-              _navRow(l.manageCategories, trailing: l.categoriesCount(12)),
-              _navRow(l.shelfOrder),
+              _navRow(
+                l.manageCategories,
+                trailing: l.categoriesCount(widget.categories.length),
+                onTap: _openCategoryManage,
+              ),
+              _navRow(l.shelfOrder, onTap: _openShelfOrder),
             ]),
             const SizedBox(height: 16),
             _buildSection(l.language, [
@@ -74,10 +102,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 (v) => _update(AppSettings(
                   reminderThresholdDays: _settings.reminderThresholdDays,
                   restockReminderEnabled: v,
-                  reminderTime: _settings.reminderTime,
+                  reminderHour: _settings.reminderHour,
+                  reminderMinute: _settings.reminderMinute,
                 )),
               ),
-              _navRow(l.reminderTimeLabel, trailing: l.data(_settings.reminderTime)),
+              _navRow(
+                l.reminderTimeLabel,
+                trailing: l.reminderTimeDisplay(
+                    _settings.reminderHour, _settings.reminderMinute),
+                onTap: _pickReminderTime,
+              ),
               _thresholdRow(),
             ]),
             const SizedBox(height: 16),
@@ -321,7 +355,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 reminderThresholdDays: v.round(),
                 restockReminderEnabled:
                     _settings.restockReminderEnabled,
-                reminderTime: _settings.reminderTime,
+                reminderHour: _settings.reminderHour,
+                reminderMinute: _settings.reminderMinute,
               )),
             ),
           ),
@@ -345,6 +380,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ],
     );
+  }
+
+  void _openCategoryManage() {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => CategoryManageScreen(
+        categories: widget.categories,
+        shelfZones: widget.shelfZones,
+        onAdd: widget.onAddCategory,
+        onEdit: widget.onEditCategory,
+        onDelete: widget.onDeleteCategory,
+        onReorder: widget.onReorderCategories,
+      ),
+    ));
+  }
+
+  void _openShelfOrder() {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => ShelfOrderScreen(
+        shelfZones: widget.shelfZones,
+        onReorder: widget.onReorderShelfZones,
+      ),
+    ));
+  }
+
+  Future<void> _pickReminderTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour: _settings.reminderHour,
+        minute: _settings.reminderMinute,
+      ),
+      builder: (ctx, child) => MediaQuery(
+        data: MediaQuery.of(ctx).copyWith(alwaysUse24HourFormat: true),
+        child: child!,
+      ),
+    );
+    if (picked == null) return;
+    _update(AppSettings(
+      reminderThresholdDays: _settings.reminderThresholdDays,
+      restockReminderEnabled: _settings.restockReminderEnabled,
+      reminderHour: picked.hour,
+      reminderMinute: picked.minute,
+    ));
   }
 
   void _showLanguageSheet(AppStrings l) {
