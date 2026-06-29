@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../models/item.dart';
 import '../l10n/l10n.dart';
+import '../widgets/toast.dart';
 
 part 'inventory_screen.widgets.dart';
 
@@ -23,6 +24,8 @@ class InventoryScreen extends StatefulWidget {
     Category category,
     String shelfZone,
   ) onEdit;
+  final void Function(List<String> ids) onBatchDelete;
+  final void Function(List<InventoryItem> items) onBatchAddToRestock;
 
   const InventoryScreen({
     super.key,
@@ -35,6 +38,8 @@ class InventoryScreen extends StatefulWidget {
     required this.onAddToShoppingList,
     required this.onReorder,
     required this.onEdit,
+    required this.onBatchDelete,
+    required this.onBatchAddToRestock,
   });
 
   @override
@@ -44,6 +49,10 @@ class InventoryScreen extends StatefulWidget {
 class _InventoryScreenState extends State<InventoryScreen> {
   final _searchCtrl = TextEditingController();
   String _query = '';
+
+  // Batch selection state
+  bool _batchMode = false;
+  final Set<String> _selected = {};
 
   @override
   void dispose() {
@@ -95,8 +104,22 @@ class _InventoryScreenState extends State<InventoryScreen> {
   // ── Item detail + inline edit sheet ──────────────────────────────────────────
 
   void _showDetailSheet(InventoryItem item) {
-    // Shared draft mutated by the sheet's editable fields; committed on close.
     final draft = _DetailDraft.from(item);
+    bool saved = false;
+
+    void commitEdit() {
+      final name = draft.name.trim();
+      if (name.isEmpty) return;
+      final shelf = draft.shelfCode.trim();
+      widget.onEdit(
+        item.id,
+        name,
+        draft.quantity.trim(),
+        shelf.isEmpty ? null : shelf,
+        draft.category,
+        draft.zone,
+      );
+    }
 
     showModalBottomSheet(
       context: context,
@@ -113,20 +136,37 @@ class _InventoryScreenState extends State<InventoryScreen> {
         onRestock: (days) => widget.onRestock(item.id, days),
         onAddToList: () => widget.onAddToShoppingList(item),
         onDelete: () => widget.onDelete(item.id),
+        onSave: () {
+          saved = true;
+          commitEdit();
+          if (mounted) showAppToast(context, L10n.of(context).savedToast);
+        },
       ),
     ).whenComplete(() {
-      if (!draft.dirty) return;
-      final name = draft.name.trim();
-      if (name.isEmpty) return; // ignore invalid edits
-      final shelf = draft.shelfCode.trim();
-      widget.onEdit(
-        item.id,
-        name,
-        draft.quantity.trim(),
-        shelf.isEmpty ? null : shelf,
-        draft.category,
-        draft.zone,
-      );
+      if (!draft.dirty || saved) return;
+      if (!mounted) return;
+      final l = L10n.of(context);
+      showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l.saveChangesTitle),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l.discardChanges),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: AppColors.brand),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l.save),
+            ),
+          ],
+        ),
+      ).then((shouldSave) {
+        if (!mounted) return;
+        if (shouldSave != true) return;
+        commitEdit();
+      });
     });
   }
 
@@ -150,6 +190,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       ? _buildReorderableGroupedList()
                       : _buildGroupedList(),
             ),
+            if (_batchMode) _buildBatchBar(),
           ],
         ),
       ),
@@ -184,26 +225,45 @@ class _InventoryScreenState extends State<InventoryScreen> {
               ],
             ),
           ),
-          GestureDetector(
-            onTap: _showAddSheet,
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: AppColors.brand,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.brand.withValues(alpha: 0.30),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
+          if (_batchMode)
+            GestureDetector(
+              onTap: () => setState(() {
+                _batchMode = false;
+                _selected.clear();
+              }),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                child: Text(
+                  l.batchDone,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.brand,
                   ),
-                ],
+                ),
               ),
-              child: const Icon(Icons.add_rounded,
-                  color: Colors.white, size: 24),
+            )
+          else
+            GestureDetector(
+              onTap: _showAddSheet,
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.brand,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.brand.withValues(alpha: 0.30),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.add_rounded,
+                    color: Colors.white, size: 24),
+              ),
             ),
-          ),
           const SizedBox(width: 4),
         ],
       ),
@@ -266,8 +326,22 @@ class _InventoryScreenState extends State<InventoryScreen> {
           ...entry.value.map((item) => _InventoryCard(
                 item: item,
                 thresholdDays: widget.thresholdDays,
-                onTap: () => _showDetailSheet(item),
+                onTap: _batchMode
+                    ? () => setState(() {
+                          if (_selected.contains(item.id)) {
+                            _selected.remove(item.id);
+                          } else {
+                            _selected.add(item.id);
+                          }
+                        })
+                    : () => _showDetailSheet(item),
                 onDelete: () => widget.onDelete(item.id),
+                batchMode: _batchMode,
+                selected: _selected.contains(item.id),
+                onHandleTap: () => setState(() {
+                  _batchMode = true;
+                  _selected.add(item.id);
+                }),
               )),
           const SizedBox(height: 6),
         ],
@@ -308,9 +382,23 @@ class _InventoryScreenState extends State<InventoryScreen> {
           key: Key('invc_${item.id}'),
           item: item,
           thresholdDays: widget.thresholdDays,
-          onTap: () => _showDetailSheet(item),
+          onTap: _batchMode
+              ? () => setState(() {
+                    if (_selected.contains(item.id)) {
+                      _selected.remove(item.id);
+                    } else {
+                      _selected.add(item.id);
+                    }
+                  })
+              : () => _showDetailSheet(item),
           onDelete: () => widget.onDelete(item.id),
-          reorderIndex: i,
+          reorderIndex: _batchMode ? null : i,
+          batchMode: _batchMode,
+          selected: _selected.contains(item.id),
+          onHandleTap: () => setState(() {
+            _batchMode = true;
+            _selected.add(item.id);
+          }),
         );
       },
       onReorderItem: (oldIndex, newIndex) =>
@@ -321,6 +409,139 @@ class _InventoryScreenState extends State<InventoryScreen> {
         borderRadius: BorderRadius.circular(14),
         shadowColor: Colors.black26,
         child: child,
+      ),
+    );
+  }
+
+  Widget _buildBatchBar() {
+    final l = L10n.of(context);
+    final allIds = widget.items.map((i) => i.id).toSet();
+    final allSelected = allIds.isNotEmpty && _selected.containsAll(allIds);
+    final hasSelection = _selected.isNotEmpty;
+    final selectedItems = widget.items.where((i) => _selected.contains(i.id)).toList();
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        boxShadow: [
+          BoxShadow(color: Color(0x12000000), blurRadius: 12, offset: Offset(0, -3)),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            l.selectedCount(_selected.length),
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              // Select all
+              GestureDetector(
+                onTap: () => setState(() {
+                  if (allSelected) {
+                    _selected.clear();
+                  } else {
+                    _selected.addAll(allIds);
+                  }
+                }),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: allSelected ? AppColors.brand.withValues(alpha: 0.12) : AppColors.fieldBg,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    l.selectAll,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: allSelected ? AppColors.brand : AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Add to restock
+              GestureDetector(
+                onTap: hasSelection ? () {
+                  widget.onBatchAddToRestock(selectedItems);
+                  setState(() {
+                    _selected.clear();
+                    _batchMode = false;
+                  });
+                } : null,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: hasSelection ? AppColors.brand.withValues(alpha: 0.12) : AppColors.fieldBg,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    l.batchAddToRestock,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: hasSelection ? AppColors.brand : AppColors.textDisabled,
+                    ),
+                  ),
+                ),
+              ),
+              const Spacer(),
+              // Delete
+              GestureDetector(
+                onTap: hasSelection ? () async {
+                  final ok = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: Text(l.selectedCount(_selected.length)),
+                      content: const Text('确定要删除吗？此操作无法撤销。'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: Text(l.cancel),
+                        ),
+                        TextButton(
+                          style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: Text(l.delete),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (ok != true) return;
+                  widget.onBatchDelete(_selected.toList());
+                  setState(() {
+                    _selected.clear();
+                    _batchMode = false;
+                  });
+                } : null,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: hasSelection ? AppColors.danger.withValues(alpha: 0.10) : AppColors.fieldBg,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    l.delete,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: hasSelection ? AppColors.danger : AppColors.textDisabled,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

@@ -8,6 +8,9 @@ class _InventoryCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onDelete;
   final int? reorderIndex;
+  final bool batchMode;
+  final bool selected;
+  final VoidCallback? onHandleTap;
 
   const _InventoryCard({
     super.key,
@@ -16,6 +19,9 @@ class _InventoryCard extends StatelessWidget {
     required this.onTap,
     required this.onDelete,
     this.reorderIndex,
+    this.batchMode = false,
+    this.selected = false,
+    this.onHandleTap,
   });
 
   @override
@@ -24,18 +30,13 @@ class _InventoryCard extends StatelessWidget {
     final status = item.statusFor(thresholdDays);
     final remaining = item.daysRemaining;
     final dn = l.data(item.name);
-    final barColor =
-        defaultShelfZones.findByName(item.shelfZone)?.dotColor ?? item.category.color;
     final q = l.data(item.quantityLabel);
-    final code = item.shelfCode != null ? l.data(item.shelfCode!) : '';
-    final meta = [
-      if (q.isNotEmpty) q,
-      if (code.isNotEmpty) code,
-    ].join(' · ');
+    final endDate = item.purchasedAt.add(Duration(days: item.estimatedDays));
+    final endDateStr = '到期: ${endDate.month}/${endDate.day}';
 
     return Dismissible(
       key: Key('inv_${item.id}'),
-      direction: DismissDirection.endToStart,
+      direction: batchMode ? DismissDirection.none : DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 18),
@@ -52,6 +53,7 @@ class _InventoryCard extends StatelessWidget {
         onTap: onTap,
         child: Container(
           margin: const EdgeInsets.only(bottom: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(14),
@@ -63,119 +65,166 @@ class _InventoryCard extends StatelessWidget {
               ),
             ],
           ),
-          child: IntrinsicHeight(
-            child: Row(
-              children: [
-                // Left color bar
-                Container(
-                  width: 5,
+          child: Row(
+            children: [
+              // Batch selection circle
+              if (batchMode) ...[
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  width: 24,
+                  height: 24,
                   decoration: BoxDecoration(
-                    color: barColor,
-                    borderRadius: const BorderRadius.horizontal(
-                        left: Radius.circular(14)),
+                    shape: BoxShape.circle,
+                    color: selected ? AppColors.brand : Colors.transparent,
+                    border: selected
+                        ? null
+                        : Border.all(color: AppColors.border, width: 1.5),
                   ),
+                  child: selected
+                      ? const Icon(Icons.check_rounded, color: Colors.white, size: 15)
+                      : null,
                 ),
-                const SizedBox(width: 12),
-                // Thumbnail
-                Container(
-                  width: 48,
-                  height: 48,
-                  margin: const EdgeInsets.symmetric(vertical: 14),
-                  decoration: BoxDecoration(
-                    color: item.category.bgColor,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Center(
-                    child: Text(
-                      dn.length > 2 ? dn.substring(0, 2) : dn,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: item.category.color,
-                      ),
+                const SizedBox(width: 10),
+              ],
+              // Muted thumbnail
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: item.category.bgColor,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Center(
+                  child: Text(
+                    dn.isNotEmpty ? dn.substring(0, 1) : '',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: item.category.color.withValues(alpha: 0.45),
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                // Content
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
+              ),
+              const SizedBox(width: 12),
+              // Name + quantity
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
                       children: [
-                        Text(
-                          dn,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
+                        Flexible(
+                          child: Text(
+                            dn,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
                           ),
                         ),
-                        if (meta.isNotEmpty) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            meta,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textMuted,
+                        if (q.isNotEmpty) ...[
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              q,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textMuted,
+                              ),
                             ),
                           ),
                         ],
-                        const SizedBox(height: 8),
-                        _ProgressBar(
-                          ratio: item.progressRatio,
-                          color: status.color,
-                        ),
-                        const SizedBox(height: 5),
-                        Text(
-                          status == StockStatus.empty
-                              ? l.usedUp
-                              : (remaining <= 3
-                                  ? l.daysShortApprox(remaining)
-                                  : l.daysShort(remaining)),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: status.color,
-                          ),
-                        ),
                       ],
                     ),
-                  ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '上次: ${item.purchasedAt.month}/${item.purchasedAt.day}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textDisabled,
+                      ),
+                    ),
+                    if (item.shelfCode != null && item.shelfCode!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: item.category.color.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          item.shelfCode!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: item.category.color,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-                const SizedBox(width: 10),
-                // Status badge
-                Container(
-                  margin: EdgeInsets.only(right: reorderIndex == null ? 14 : 6),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: status.bgColor,
-                    borderRadius: BorderRadius.circular(20),
+              ),
+              const SizedBox(width: 12),
+              // Right: date / progress bar / days:status
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    endDateStr,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textMuted,
+                    ),
                   ),
-                  child: Text(
-                    l.stockStatus(status),
+                  const SizedBox(height: 4),
+                  SizedBox(
+                    width: 64,
+                    child: _ProgressBar(
+                      ratio: item.progressRatio,
+                      color: status.color,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    status == StockStatus.empty
+                        ? l.usedUp
+                        : '${l.stockStatus(status)}(${l.daysShort(remaining.clamp(0, 999))})',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: status.color,
                     ),
                   ),
-                ),
-                // Drag handle (only in reorderable mode)
-                if (reorderIndex != null)
-                  ReorderableDragStartListener(
+                ],
+              ),
+              // Drag handle (tap = batch mode, drag = reorder)
+              if (reorderIndex != null && !batchMode)
+                GestureDetector(
+                  onTap: onHandleTap,
+                  child: ReorderableDragStartListener(
                     index: reorderIndex!,
                     child: const Padding(
-                      padding: EdgeInsets.only(right: 10, left: 2),
+                      padding: EdgeInsets.only(left: 8),
                       child: Icon(Icons.drag_handle_rounded,
                           size: 20, color: AppColors.border),
                     ),
                   ),
-              ],
-            ),
+                )
+              else
+                const SizedBox(width: 2),
+            ],
           ),
         ),
       ),
@@ -230,6 +279,7 @@ class _InventoryDetailSheet extends StatefulWidget {
   final void Function(int days) onRestock;
   final VoidCallback onAddToList;
   final VoidCallback onDelete;
+  final VoidCallback onSave;
 
   const _InventoryDetailSheet({
     required this.item,
@@ -239,6 +289,7 @@ class _InventoryDetailSheet extends StatefulWidget {
     required this.onRestock,
     required this.onAddToList,
     required this.onDelete,
+    required this.onSave,
   });
 
   @override
@@ -249,7 +300,14 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
   late final TextEditingController _nameCtrl;
   late final TextEditingController _qtyCtrl;
   late final TextEditingController _shelfCtrl;
+  late final TextEditingController _customDaysCtrl;
   late int _selectedDays;
+  bool _usingCustom = false;
+  bool _resetPending = false;
+  bool _addedToList = false;
+  bool _customDaysOverflow = false;
+
+  static const _maxCustomDays = 1000;
 
   _DetailDraft get _draft => widget.draft;
 
@@ -259,6 +317,7 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
     _nameCtrl = TextEditingController(text: _draft.name);
     _qtyCtrl = TextEditingController(text: _draft.quantity);
     _shelfCtrl = TextEditingController(text: _draft.shelfCode);
+    _customDaysCtrl = TextEditingController();
     _selectedDays = widget.item.estimatedDays;
   }
 
@@ -267,6 +326,7 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
     _nameCtrl.dispose();
     _qtyCtrl.dispose();
     _shelfCtrl.dispose();
+    _customDaysCtrl.dispose();
     super.dispose();
   }
 
@@ -282,6 +342,8 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         isDense: true,
+        counterStyle: const TextStyle(
+            fontSize: 10, color: AppColors.textDisabled),
       );
 
   Widget _label(String text) => Padding(
@@ -300,6 +362,14 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
   Widget build(BuildContext context) {
     final l = L10n.of(context);
     final status = widget.item.statusFor(widget.thresholdDays);
+    final previewStatus = _resetPending
+        ? (_selectedDays <= 0
+            ? StockStatus.empty
+            : _selectedDays <= widget.thresholdDays
+                ? StockStatus.low
+                : StockStatus.sufficient)
+        : status;
+    final previewDays = _resetPending ? _selectedDays : widget.item.daysRemaining;
     return Padding(
       padding: EdgeInsets.only(
         left: 20,
@@ -312,9 +382,102 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ── Top-right action buttons ──
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                GestureDetector(
+                  onTap: _addedToList
+                      ? null
+                      : () {
+                          widget.onAddToList();
+                          setState(() => _addedToList = true);
+                        },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: _addedToList
+                          ? AppColors.fieldBg
+                          : AppColors.brand.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      _addedToList ? l.alreadyInList : l.addToRestockList,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: _addedToList ? AppColors.textMuted : AppColors.brand,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context);
+                    widget.onSave();
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.brand,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      l.save,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.location_on_outlined,
+                    size: 14, color: AppColors.textDisabled),
+                const SizedBox(width: 4),
+                Text(
+                  l.shelfZoneInline(l.data(_draft.zone)),
+                  style: const TextStyle(
+                      fontSize: 12, color: AppColors.textMuted),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: previewStatus.bgColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    l.stockStatus(previewStatus),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: previewStatus.color,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  previewStatus == StockStatus.empty
+                      ? l.usedUp
+                      : l.daysRemainingLong(previewDays),
+                  style: TextStyle(fontSize: 12, color: previewStatus.color),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
             // ── Editable header ──
             TextField(
               controller: _nameCtrl,
+              maxLength: 10,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
               decoration: _dec(l.productNameHint),
               onChanged: (v) {
@@ -330,6 +493,7 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                     padding: const EdgeInsets.only(right: 5),
                     child: TextField(
                       controller: _qtyCtrl,
+                      maxLength: 8,
                       style: const TextStyle(fontSize: 15),
                       decoration: _dec(l.quantityFieldLabel),
                       onChanged: (v) {
@@ -345,6 +509,7 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                     padding: const EdgeInsets.only(left: 5, top: 10),
                     child: TextField(
                       controller: _shelfCtrl,
+                      maxLength: 10,
                       style: const TextStyle(fontSize: 15),
                       decoration: _dec(l.shelfCodeFieldLabel),
                       onChanged: (v) {
@@ -389,59 +554,7 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                 );
               }).toList(),
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.location_on_outlined,
-                    size: 14, color: AppColors.textDisabled),
-                const SizedBox(width: 4),
-                Text(
-                  l.shelfZoneInline(l.data(_draft.zone)),
-                  style: const TextStyle(
-                      fontSize: 12, color: AppColors.textMuted),
-                ),
-              ],
-            ),
             const SizedBox(height: 16),
-            // ── Progress + status (read-only) ──
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: LinearProgressIndicator(
-                value: widget.item.progressRatio,
-                backgroundColor: status.color.withValues(alpha: 0.12),
-                color: status.color,
-                minHeight: 8,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: status.bgColor,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    l.stockStatus(status),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: status.color,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  status == StockStatus.empty
-                      ? l.usedUp
-                      : l.daysRemainingLong(widget.item.daysRemaining),
-                  style: TextStyle(fontSize: 13, color: status.color),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
             const Divider(height: 1, color: Color(0xFFF0F0EA)),
             const SizedBox(height: 16),
             // ── Reset section ──
@@ -454,98 +567,134 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
               ),
             ),
             const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 6,
-              children: [3, 5, 7, 14, 30].map((d) {
-                final sel = _selectedDays == d;
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedDays = d),
-                  child: AnimatedContainer(
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  ...[3, 5, 7, 14, 30].map((d) {
+                    final sel = !_usingCustom && _selectedDays == d;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedDays = d;
+                            _customDaysCtrl.clear();
+                            _usingCustom = false;
+                            _resetPending = true;
+                          });
+                          widget.onRestock(d);
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: sel ? AppColors.brand : AppColors.fieldBg,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            l.days(d),
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: sel ? Colors.white : AppColors.textChip,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                  // Custom days chip
+                  AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
                     decoration: BoxDecoration(
-                      color: sel ? AppColors.brand : AppColors.fieldBg,
+                      color: _usingCustom ? AppColors.brand : AppColors.fieldBg,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Text(
-                      l.days(d),
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: sel ? Colors.white : AppColors.textChip,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 44,
+                          height: 36,
+                          child: TextField(
+                            controller: _customDaysCtrl,
+                            keyboardType: TextInputType.number,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: _usingCustom ? Colors.white : AppColors.textChip,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: l.customDaysLabel,
+                              hintStyle: TextStyle(
+                                fontSize: 12,
+                                color: _usingCustom
+                                    ? Colors.white70
+                                    : AppColors.textDisabled,
+                              ),
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding:
+                                  const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                            onChanged: (v) {
+                              final n = int.tryParse(v.trim());
+                              final overflow = n != null && n > _maxCustomDays;
+                              setState(() {
+                                _usingCustom = v.trim().isNotEmpty;
+                                _resetPending = _usingCustom;
+                                _customDaysOverflow = overflow;
+                                if (n != null && n > 0 && !overflow) {
+                                  _selectedDays = n;
+                                }
+                              });
+                            },
+                            onSubmitted: (v) {
+                              final raw = int.tryParse(v.trim());
+                              if (raw == null || raw <= 0) return;
+                              final n = raw.clamp(1, _maxCustomDays);
+                              if (raw > _maxCustomDays) {
+                                _customDaysCtrl.text = '$n';
+                                _customDaysCtrl.selection =
+                                    TextSelection.collapsed(
+                                        offset: '$n'.length);
+                              }
+                              setState(() {
+                                _selectedDays = n;
+                                _usingCustom = true;
+                                _resetPending = true;
+                                _customDaysOverflow = false;
+                              });
+                              widget.onRestock(n);
+                            },
+                          ),
+                        ),
+                        Text(
+                          l.dayUnit,
+                          style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: _usingCustom ? Colors.white : AppColors.textChip,
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                );
-              }).toList(),
-            ),
-            SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                activeTrackColor: AppColors.brand,
-                inactiveTrackColor: AppColors.divider,
-                thumbColor: AppColors.brand,
-                overlayColor: AppColors.brand.withValues(alpha: 0.15),
-                trackHeight: 3,
-                thumbShape:
-                    const RoundSliderThumbShape(enabledThumbRadius: 10),
-              ),
-              child: Slider(
-                value: _selectedDays.toDouble().clamp(1, 60),
-                min: 1,
-                max: 60,
-                divisions: 59,
-                label: l.days(_selectedDays),
-                onChanged: (v) => setState(() => _selectedDays = v.round()),
+                ),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.brand,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                  elevation: 0,
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                  widget.onRestock(_selectedDays);
-                },
-                child: Text(
-                  l.resetTimer(_selectedDays),
-                  style: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w600),
-                ),
+            if (_customDaysOverflow) ...[
+              const SizedBox(height: 6),
+              Text(
+                l.customDaysMaxHint,
+                style: const TextStyle(fontSize: 12, color: AppColors.danger),
               ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              height: 44,
-              child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.brand,
-                  side: const BorderSide(color: AppColors.brand, width: 1.5),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                  widget.onAddToList();
-                },
-                child: Text(
-                  l.addToRestockList,
-                  style: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w600),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
+            ],
+            const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               height: 44,
@@ -587,14 +736,19 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
   final _nameCtrl = TextEditingController();
   final _qtyCtrl = TextEditingController();
   final _shelfCtrl = TextEditingController();
+  final _customDaysCtrl = TextEditingController();
   late Category _category = widget.categories.first;
   late int _days = _category.defaultDays;
+  bool _usingCustom = false;
+  bool _customDaysOverflow = false;
+  static const _maxCustomDays = 1000;
 
   @override
   void dispose() {
     _nameCtrl.dispose();
     _qtyCtrl.dispose();
     _shelfCtrl.dispose();
+    _customDaysCtrl.dispose();
     super.dispose();
   }
 
@@ -627,6 +781,8 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         isDense: true,
+        counterStyle: const TextStyle(
+            fontSize: 10, color: AppColors.textDisabled),
       );
 
   @override
@@ -647,10 +803,11 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
             l.addToInventoryTitle,
             style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           TextField(
             controller: _nameCtrl,
             autofocus: true,
+            maxLength: 10,
             style: const TextStyle(fontSize: 15),
             decoration: InputDecoration(
               hintText: l.productNameHint,
@@ -664,16 +821,19 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               isDense: true,
+              counterStyle: const TextStyle(
+                  fontSize: 10, color: AppColors.textDisabled),
             ),
             onChanged: (_) => setState(() {}),
             onSubmitted: (_) => _submit(),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
                 child: TextField(
                   controller: _qtyCtrl,
+                  maxLength: 8,
                   style: const TextStyle(fontSize: 15),
                   decoration: _fieldDecoration(l.quantityFieldLabel),
                 ),
@@ -682,13 +842,14 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
               Expanded(
                 child: TextField(
                   controller: _shelfCtrl,
+                  maxLength: 10,
                   style: const TextStyle(fontSize: 15),
                   decoration: _fieldDecoration(l.shelfCodeFieldLabel),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           Text(
             l.categoryLabel,
             style: const TextStyle(
@@ -725,7 +886,7 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
               );
             }).toList(),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           Text(
             l.estimatedUseDays,
             style: const TextStyle(
@@ -735,54 +896,124 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
             ),
           ),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
-            children: [3, 5, 7, 14, 30].map((d) {
-              final sel = _days == d;
-              return GestureDetector(
-                onTap: () => setState(() => _days = d),
-                child: AnimatedContainer(
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                ...[3, 5, 7, 14, 30].map((d) {
+                  final sel = !_usingCustom && _days == d;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: GestureDetector(
+                      onTap: () => setState(() {
+                        _days = d;
+                        _customDaysCtrl.clear();
+                        _usingCustom = false;
+                      }),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: sel ? AppColors.brand : AppColors.fieldBg,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          l.days(d),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: sel ? Colors.white : AppColors.textChip,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+                // Custom days chip
+                AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
                   decoration: BoxDecoration(
-                    color: sel
-                        ? AppColors.brand
-                        : AppColors.fieldBg,
+                    color: _usingCustom ? AppColors.brand : AppColors.fieldBg,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text(
-                    l.days(d),
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: sel ? Colors.white : AppColors.textChip,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 44,
+                        height: 36,
+                        child: TextField(
+                          controller: _customDaysCtrl,
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: _usingCustom ? Colors.white : AppColors.textChip,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: l.customDaysLabel,
+                            hintStyle: TextStyle(
+                              fontSize: 12,
+                              color: _usingCustom
+                                  ? Colors.white70
+                                  : AppColors.textDisabled,
+                            ),
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding:
+                                const EdgeInsets.symmetric(vertical: 10),
+                          ),
+                          onChanged: (v) {
+                            final n = int.tryParse(v.trim());
+                            final overflow = n != null && n > _maxCustomDays;
+                            setState(() {
+                              _usingCustom = v.trim().isNotEmpty;
+                              _customDaysOverflow = overflow;
+                              if (n != null && n > 0 && !overflow) _days = n;
+                            });
+                          },
+                          onSubmitted: (v) {
+                            final raw = int.tryParse(v.trim());
+                            if (raw == null || raw <= 0) return;
+                            final n = raw.clamp(1, _maxCustomDays);
+                            if (raw > _maxCustomDays) {
+                              _customDaysCtrl.text = '$n';
+                              _customDaysCtrl.selection =
+                                  TextSelection.collapsed(offset: '$n'.length);
+                            }
+                            setState(() {
+                              _days = n;
+                              _usingCustom = true;
+                              _customDaysOverflow = false;
+                            });
+                          },
+                        ),
+                      ),
+                      Text(
+                        l.dayUnit,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: _usingCustom ? Colors.white : AppColors.textChip,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              );
-            }).toList(),
-          ),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: AppColors.brand,
-              inactiveTrackColor: AppColors.divider,
-              thumbColor: AppColors.brand,
-              overlayColor: AppColors.brand.withValues(alpha: 0.15),
-              trackHeight: 3,
-              thumbShape:
-                  const RoundSliderThumbShape(enabledThumbRadius: 10),
-            ),
-            child: Slider(
-              value: _days.toDouble().clamp(1, 60),
-              min: 1,
-              max: 60,
-              divisions: 59,
-              label: l.days(_days),
-              onChanged: (v) => setState(() => _days = v.round()),
+              ],
             ),
           ),
+          if (_customDaysOverflow) ...[
+            const SizedBox(height: 6),
+            Text(
+              l.customDaysMaxHint,
+              style: const TextStyle(fontSize: 12, color: AppColors.danger),
+            ),
+          ],
+          const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
             height: 48,
