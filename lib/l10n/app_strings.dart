@@ -86,6 +86,7 @@ abstract class AppStrings {
   String get productNameHint; // "商品名称"
   String get categoryLabel; // "分类"
   String get estimatedUseDays; // "预计使用天数"
+  String estimatedDaysSelected(int n); // "预计能用 N 天"
   String get addToInventoryBtn; // "加入库存"
 
   // ── Reminder screen ──
@@ -128,6 +129,13 @@ abstract class AppStrings {
   String get reminderTimeLabel;
   String reminderTimeDisplay(int hour, int minute);
   String get advanceDays; // "提前天数"
+  String get customDaysLabel;  // "自定义" / "Custom"
+  String get dayUnit;          // "天" / "d"
+  String get saveChangesTitle; // "保存修改？" / "Save changes?"
+  String get discardChanges;   // "不保存" / "Discard"
+  String get savedToast;       // "已保存" / "Saved"
+  String get restockToast;     // "计时已重置" / "Timer reset"
+  String get customDaysMaxHint; // "最多 1000 天" / "Max 1000 days"
   String get sectionData;
   String get backupExport;
   String get importRestore;
@@ -137,6 +145,14 @@ abstract class AppStrings {
   String get languageZh; // "中文"
   String get languageEn; // "English"
   String labelForLanguage(/* AppLanguage */ Object lang); // trailing display
+
+  // ── Batch operations ──
+  String get batchEdit;         // "编辑" / "Edit"
+  String get batchDone;         // "完成" / "Done"
+  String get selectAll;         // "全选" / "Select all"
+  String get batchMarkBought;   // "勾选已购" / "Mark bought"
+  String get batchAddToRestock; // "加入补货" / "Add to restock"
+  String selectedCount(int n);  // "已选 N 件" / "N selected"
 
   // ── Enum + data lookups ──
   String stockStatus(StockStatus s);
@@ -161,9 +177,9 @@ class ZhStrings extends AppStrings {
       '已买到的 $bought 件会从清单移除，未买到的会保留在清单里。';
   @override String get cancel => '取消';
   @override String get smartHint =>
-      '智能模式按货架分组方便采购。勾选商品 = 已买到，会记录到库存并开始用量计时；点「完成购物」后已买到的会从清单移除。';
+      '勾选 = 已买到并记入库存；点「完成购物」清除已买商品。';
   @override String get modeSimple => '简单';
-  @override String get modeSmart => '智能';
+  @override String get modeSmart => '计划';
   @override String get budgetMode => '记账';
   @override String get unitPriceFieldLabel => '单价';
   @override String get budgetTotalLabel => '合计';
@@ -226,6 +242,7 @@ class ZhStrings extends AppStrings {
   @override String get categoryLabel => '分类';
   @override String get estimatedUseDays => '预计使用天数';
   @override String get addToInventoryBtn => '加入库存';
+  @override String estimatedDaysSelected(int n) => '预计能用 $n 天';
 
   @override String get reminderTitle => '提醒';
   @override String reminderSummary(int r, int e) => '$r件该补货 · $e件即将用完';
@@ -248,7 +265,7 @@ class ZhStrings extends AppStrings {
   @override String get proDesc => '拍照识别配图 · 快捷加项组件 · 多设备同步备份';
   @override String get proCta => '查看 Pro 功能 →';
   @override String get sectionCategoryShelf => '分类与货架';
-  @override String get manageCategories => '管理分类';
+  @override String get manageCategories => '商品分类';
   @override String get addCategoryTitle => '新建分类';
   @override String get editCategoryTitle => '编辑分类';
   @override String get categoryNameLabel => '分类名称';
@@ -266,6 +283,13 @@ class ZhStrings extends AppStrings {
   @override String reminderTimeDisplay(int h, int m) =>
       '每天 ${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
   @override String get advanceDays => '提前天数';
+  @override String get customDaysLabel => '自定义';
+  @override String get dayUnit => '天';
+  @override String get saveChangesTitle => '保存修改？';
+  @override String get discardChanges => '不保存';
+  @override String get savedToast => '已保存';
+  @override String get restockToast => '计时已重置';
+  @override String get customDaysMaxHint => '最多 1000 天';
   @override String get sectionData => '数据';
   @override String get backupExport => '备份导出';
   @override String get importRestore => '导入恢复';
@@ -279,6 +303,13 @@ class ZhStrings extends AppStrings {
   @override String get scale1Day => '1天';
   @override String get scale1Week => '1周';
   @override String get scale2Week => '2周';
+
+  @override String get batchEdit => '编辑';
+  @override String get batchDone => '完成';
+  @override String get selectAll => '全选';
+  @override String get batchMarkBought => '勾选已购';
+  @override String get batchAddToRestock => '加入补货';
+  @override String selectedCount(int n) => '已选 $n 件';
 
   @override String stockStatus(StockStatus s) {
     switch (s) {
@@ -308,9 +339,9 @@ class EnStrings extends AppStrings {
       '$bought bought item(s) will be removed from the list; unbought ones stay.';
   @override String get cancel => 'Cancel';
   @override String get smartHint =>
-      'Smart mode groups items by aisle for easier shopping. Checking an item = bought: it is logged to inventory and starts a usage timer. "Done" removes bought items from the list.';
+      'Check = bought & logged to inventory. "Done" removes checked items.';
   @override String get modeSimple => 'Simple';
-  @override String get modeSmart => 'Smart';
+  @override String get modeSmart => 'Plan';
   @override String get budgetMode => 'Budget';
   @override String get unitPriceFieldLabel => 'Unit price';
   @override String get budgetTotalLabel => 'Total';
@@ -373,6 +404,7 @@ class EnStrings extends AppStrings {
   @override String get categoryLabel => 'Category';
   @override String get estimatedUseDays => 'Estimated days of use';
   @override String get addToInventoryBtn => 'Add to inventory';
+  @override String estimatedDaysSelected(int n) => 'Will last $n days';
 
   @override String get reminderTitle => 'Alerts';
   @override String reminderSummary(int r, int e) => '$r to restock · $e running low';
@@ -395,7 +427,7 @@ class EnStrings extends AppStrings {
   @override String get proDesc => 'Photo recognition · Quick-add widget · Multi-device sync';
   @override String get proCta => 'See Pro features →';
   @override String get sectionCategoryShelf => 'Categories & aisles';
-  @override String get manageCategories => 'Manage categories';
+  @override String get manageCategories => 'Product categories';
   @override String get addCategoryTitle => 'New category';
   @override String get editCategoryTitle => 'Edit category';
   @override String get categoryNameLabel => 'Name';
@@ -414,6 +446,13 @@ class EnStrings extends AppStrings {
   @override String reminderTimeDisplay(int h, int m) =>
       'Daily ${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
   @override String get advanceDays => 'Lead days';
+  @override String get customDaysLabel => 'Custom';
+  @override String get dayUnit => 'd';
+  @override String get saveChangesTitle => 'Save changes?';
+  @override String get discardChanges => 'Discard';
+  @override String get savedToast => 'Saved';
+  @override String get restockToast => 'Timer reset';
+  @override String get customDaysMaxHint => 'Max 1000 days';
   @override String get sectionData => 'Data';
   @override String get backupExport => 'Backup & export';
   @override String get importRestore => 'Import & restore';
@@ -427,6 +466,13 @@ class EnStrings extends AppStrings {
   @override String get scale1Day => '1d';
   @override String get scale1Week => '1wk';
   @override String get scale2Week => '2wk';
+
+  @override String get batchEdit => 'Edit';
+  @override String get batchDone => 'Done';
+  @override String get selectAll => 'Select all';
+  @override String get batchMarkBought => 'Mark bought';
+  @override String get batchAddToRestock => 'Add to restock';
+  @override String selectedCount(int n) => '$n selected';
 
   @override String stockStatus(StockStatus s) {
     switch (s) {

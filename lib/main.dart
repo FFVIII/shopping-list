@@ -88,6 +88,7 @@ class AppShell extends StatefulWidget {
 
 class _AppShellState extends State<AppShell> {
   int _tab = 0;
+  int _smartModeRequest = 0;
   late List<ShoppingItem> _shoppingSimple;
   late List<ShoppingItem> _shopping;
   late List<InventoryItem> _inventory;
@@ -120,20 +121,19 @@ class _AppShellState extends State<AppShell> {
 
   // ── 分类：增 / 改 / 删 / 重排 ─────────────────────────────────────────────────
 
-  void _addCategory(String name, Color color, String shelfZone, int defaultDays) {
+  Category _addCategory(String name, Color color, String shelfZone, int defaultDays) {
+    final cat = Category(
+      id: 'cat_${DateTime.now().millisecondsSinceEpoch}',
+      name: name,
+      color: color,
+      bgColor: Category.tintOf(color),
+      shelfZone: shelfZone,
+      defaultDays: defaultDays,
+    );
     setState(() {
-      _categories = [
-        ..._categories,
-        Category(
-          id: 'cat_${DateTime.now().millisecondsSinceEpoch}',
-          name: name,
-          color: color,
-          bgColor: Category.tintOf(color),
-          shelfZone: shelfZone,
-          defaultDays: defaultDays,
-        ),
-      ];
+      _categories = [..._categories, cat];
     });
+    return cat;
   }
 
   void _editCategory(
@@ -309,43 +309,58 @@ class _AppShellState extends State<AppShell> {
       builder: (ctx) => _DaysSheet(
         item: item,
         initialDays: item.category.defaultDays,
-        onConfirm: (days) => _confirmPurchase(item, days),
+        categories: _categories,
+        onConfirm: (days, name, quantity, shelfCode, category, zone) =>
+            _confirmPurchase(item, days, name, quantity, shelfCode, category, zone),
       ),
     );
   }
 
-  void _confirmPurchase(ShoppingItem shoppingItem, int estimatedDays) {
+  void _confirmPurchase(
+    ShoppingItem shoppingItem,
+    int estimatedDays,
+    String name,
+    String quantity,
+    String? shelfCode,
+    Category category,
+    String zone,
+  ) {
     setState(() {
-      // Mark shopping item as checked
-      final idx =
-          _shopping.indexWhere((i) => i.id == shoppingItem.id);
+      // Update shopping item fields with any edits
+      final idx = _shopping.indexWhere((i) => i.id == shoppingItem.id);
       if (idx != -1) {
-        _shopping[idx].checked = true;
-        _shopping[idx].addedToInventory = true;
+        _shopping[idx]
+          ..checked = true
+          ..addedToInventory = true
+          ..name = name
+          ..quantityLabel = quantity
+          ..shelfCode = shelfCode
+          ..category = category
+          ..shelfZone = zone;
       }
 
-      // Update or add inventory entry
-      final invIdx =
-          _inventory.indexWhere((i) => i.name == shoppingItem.name);
+      // Update or add inventory entry using the (possibly edited) data
+      final invIdx = _inventory.indexWhere((i) => i.name == shoppingItem.name);
       if (invIdx != -1) {
-        // Reset the timer and refresh quantity / shelf from the purchase
-        _inventory[invIdx].purchasedAt = DateTime.now();
-        _inventory[invIdx].estimatedDays = estimatedDays;
-        _inventory[invIdx].quantityLabel = shoppingItem.quantityLabel;
-        if (shoppingItem.shelfCode != null) {
-          _inventory[invIdx].shelfCode = shoppingItem.shelfCode;
-        }
+        _inventory[invIdx]
+          ..purchasedAt = DateTime.now()
+          ..estimatedDays = estimatedDays
+          ..name = name
+          ..quantityLabel = quantity
+          ..shelfCode = shelfCode
+          ..category = category
+          ..shelfZone = zone;
         _inventory = List<InventoryItem>.from(_inventory);
       } else {
         _inventory = [
           ..._inventory,
           InventoryItem(
             id: 'inv_${DateTime.now().millisecondsSinceEpoch}',
-            name: shoppingItem.name,
-            category: shoppingItem.category,
-            shelfZone: shoppingItem.shelfZone,
-            shelfCode: shoppingItem.shelfCode,
-            quantityLabel: shoppingItem.quantityLabel,
+            name: name,
+            category: category,
+            shelfZone: zone,
+            shelfCode: shelfCode,
+            quantityLabel: quantity,
             purchasedAt: DateTime.now(),
             estimatedDays: estimatedDays,
           ),
@@ -395,6 +410,59 @@ class _AppShellState extends State<AppShell> {
 
   void _deleteSmartItem(String id) {
     setState(() => _shopping.removeWhere((i) => i.id == id));
+  }
+
+  void _batchDeleteSmart(List<String> ids) {
+    final idSet = ids.toSet();
+    setState(() => _shopping = _shopping.where((i) => !idSet.contains(i.id)).toList());
+  }
+
+  void _batchDeleteBudget(List<String> ids) {
+    final idSet = ids.toSet();
+    setState(() => _budget = _budget.where((i) => !idSet.contains(i.id)).toList());
+  }
+
+  void _reorderBudget(int oldIndex, int newIndex) {
+    setState(() {
+      final item = _budget.removeAt(oldIndex);
+      _budget.insert(newIndex, item);
+    });
+  }
+
+  void _batchMarkBought(List<String> ids) {
+    setState(() {
+      for (final id in ids) {
+        final idx = _shopping.indexWhere((i) => i.id == id);
+        if (idx == -1) continue;
+        final item = _shopping[idx];
+        if (item.checked) continue;
+        _shopping[idx].checked = true;
+        _shopping[idx].addedToInventory = true;
+        // Update or create inventory entry using category default days
+        final days = item.category.defaultDays;
+        final invIdx = _inventory.indexWhere((i) => i.name == item.name);
+        if (invIdx != -1) {
+          _inventory[invIdx].purchasedAt = DateTime.now();
+          _inventory[invIdx].estimatedDays = days;
+          _inventory[invIdx].quantityLabel = item.quantityLabel;
+          if (item.shelfCode != null) _inventory[invIdx].shelfCode = item.shelfCode;
+        } else {
+          _inventory = [
+            ..._inventory,
+            InventoryItem(
+              id: 'inv_${DateTime.now().millisecondsSinceEpoch}_$id',
+              name: item.name,
+              category: item.category,
+              shelfZone: item.shelfZone,
+              shelfCode: item.shelfCode,
+              quantityLabel: item.quantityLabel,
+              purchasedAt: DateTime.now(),
+              estimatedDays: days,
+            ),
+          ];
+        }
+      }
+    });
   }
 
   // ── 清单：重命名 ──────────────────────────────────────────────────────────
@@ -453,6 +521,7 @@ class _AppShellState extends State<AppShell> {
           shelfCode: inv.shelfCode,
         ),
       ];
+      _smartModeRequest++;
     });
   }
 
@@ -485,6 +554,30 @@ class _AppShellState extends State<AppShell> {
 
   void _deleteInventoryItem(String id) {
     setState(() => _inventory = _inventory.where((i) => i.id != id).toList());
+  }
+
+  void _batchDeleteInventory(List<String> ids) {
+    final idSet = ids.toSet();
+    setState(() => _inventory = _inventory.where((i) => !idSet.contains(i.id)).toList());
+  }
+
+  void _batchAddToRestock(List<InventoryItem> items) {
+    setState(() {
+      for (final inv in items) {
+        if (_shopping.any((s) => s.name == inv.name && !s.checked)) continue;
+        _shopping = [
+          ..._shopping,
+          ShoppingItem(
+            id: 'shop_${DateTime.now().millisecondsSinceEpoch}_${inv.id}',
+            name: inv.name,
+            category: inv.category,
+            shelfZone: inv.shelfZone,
+            shelfCode: inv.shelfCode,
+            quantityLabel: inv.quantityLabel,
+          ),
+        ];
+      }
+    });
   }
 
   void _editInventoryItem(
@@ -521,12 +614,28 @@ class _AppShellState extends State<AppShell> {
 
   void _addAllToList() {
     final threshold = _settings.reminderThresholdDays;
-    final needRestock = _inventory
+    final toAdd = _inventory
         .where((i) => i.statusFor(threshold) != StockStatus.sufficient)
+        .where((i) => !_shopping.any((s) => s.name == i.name && !s.checked))
         .toList();
-    for (final inv in needRestock) {
-      _addToListFromReminder(inv);
-    }
+    if (toAdd.isEmpty) return;
+    final base = DateTime.now().millisecondsSinceEpoch;
+    setState(() {
+      final newItems = <ShoppingItem>[];
+      for (var idx = 0; idx < toAdd.length; idx++) {
+        final inv = toAdd[idx];
+        newItems.add(ShoppingItem(
+          id: 'r_${base}_$idx',
+          name: inv.name,
+          category: inv.category,
+          quantityLabel: '1件',
+          shelfZone: inv.shelfZone,
+          shelfCode: inv.shelfCode,
+        ));
+      }
+      _shopping = [..._shopping, ...newItems];
+      _smartModeRequest++;
+    });
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -563,6 +672,11 @@ class _AppShellState extends State<AppShell> {
               onAddBudget: _addBudgetItem,
               onEditBudget: _editBudgetItem,
               onDeleteBudget: _deleteBudgetItem,
+              onReorderBudget: _reorderBudget,
+              onBatchDeleteSmart: _batchDeleteSmart,
+              onBatchMarkBought: _batchMarkBought,
+              onBatchDeleteBudget: _batchDeleteBudget,
+              smartModeRequest: _smartModeRequest,
             ),
             InventoryScreen(
               items: _inventory,
@@ -574,6 +688,8 @@ class _AppShellState extends State<AppShell> {
               onAddToShoppingList: _addToListFromReminder,
               onReorder: _reorderInventory,
               onEdit: _editInventoryItem,
+              onBatchDelete: _batchDeleteInventory,
+              onBatchAddToRestock: _batchAddToRestock,
             ),
             ReminderScreen(
               inventoryItems: _inventory,
