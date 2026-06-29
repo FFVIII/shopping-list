@@ -291,6 +291,7 @@ class _ReminderRow extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       color: status.color,
+                      decoration: TextDecoration.none,
                     ),
                   ),
                 ],

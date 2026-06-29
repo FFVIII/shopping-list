@@ -5,10 +5,22 @@ part of 'list_screen.dart';
 extension _SmartModeState on _ListScreenState {
   Map<String, List<ShoppingItem>> _groupByShelf() {
     final map = <String, List<ShoppingItem>>{};
+    final untagged = <ShoppingItem>[];
     for (final item in widget.smartItems) {
-      map.putIfAbsent(item.shelfZone, () => []).add(item);
+      final code = item.shelfCode?.trim();
+      if (code != null && code.isNotEmpty) {
+        map.putIfAbsent(code, () => []).add(item);
+      } else {
+        untagged.add(item);
+      }
     }
-    return map;
+    final sorted = Map.fromEntries(
+      map.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
+    );
+    if (untagged.isNotEmpty) {
+      sorted[L10n.of(context).untaggedShelf] = untagged;
+    }
+    return sorted;
   }
 
   Map<String, List<ShoppingItem>> _groupByCategory() {
@@ -77,6 +89,10 @@ extension _SmartModeState on _ListScreenState {
     final groupCounts = {
       for (final e in groups.entries) e.key: e.value.length
     };
+    final groupColors = {
+      for (final e in groups.entries)
+        e.key: e.value.first.category.color,
+    };
 
     return ReorderableListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
@@ -88,14 +104,12 @@ extension _SmartModeState on _ListScreenState {
           return _buildSectionHeader(
             entry.groupKey,
             groupCounts[entry.groupKey] ?? 0,
+            color: groupColors[entry.groupKey],
             key: Key('h_${entry.groupKey}'),
           );
         }
         final item = entry.item!;
-        final zoneColor = _byShelf
-            ? (defaultShelfZones.findByName(item.shelfZone)?.dotColor ??
-                item.category.color)
-            : item.category.color;
+        final zoneColor = item.category.color;
         return _SmartRow(
           key: Key('si_${item.id}'),
           item: item,
@@ -121,11 +135,9 @@ extension _SmartModeState on _ListScreenState {
     );
   }
 
-  Widget _buildSectionHeader(String zone, int count, {Key? key}) {
+  Widget _buildSectionHeader(String zone, int count, {Key? key, Color? color}) {
     final l = L10n.of(context);
-    final color = _byShelf
-        ? (defaultShelfZones.findByName(zone)?.dotColor ?? AppColors.textMuted)
-        : AppColors.textMuted;
+    final color0 = color ?? AppColors.textMuted;
     return Padding(
       key: key,
       padding: const EdgeInsets.fromLTRB(4, 14, 0, 6),
@@ -135,7 +147,7 @@ extension _SmartModeState on _ListScreenState {
             width: 10,
             height: 10,
             decoration:
-                BoxDecoration(color: color, shape: BoxShape.circle),
+                BoxDecoration(color: color0, shape: BoxShape.circle),
           ),
           const SizedBox(width: 8),
           Text(
@@ -152,7 +164,7 @@ extension _SmartModeState on _ListScreenState {
             padding:
                 const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
+              color: color0.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
@@ -160,7 +172,7 @@ extension _SmartModeState on _ListScreenState {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: color,
+                color: color0,
               ),
             ),
           ),
@@ -385,7 +397,7 @@ class _SmartRow extends StatelessWidget {
 class _SmartAddSheet extends StatefulWidget {
   final String name;
   final List<Category> categories;
-  final void Function(Category category, String zone) onConfirm;
+  final void Function(Category category, String zone, String quantityLabel, String? shelfCode) onConfirm;
 
   const _SmartAddSheet({
     required this.name,
@@ -400,13 +412,38 @@ class _SmartAddSheet extends StatefulWidget {
 class _SmartAddSheetState extends State<_SmartAddSheet> {
   late Category _selectedCategory;
   late String _selectedZone;
+  late final TextEditingController _qtyCtrl;
+  late final TextEditingController _shelfCtrl;
 
   @override
   void initState() {
     super.initState();
     _selectedCategory = widget.categories.first;
     _selectedZone = _selectedCategory.shelfZone;
+    _qtyCtrl = TextEditingController();
+    _shelfCtrl = TextEditingController();
   }
+
+  @override
+  void dispose() {
+    _qtyCtrl.dispose();
+    _shelfCtrl.dispose();
+    super.dispose();
+  }
+
+  InputDecoration _fieldDecoration(String hint) => InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(color: AppColors.textDisabled),
+        filled: true,
+        fillColor: AppColors.fieldBg,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        isDense: true,
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -418,89 +455,134 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
         top: 20,
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l.addItemTitle(l.data(widget.name)),
-            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            l.chooseCategoryHint,
-            style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: widget.categories.map((cat) {
-              final sel = _selectedCategory == cat;
-              return GestureDetector(
-                onTap: () => setState(() {
-                  _selectedCategory = cat;
-                  _selectedZone = cat.shelfZone;
-                }),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: sel ? cat.color : cat.bgColor,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    cat.name,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: sel ? Colors.white : cat.color,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l.addItemTitle(l.data(widget.name)),
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              l.chooseCategoryHint,
+              style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: widget.categories.map((cat) {
+                final sel = _selectedCategory == cat;
+                return GestureDetector(
+                  onTap: () => setState(() {
+                    _selectedCategory = cat;
+                    _selectedZone = cat.shelfZone;
+                  }),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: sel ? cat.color : cat.bgColor,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      cat.name,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: sel ? Colors.white : cat.color,
+                      ),
                     ),
                   ),
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Row(
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 14),
+            Row(
               children: [
-                const Icon(Icons.location_on_outlined,
-                    size: 14, color: AppColors.textDisabled),
-                const SizedBox(width: 4),
-                Text(
-                  l.shelfZoneInline(l.data(_selectedZone)),
-                  style: const TextStyle(
-                      fontSize: 12, color: AppColors.textMuted),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Text(
+                          l.quantityFieldLabel,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                      TextField(
+                        controller: _qtyCtrl,
+                        style: const TextStyle(fontSize: 15),
+                        decoration: _fieldDecoration('1件'),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Text(
+                          l.shelfCodeFieldLabel,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                      TextField(
+                        controller: _shelfCtrl,
+                        style: const TextStyle(fontSize: 15),
+                        decoration: _fieldDecoration('货架B1'),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brand,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-                elevation: 0,
-              ),
-              onPressed: () {
-                Navigator.pop(context);
-                widget.onConfirm(_selectedCategory, _selectedZone);
-              },
-              child: Text(
-                l.addToList,
-                style: const TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.w600),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.brand,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                ),
+                onPressed: () {
+                  final shelf = _shelfCtrl.text.trim();
+                  Navigator.pop(context);
+                  widget.onConfirm(
+                    _selectedCategory,
+                    _selectedZone,
+                    _qtyCtrl.text.trim(),
+                    shelf.isEmpty ? null : shelf,
+                  );
+                },
+                child: Text(
+                  l.addToList,
+                  style: const TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.w600),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

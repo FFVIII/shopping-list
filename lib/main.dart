@@ -259,14 +259,15 @@ class _AppShellState extends State<AppShell> {
 
   // ── 清单：智能模式添加（带分类）────────────────────────────────────────────
 
-  void _addSmart(String name, Category category, String shelfZone) {
+  void _addSmart(String name, String quantityLabel, String? shelfCode, Category category, String shelfZone) {
     setState(() {
       _shopping.add(ShoppingItem(
         id: 'u_${DateTime.now().millisecondsSinceEpoch}',
         name: name,
         category: category,
-        quantityLabel: '1件',
+        quantityLabel: quantityLabel.isEmpty ? '1件' : quantityLabel,
         shelfZone: shelfZone,
+        shelfCode: shelfCode,
       ));
     });
   }

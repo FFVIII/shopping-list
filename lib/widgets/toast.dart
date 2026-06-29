@@ -62,18 +62,22 @@ class _ToastCardState extends State<_ToastCard> {
     return AnimatedOpacity(
       opacity: _opacity,
       duration: const Duration(milliseconds: 180),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
-        decoration: BoxDecoration(
-          color: const Color(0xFF313131).withValues(alpha: 0.92),
-          borderRadius: BorderRadius.circular(22),
-        ),
-        child: Text(
-          widget.message,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+          decoration: BoxDecoration(
+            color: const Color(0xFF313131).withValues(alpha: 0.92),
+            borderRadius: BorderRadius.circular(22),
+          ),
+          child: Text(
+            widget.message,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+              decoration: TextDecoration.none,
+            ),
           ),
         ),
       ),

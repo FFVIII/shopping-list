@@ -37,6 +37,7 @@ abstract class AppStrings {
   String money(double v); // "¥12.50" / "$12.50"
   String get byShelf;
   String get byCategory;
+  String get untaggedShelf; // "未标记" / "Untagged"
   String get pendingSection; // "待购" / "To buy"
   String get purchasedSection;
   String itemCountChip(int n); // "3件" / "3"
@@ -194,6 +195,7 @@ class ZhStrings extends AppStrings {
   @override String money(double v) => '¥${v.toStringAsFixed(2)}';
   @override String get byShelf => '按货架';
   @override String get byCategory => '按分类';
+  @override String get untaggedShelf => '未标记';
   @override String get pendingSection => '待购';
   @override String get purchasedSection => '已购';
   @override String itemCountChip(int n) => '$n件';
@@ -356,6 +358,7 @@ class EnStrings extends AppStrings {
   @override String money(double v) => '\$${v.toStringAsFixed(2)}';
   @override String get byShelf => 'By aisle';
   @override String get byCategory => 'By category';
+  @override String get untaggedShelf => 'Untagged';
   @override String get pendingSection => 'To buy';
   @override String get purchasedSection => 'Bought';
   @override String itemCountChip(int n) => '$n';

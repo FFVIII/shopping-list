@@ -21,7 +21,7 @@ class ListScreen extends StatefulWidget {
   // Smart mode: triggers "how many days?" sheet → inventory
   final void Function(String id) onToggleSmart;
   final void Function(String name) onAddSimple;
-  final void Function(String name, Category category, String shelfZone) onAddSmart;
+  final void Function(String name, String quantityLabel, String? shelfCode, Category category, String shelfZone) onAddSmart;
   final void Function(String id) onDeleteSimple;
   final void Function(String id) onDeleteSmart;
   final VoidCallback onCompleteSimple;
@@ -853,8 +853,8 @@ class _ListScreenState extends State<ListScreen> {
       builder: (ctx) => _SmartAddSheet(
         name: name,
         categories: widget.categories,
-        onConfirm: (category, zone) {
-          widget.onAddSmart(name, category, zone);
+        onConfirm: (category, zone, quantityLabel, shelfCode) {
+          widget.onAddSmart(name, quantityLabel, shelfCode, category, zone);
           _nameCtrl.clear();
         },
       ),
