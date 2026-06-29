@@ -5,6 +5,9 @@ import '../models/item.dart';
 import '../l10n/l10n.dart';
 
 part 'list_screen.widgets.dart';
+part 'list_screen.simple.dart';
+part 'list_screen.smart.dart';
+part 'list_screen.budget.dart';
 
 /// List page modes, in display order: Simple · Budget · Smart.
 enum ListMode { simple, budget, smart }
@@ -45,6 +48,14 @@ class ListScreen extends StatefulWidget {
   final void Function(String id, String name, int quantity, double unitPrice)
       onEditBudget;
   final void Function(String id) onDeleteBudget;
+  final void Function(int oldIndex, int newIndex) onReorderBudget;
+  // Batch operations
+  final void Function(List<String> ids) onBatchDeleteSmart;
+  final void Function(List<String> ids) onBatchMarkBought;
+  final void Function(List<String> ids) onBatchDeleteBudget;
+  // Incremented each time an item is added from the reminder screen;
+  // causes this screen to switch to smart mode so the new item is visible.
+  final int smartModeRequest;
 
   const ListScreen({
     super.key,
@@ -67,6 +78,11 @@ class ListScreen extends StatefulWidget {
     required this.onAddBudget,
     required this.onEditBudget,
     required this.onDeleteBudget,
+    required this.onReorderBudget,
+    required this.onBatchDeleteSmart,
+    required this.onBatchMarkBought,
+    required this.onBatchDeleteBudget,
+    required this.smartModeRequest,
   });
 
   @override
@@ -77,6 +93,14 @@ class _ListScreenState extends State<ListScreen> {
   ListMode _mode = ListMode.simple;
   bool _byShelf = true;
   bool _smartHintDismissed = false;
+
+  // Batch selection state (smart mode)
+  bool _smartBatchMode = false;
+  final Set<String> _smartSelected = {};
+
+  // Batch selection state (budget mode)
+  bool _budgetBatchMode = false;
+  final Set<String> _budgetSelected = {};
 
   bool get _isSmart => _mode == ListMode.smart;
   bool get _isBudget => _mode == ListMode.budget;
@@ -91,6 +115,14 @@ class _ListScreenState extends State<ListScreen> {
   void initState() {
     super.initState();
     _initSpeech();
+  }
+
+  @override
+  void didUpdateWidget(ListScreen old) {
+    super.didUpdateWidget(old);
+    if (widget.smartModeRequest != old.smartModeRequest) {
+      setState(() => _mode = ListMode.smart);
+    }
   }
 
   Future<void> _initSpeech() async {
@@ -185,6 +217,7 @@ class _ListScreenState extends State<ListScreen> {
             _buildHeader(today),
             _buildModeToggle(),
             if (_isSmart) _buildSmartSubToggle(),
+            if (_isBudget && _budgetBatchMode) _buildBudgetBatchSubBar(),
             if (_isSmart && !_smartHintDismissed) _buildSmartHint(),
             const SizedBox(height: 4),
             Expanded(
@@ -198,9 +231,14 @@ class _ListScreenState extends State<ListScreen> {
                           ? _buildSmartList()
                           : _buildSimpleList(),
             ),
-            if (_isBudget && widget.budgetItems.isNotEmpty)
+            if (_isBudget && widget.budgetItems.isNotEmpty && !_budgetBatchMode)
               _buildBudgetTotalBar(),
-            _buildAddBar(context),
+            if (_isSmart && _smartBatchMode)
+              _buildSmartBatchBar()
+            else if (_isBudget && _budgetBatchMode)
+              _buildBudgetBatchBar()
+            else
+              _buildAddBar(context),
           ],
         ),
       ),
@@ -273,7 +311,88 @@ class _ListScreenState extends State<ListScreen> {
     );
   }
 
-  // ── Smart-mode explanation banner ───────────────────────────────────────────
+  // ── Mode toggles ─────────────────────────────────────────────────────────────
+
+  Widget _buildModeToggle() {
+    final l = L10n.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+      child: Container(
+        height: 38,
+        decoration: BoxDecoration(
+          color: const Color(0xFFE8E8E3),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            _SegmentBtn(
+              label: l.modeSimple,
+              selected: _mode == ListMode.simple,
+              onTap: () => setState(() => _mode = ListMode.simple),
+            ),
+            _SegmentBtn(
+              label: l.budgetMode,
+              selected: _mode == ListMode.budget,
+              onTap: () => setState(() => _mode = ListMode.budget),
+            ),
+            _SegmentBtn(
+              label: l.modeSmart,
+              selected: _mode == ListMode.smart,
+              onTap: () => setState(() => _mode = ListMode.smart),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSmartSubToggle() {
+    final l = L10n.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
+      child: Row(
+        children: [
+          if (!_smartBatchMode) ...[
+            _TextToggleBtn(
+              label: l.byShelf,
+              selected: _byShelf,
+              onTap: () => setState(() => _byShelf = true),
+            ),
+            const SizedBox(width: 4),
+            _TextToggleBtn(
+              label: l.byCategory,
+              selected: !_byShelf,
+              onTap: () => setState(() => _byShelf = false),
+            ),
+          ] else ...[
+            Text(
+              l.selectedCount(_smartSelected.length),
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const Spacer(),
+            GestureDetector(
+              onTap: () => setState(() {
+                _smartBatchMode = false;
+                _smartSelected.clear();
+              }),
+              child: Text(
+                l.batchDone,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.brand,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 
   Widget _buildSmartHint() {
     final l = L10n.of(context);
@@ -311,346 +430,7 @@ class _ListScreenState extends State<ListScreen> {
     );
   }
 
-  // ── 简单 / 智能 main toggle ─────────────────────────────────────────────────
-
-  Widget _buildModeToggle() {
-    final l = L10n.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
-      child: Container(
-        height: 38,
-        decoration: BoxDecoration(
-          color: const Color(0xFFE8E8E3),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            _SegmentBtn(
-              label: l.modeSimple,
-              selected: _mode == ListMode.simple,
-              onTap: () => setState(() => _mode = ListMode.simple),
-            ),
-            _SegmentBtn(
-              label: l.budgetMode,
-              selected: _mode == ListMode.budget,
-              onTap: () => setState(() => _mode = ListMode.budget),
-            ),
-            _SegmentBtn(
-              label: l.modeSmart,
-              selected: _mode == ListMode.smart,
-              onTap: () => setState(() => _mode = ListMode.smart),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ── 按货架 / 按分类 sub-toggle (smart mode only) ────────────────────────────
-
-  Widget _buildSmartSubToggle() {
-    final l = L10n.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
-      child: Row(
-        children: [
-          _TextToggleBtn(
-            label: l.byShelf,
-            selected: _byShelf,
-            onTap: () => setState(() => _byShelf = true),
-          ),
-          const SizedBox(width: 4),
-          _TextToggleBtn(
-            label: l.byCategory,
-            selected: !_byShelf,
-            onTap: () => setState(() => _byShelf = false),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── Simple list ─────────────────────────────────────────────────────────────
-
-  Widget _buildSimpleList() {
-    final l = L10n.of(context);
-    final pending = widget.simpleItems.where((i) => !i.checked).toList();
-    final done = widget.simpleItems.where((i) => i.checked).toList();
-
-    return CustomScrollView(
-      slivers: [
-        if (pending.isNotEmpty)
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-            sliver: SliverToBoxAdapter(
-              child: _simpleSectionHeader(
-                icon: Icons.shopping_cart_outlined,
-                label: l.pendingSection,
-                count: pending.length,
-                color: AppColors.textSecondary,
-                chipBg: AppColors.fieldBg,
-                topPad: 4,
-              ),
-            ),
-          ),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-          sliver: SliverReorderableList(
-            itemCount: pending.length,
-            itemBuilder: (ctx, i) {
-              final item = pending[i];
-              return _SimpleRow(
-                key: Key('p_${item.id}'),
-                item: item,
-                reorderIndex: i,
-                onToggle: () => widget.onToggleSimple(item.id),
-                onDelete: () => widget.onDeleteSimple(item.id),
-                onLongPress: () => _showRenameSheet(item, false),
-                showDragHandle: true,
-              );
-            },
-            onReorderItem: widget.onReorderSimple,
-            proxyDecorator: (child, index, animation) {
-              return Material(
-                elevation: 6,
-                borderRadius: BorderRadius.circular(12),
-                shadowColor: Colors.black26,
-                child: child,
-              );
-            },
-          ),
-        ),
-        if (done.isNotEmpty)
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                _simpleSectionHeader(
-                  icon: Icons.check_circle_outline_rounded,
-                  label: l.purchasedSection,
-                  count: done.length,
-                  color: const Color(0xFFAAAAAA),
-                  chipBg: const Color(0xFFF0F0EA),
-                  topPad: 18,
-                ),
-                ...done.map((item) => _SimpleRow(
-                      item: item,
-                      onToggle: () => widget.onToggleSimple(item.id),
-                      onDelete: () => widget.onDeleteSimple(item.id),
-                      onLongPress: () => _showRenameSheet(item, false),
-                    )),
-              ]),
-            ),
-          ),
-      ],
-    );
-  }
-
-  /// Section header for simple-mode "待购 / 已购" groups (icon · label · count).
-  Widget _simpleSectionHeader({
-    required IconData icon,
-    required String label,
-    required int count,
-    required Color color,
-    required Color chipBg,
-    required double topPad,
-  }) {
-    final l = L10n.of(context);
-    return Padding(
-      padding: EdgeInsets.fromLTRB(4, topPad, 4, 6),
-      child: Row(
-        children: [
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
-          ),
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-            decoration: BoxDecoration(
-              color: chipBg,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              l.itemCountChip(count),
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── Smart list ──────────────────────────────────────────────────────────────
-
-  Map<String, List<ShoppingItem>> _groupByShelf() {
-    final map = <String, List<ShoppingItem>>{};
-    for (final item in widget.smartItems) {
-      map.putIfAbsent(item.shelfZone, () => []).add(item);
-    }
-    return map;
-  }
-
-  Map<String, List<ShoppingItem>> _groupByCategory() {
-    final map = <String, List<ShoppingItem>>{};
-    for (final item in widget.smartItems) {
-      map.putIfAbsent(item.category.name, () => []).add(item);
-    }
-    return map;
-  }
-
-  List<_FlatEntry> _buildFlatEntries(Map<String, List<ShoppingItem>> groups) {
-    final entries = <_FlatEntry>[];
-    for (final entry in groups.entries) {
-      entries.add(_FlatEntry.header(entry.key));
-      for (final item in entry.value) {
-        entries.add(_FlatEntry.forItem(item, entry.key));
-      }
-    }
-    return entries;
-  }
-
-  // Called by ReorderableListView.onReorderItem — newIndex is pre-adjusted.
-  void _onSmartReorder(int oldIndex, int newIndex, List<_FlatEntry> flat) {
-    if (flat[oldIndex].isHeader) return;
-    final movedItem = flat[oldIndex].item!;
-
-    final mutable = List<_FlatEntry>.from(flat);
-    final moved = mutable.removeAt(oldIndex);
-    mutable.insert(newIndex, moved);
-
-    // Find nearest preceding header to determine new group
-    String newGroup = '';
-    for (int i = newIndex; i >= 0; i--) {
-      if (mutable[i].isHeader) {
-        newGroup = mutable[i].groupKey;
-        break;
-      }
-    }
-    // Dropped before first header → use first available group
-    if (newGroup.isEmpty) {
-      for (final e in mutable) {
-        if (e.isHeader) { newGroup = e.groupKey; break; }
-      }
-    }
-    if (newGroup.isEmpty) return;
-
-    final orderedIds = mutable
-        .where((e) => !e.isHeader)
-        .map((e) => e.item!.id)
-        .toList();
-
-    if (_byShelf) {
-      widget.onReorderSmart(movedItem.id, newGroup, null, orderedIds);
-    } else {
-      final newCat = widget.categories.firstWhere(
-        (c) => c.name == newGroup,
-        orElse: () => movedItem.category,
-      );
-      widget.onReorderSmart(movedItem.id, null, newCat, orderedIds);
-    }
-  }
-
-  Widget _buildSmartList() {
-    final groups = _byShelf ? _groupByShelf() : _groupByCategory();
-    final flat = _buildFlatEntries(groups);
-    final groupCounts = {for (final e in groups.entries) e.key: e.value.length};
-
-    return ReorderableListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      buildDefaultDragHandles: false,
-      itemCount: flat.length,
-      itemBuilder: (ctx, i) {
-        final entry = flat[i];
-        if (entry.isHeader) {
-          return _buildSectionHeader(
-            entry.groupKey,
-            groupCounts[entry.groupKey] ?? 0,
-            key: Key('h_${entry.groupKey}'),
-          );
-        }
-        final item = entry.item!;
-        final zoneColor = _byShelf
-            ? (defaultShelfZones.findByName(item.shelfZone)?.dotColor ?? item.category.color)
-            : item.category.color;
-        return _SmartRow(
-          key: Key('si_${item.id}'),
-          item: item,
-          zoneColor: zoneColor,
-          onToggle: () => widget.onToggleSmart(item.id),
-          onDelete: () => widget.onDeleteSmart(item.id),
-          onLongPress: () => _showRenameSheet(item, true),
-          showDragHandle: !item.checked,
-          reorderIndex: item.checked ? null : i,
-        );
-      },
-      onReorderItem: (old, newIdx) => _onSmartReorder(old, newIdx, flat),
-      proxyDecorator: (child, index, animation) => Material(
-        elevation: 6,
-        borderRadius: BorderRadius.circular(12),
-        shadowColor: Colors.black26,
-        child: child,
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String zone, int count, {Key? key}) {
-    final l = L10n.of(context);
-    final color = _byShelf
-        ? (defaultShelfZones.findByName(zone)?.dotColor ?? AppColors.textMuted)
-        : AppColors.textMuted;
-    return Padding(
-      key: key,
-      padding: const EdgeInsets.fromLTRB(4, 14, 0, 6),
-      child: Row(
-        children: [
-          Container(
-            width: 10,
-            height: 10,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            l.data(zone),
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-              letterSpacing: 0.1,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              l.itemCountChip(count),
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── Empty state ─────────────────────────────────────────────────────────────
+  // ── Empty state (simple / smart) ────────────────────────────────────────────
 
   Widget _emptyState() {
     final l = L10n.of(context);
@@ -752,6 +532,270 @@ class _ListScreenState extends State<ListScreen> {
     );
   }
 
+  void _enterSmartBatchWithItem(String id) {
+    setState(() {
+      _smartBatchMode = true;
+      _smartSelected.add(id);
+    });
+  }
+
+  void _toggleSmartSelection(String id) {
+    setState(() {
+      if (_smartSelected.contains(id)) {
+        _smartSelected.remove(id);
+      } else {
+        _smartSelected.add(id);
+      }
+    });
+  }
+
+  void _enterBudgetBatchWithItem(String id) {
+    setState(() {
+      _budgetBatchMode = true;
+      _budgetSelected.add(id);
+    });
+  }
+
+  void _toggleBudgetSelection(String id) {
+    setState(() {
+      if (_budgetSelected.contains(id)) {
+        _budgetSelected.remove(id);
+      } else {
+        _budgetSelected.add(id);
+      }
+    });
+  }
+
+  Widget _buildBudgetBatchSubBar() {
+    final l = L10n.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
+      child: Row(
+        children: [
+          Text(
+            l.selectedCount(_budgetSelected.length),
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: () => setState(() {
+              _budgetBatchMode = false;
+              _budgetSelected.clear();
+            }),
+            child: Text(
+              l.batchDone,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.brand,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBudgetBatchBar() {
+    final l = L10n.of(context);
+    final allIds = widget.budgetItems.map((i) => i.id).toSet();
+    final allSelected =
+        allIds.isNotEmpty && _budgetSelected.containsAll(allIds);
+    final hasSelection = _budgetSelected.isNotEmpty;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        boxShadow: [
+          BoxShadow(
+              color: Color(0x12000000), blurRadius: 12, offset: Offset(0, -3)),
+        ],
+      ),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => setState(() {
+              if (allSelected) {
+                _budgetSelected.clear();
+              } else {
+                _budgetSelected.addAll(allIds);
+              }
+            }),
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: allSelected
+                    ? AppColors.brand.withValues(alpha: 0.12)
+                    : AppColors.fieldBg,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                l.selectAll,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: allSelected
+                      ? AppColors.brand
+                      : AppColors.textSecondary,
+                ),
+              ),
+            ),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: hasSelection
+                ? () async {
+                    final ok = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: Text(l.selectedCount(_budgetSelected.length)),
+                        content: const Text('确定要删除吗？此操作无法撤销。'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: Text(l.cancel),
+                          ),
+                          TextButton(
+                            style: TextButton.styleFrom(
+                                foregroundColor: AppColors.danger),
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: Text(l.delete),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (ok != true) return;
+                    widget.onBatchDeleteBudget(_budgetSelected.toList());
+                    setState(() {
+                      _budgetSelected.clear();
+                      _budgetBatchMode = false;
+                    });
+                  }
+                : null,
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: hasSelection
+                    ? AppColors.danger.withValues(alpha: 0.10)
+                    : AppColors.fieldBg,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                l.delete,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: hasSelection
+                      ? AppColors.danger
+                      : AppColors.textDisabled,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Smart batch bar ──────────────────────────────────────────────────────────
+
+  Widget _buildSmartBatchBar() {
+    final l = L10n.of(context);
+    final allIds = widget.smartItems.map((i) => i.id).toSet();
+    final allSelected = allIds.isNotEmpty && _smartSelected.containsAll(allIds);
+    final hasSelection = _smartSelected.isNotEmpty;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        boxShadow: [
+          BoxShadow(color: Color(0x12000000), blurRadius: 12, offset: Offset(0, -3)),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Select all
+          GestureDetector(
+            onTap: () => setState(() {
+              if (allSelected) {
+                _smartSelected.clear();
+              } else {
+                _smartSelected.addAll(allIds);
+              }
+            }),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: allSelected ? AppColors.brand.withValues(alpha: 0.12) : AppColors.fieldBg,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                l.selectAll,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: allSelected ? AppColors.brand : AppColors.textSecondary,
+                ),
+              ),
+            ),
+          ),
+          const Spacer(),
+          // Delete
+          GestureDetector(
+            onTap: hasSelection ? () async {
+              final ok = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: Text(L10n.of(context).selectedCount(_smartSelected.length)),
+                  content: const Text('确定要删除吗？此操作无法撤销。'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(L10n.of(context).cancel)),
+                    TextButton(
+                      style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: Text(L10n.of(context).delete),
+                    ),
+                  ],
+                ),
+              );
+              if (ok != true) return;
+              widget.onBatchDeleteSmart(_smartSelected.toList());
+              setState(() {
+                _smartSelected.clear();
+                _smartBatchMode = false;
+              });
+            } : null,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: hasSelection ? AppColors.danger.withValues(alpha: 0.10) : AppColors.fieldBg,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                l.delete,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: hasSelection ? AppColors.danger : AppColors.textDisabled,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showRenameSheet(ShoppingItem item, bool isSmart) {
     showModalBottomSheet(
       context: context,
@@ -798,9 +842,7 @@ class _ListScreenState extends State<ListScreen> {
     }
   }
 
-  // ── Budget (记账) mode ───────────────────────────────────────────────────────
-
-  void _showBudgetSheet({BudgetItem? item, String initialName = ''}) {
+  void _showSmartAddSheet(BuildContext context, String name) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -808,215 +850,14 @@ class _ListScreenState extends State<ListScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) => _BudgetSheet(
-        item: item,
-        initialName: initialName,
-        onConfirm: (name, qty, price) {
-          if (item != null) {
-            widget.onEditBudget(item.id, name, qty, price);
-          } else {
-            widget.onAddBudget(name, qty, price);
-          }
+      builder: (ctx) => _SmartAddSheet(
+        name: name,
+        categories: widget.categories,
+        onConfirm: (category, zone) {
+          widget.onAddSmart(name, category, zone);
+          _nameCtrl.clear();
         },
       ),
-    );
-  }
-
-  Widget _buildBudgetList() {
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      itemCount: widget.budgetItems.length,
-      itemBuilder: (ctx, i) {
-        final item = widget.budgetItems[i];
-        return _BudgetRow(
-          item: item,
-          onTap: () => _showBudgetSheet(item: item),
-          onDelete: () => widget.onDeleteBudget(item.id),
-        );
-      },
-    );
-  }
-
-  Widget _buildBudgetTotalBar() {
-    final l = L10n.of(context);
-    final total =
-        widget.budgetItems.fold<double>(0, (s, i) => s + i.lineTotal);
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.brand.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          Text(
-            l.budgetTotalLabel,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const Spacer(),
-          Text(
-            l.money(total),
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: AppColors.brand,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _budgetEmptyState() {
-    final l = L10n.of(context);
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.receipt_long_outlined,
-              size: 56, color: Color(0xFFD8D8D3)),
-          const SizedBox(height: 16),
-          Text(
-            l.budgetEmptyTitle,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textMuted,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            l.budgetEmptySubtitle,
-            style: const TextStyle(
-                fontSize: 13, color: AppColors.textDisabled),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showSmartAddSheet(BuildContext context, String name) {
-    Category selectedCategory = widget.categories.first;
-    String selectedZone = selectedCategory.shelfZone;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setModal) {
-            final l = L10n.of(ctx);
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 20,
-                right: 20,
-                top: 20,
-                bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l.addItemTitle(l.data(name)),
-                    style: const TextStyle(
-                        fontSize: 17, fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    l.chooseCategoryHint,
-                    style: const TextStyle(
-                        fontSize: 13, color: AppColors.textMuted),
-                  ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: widget.categories.map((cat) {
-                      final sel = selectedCategory == cat;
-                      return GestureDetector(
-                        onTap: () {
-                          setModal(() {
-                            selectedCategory = cat;
-                            selectedZone = cat.shelfZone;
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: sel ? cat.color : cat.bgColor,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            cat.name,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color:
-                                  sel ? Colors.white : cat.color,
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.location_on_outlined,
-                            size: 14, color: AppColors.textDisabled),
-                        const SizedBox(width: 4),
-                        Text(
-                          l.shelfZoneInline(l.data(selectedZone)),
-                          style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textMuted),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.brand,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
-                        elevation: 0,
-                      ),
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        widget.onAddSmart(
-                            name, selectedCategory, selectedZone);
-                        _nameCtrl.clear();
-                      },
-                      child: Text(l.addToList,
-                          style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600)),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
     );
   }
 
