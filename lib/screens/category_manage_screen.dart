@@ -3,10 +3,10 @@ import '../theme/app_colors.dart';
 import '../models/item.dart';
 import '../l10n/l10n.dart';
 
-class CategoryManageScreen extends StatelessWidget {
+class CategoryManageScreen extends StatefulWidget {
   final List<Category> categories;
   final List<ShelfZone> shelfZones;
-  final void Function(String name, Color color, String shelfZone, int defaultDays)
+  final Category Function(String name, Color color, String shelfZone, int defaultDays)
       onAdd;
   final void Function(
     String id,
@@ -28,6 +28,13 @@ class CategoryManageScreen extends StatelessWidget {
     required this.onReorder,
   });
 
+  @override
+  State<CategoryManageScreen> createState() => _CategoryManageScreenState();
+}
+
+class _CategoryManageScreenState extends State<CategoryManageScreen> {
+  late List<Category> _categories;
+
   static const List<Color> _palette = [
     Color(0xFF4CAF50),
     Color(0xFF2196F3),
@@ -39,7 +46,13 @@ class CategoryManageScreen extends StatelessWidget {
     Color(0xFF78909C),
   ];
 
-  void _openEdit(BuildContext context, Category cat) {
+  @override
+  void initState() {
+    super.initState();
+    _categories = List<Category>.from(widget.categories);
+  }
+
+  void _openEdit(Category cat) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -49,15 +62,19 @@ class CategoryManageScreen extends StatelessWidget {
       ),
       builder: (_) => _CategoryEditSheet(
         initial: cat,
-        shelfZones: shelfZones,
+        shelfZones: widget.shelfZones,
         palette: _palette,
-        onSubmit: (name, color, zone, days) =>
-            onEdit(cat.id, name, color, zone, days),
+        onSubmit: (name, color, zone, days) {
+          widget.onEdit(cat.id, name, color, zone, days);
+          setState(() {
+            _categories = List<Category>.from(_categories);
+          });
+        },
       ),
     );
   }
 
-  void _openAdd(BuildContext context) {
+  void _openAdd() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -67,14 +84,19 @@ class CategoryManageScreen extends StatelessWidget {
       ),
       builder: (_) => _CategoryEditSheet(
         initial: null,
-        shelfZones: shelfZones,
+        shelfZones: widget.shelfZones,
         palette: _palette,
-        onSubmit: (name, color, zone, days) => onAdd(name, color, zone, days),
+        onSubmit: (name, color, zone, days) {
+          final cat = widget.onAdd(name, color, zone, days);
+          setState(() {
+            _categories = [..._categories, cat];
+          });
+        },
       ),
     );
   }
 
-  Future<void> _confirmDelete(BuildContext context, Category cat) async {
+  Future<void> _confirmDelete(Category cat) async {
     final l = L10n.of(context);
     final ok = await showDialog<bool>(
       context: context,
@@ -94,7 +116,20 @@ class CategoryManageScreen extends StatelessWidget {
         ],
       ),
     );
-    if (ok == true) onDelete(cat.id);
+    if (ok == true) {
+      widget.onDelete(cat.id);
+      setState(() {
+        _categories = _categories.where((c) => c.id != cat.id).toList();
+      });
+    }
+  }
+
+  void _handleReorder(int oldIndex, int newIndex) {
+    widget.onReorder(oldIndex, newIndex);
+    setState(() {
+      final item = _categories.removeAt(oldIndex);
+      _categories.insert(newIndex, item);
+    });
   }
 
   @override
@@ -113,7 +148,7 @@ class CategoryManageScreen extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            onPressed: () => _openAdd(context),
+            onPressed: _openAdd,
             icon: const Icon(Icons.add_rounded),
             tooltip: l.add,
           ),
@@ -122,9 +157,9 @@ class CategoryManageScreen extends StatelessWidget {
       body: SafeArea(
         child: ReorderableListView.builder(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          itemCount: categories.length,
+          itemCount: _categories.length,
           buildDefaultDragHandles: false,
-          onReorderItem: onReorder,
+          onReorderItem: _handleReorder,
           proxyDecorator: (child, index, animation) => Material(
             elevation: 6,
             borderRadius: BorderRadius.circular(12),
@@ -132,7 +167,7 @@ class CategoryManageScreen extends StatelessWidget {
             child: child,
           ),
           itemBuilder: (ctx, i) {
-            final cat = categories[i];
+            final cat = _categories[i];
             final isFallback = cat.id == kFallbackCategoryId;
             return Container(
               key: ValueKey('cat_${cat.id}'),
@@ -150,7 +185,7 @@ class CategoryManageScreen extends StatelessWidget {
               ),
               child: InkWell(
                 borderRadius: BorderRadius.circular(14),
-                onTap: () => _openEdit(context, cat),
+                onTap: () => _openEdit(cat),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 14),
@@ -192,7 +227,7 @@ class CategoryManageScreen extends StatelessWidget {
                         IconButton(
                           icon: const Icon(Icons.delete_outline_rounded,
                               size: 20, color: AppColors.textDisabled),
-                          onPressed: () => _confirmDelete(context, cat),
+                          onPressed: () => _confirmDelete(cat),
                         ),
                       ReorderableDragStartListener(
                         index: i,

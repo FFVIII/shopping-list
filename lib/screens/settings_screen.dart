@@ -15,7 +15,7 @@ class SettingsScreen extends StatefulWidget {
   final List<ShelfZone> shelfZones;
   final void Function(int oldIndex, int newIndex) onReorderShelfZones;
   final List<Category> categories;
-  final void Function(String name, Color color, String shelfZone, int defaultDays)
+  final Category Function(String name, Color color, String shelfZone, int defaultDays)
       onAddCategory;
   final void Function(
     String id,
