@@ -316,6 +316,7 @@ class _AppShellState extends State<AppShell> {
         ),
       ];
     });
+    _persistBudget();
   }
 
   void _editBudgetItem(
@@ -329,10 +330,12 @@ class _AppShellState extends State<AppShell> {
         ..unitPrice = unitPrice;
       _budget = List<BudgetItem>.from(_budget);
     });
+    _persistBudget();
   }
 
   void _deleteBudgetItem(String id) {
     setState(() => _budget = _budget.where((i) => i.id != id).toList());
+    _persistBudget();
   }
 
   // ── 清单：简单模式添加（无分类）────────────────────────────────────────────
@@ -486,6 +489,7 @@ class _AppShellState extends State<AppShell> {
   void _batchDeleteBudget(List<String> ids) {
     final idSet = ids.toSet();
     setState(() => _budget = _budget.where((i) => !idSet.contains(i.id)).toList());
+    _persistBudget();
   }
 
   void _reorderBudget(List<String> orderedIds) {
@@ -494,6 +498,7 @@ class _AppShellState extends State<AppShell> {
           .map((id) => _budget.firstWhere((i) => i.id == id))
           .toList();
     });
+    _persistBudget();
   }
 
   void _batchMarkBought(List<String> ids) {
