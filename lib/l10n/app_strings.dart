@@ -131,6 +131,12 @@ abstract class AppStrings {
   String get deleteCategoryMessage;
   String categoriesCount(int n); // "12类"
   String get shelfOrder;
+  String get noShelfCodes;
+  String get addShelfCodeTitle;
+  String get shelfCodeNameLabel;
+  String get shelfCodeNameHint;
+  String deleteShelfCodeTitle(String code);
+  String get deleteShelfCodeMessage;
   String get sectionReminder;
   String get restockReminder;
   String get reminderTimeLabel;
@@ -292,6 +298,13 @@ class ZhStrings extends AppStrings {
   @override String get deleteCategoryMessage => '使用此分类的商品会改派到「其他」。';
   @override String categoriesCount(int n) => '$n类';
   @override String get shelfOrder => '货架顺序';
+  @override String get noShelfCodes => '暂无货架码';
+  @override String get addShelfCodeTitle => '新建货架码';
+  @override String get shelfCodeNameLabel => '货架码';
+  @override String get shelfCodeNameHint => '如：货架B1';
+  @override String deleteShelfCodeTitle(String code) => '删除「$code」？';
+  @override String get deleteShelfCodeMessage => '从顺序列表中移除此货架码。';
+
   @override String get sectionReminder => '提醒';
   @override String get restockReminder => '补货提醒';
   @override String get reminderTimeLabel => '提醒时间';
@@ -463,6 +476,13 @@ class EnStrings extends AppStrings {
       'Items in this category will be reassigned to "Other".';
   @override String categoriesCount(int n) => '$n';
   @override String get shelfOrder => 'Aisle order';
+  @override String get noShelfCodes => 'No shelf codes yet';
+  @override String get addShelfCodeTitle => 'New shelf code';
+  @override String get shelfCodeNameLabel => 'Shelf code';
+  @override String get shelfCodeNameHint => 'e.g. Aisle B1';
+  @override String deleteShelfCodeTitle(String code) => 'Remove "$code"?';
+  @override String get deleteShelfCodeMessage => 'Removes this code from the order list.';
+
   @override String get sectionReminder => 'Reminders';
   @override String get restockReminder => 'Restock reminder';
   @override String get reminderTimeLabel => 'Reminder time';

@@ -3,6 +3,7 @@ import '../theme/app_colors.dart';
 import '../widgets/drag_handle.dart';
 import '../models/item.dart';
 import '../l10n/l10n.dart';
+import '../widgets/batch_bar.dart';
 
 class CategoryManageScreen extends StatefulWidget {
   final List<Category> categories;
@@ -35,6 +36,8 @@ class CategoryManageScreen extends StatefulWidget {
 
 class _CategoryManageScreenState extends State<CategoryManageScreen> {
   late List<Category> _categories;
+  bool _batchMode = false;
+  final Set<String> _selected = {};
 
   static const List<Color> _palette = [
     Color(0xFF4CAF50),
@@ -54,6 +57,7 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
   }
 
   void _openEdit(Category cat) {
+    if (_batchMode) return;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -67,9 +71,7 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
         palette: _palette,
         onSubmit: (name, color, zone, days) {
           widget.onEdit(cat.id, name, color, zone, days);
-          setState(() {
-            _categories = List<Category>.from(_categories);
-          });
+          setState(() => _categories = List<Category>.from(_categories));
         },
       ),
     );
@@ -89,40 +91,10 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
         palette: _palette,
         onSubmit: (name, color, zone, days) {
           final cat = widget.onAdd(name, color, zone, days);
-          setState(() {
-            _categories = [..._categories, cat];
-          });
+          setState(() => _categories = [..._categories, cat]);
         },
       ),
     );
-  }
-
-  Future<void> _confirmDelete(Category cat) async {
-    final l = L10n.of(context);
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l.deleteCategoryTitle(cat.name)),
-        content: Text(l.deleteCategoryMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
-            child: Text(l.delete),
-          ),
-        ],
-      ),
-    );
-    if (ok == true) {
-      widget.onDelete(cat.id);
-      setState(() {
-        _categories = _categories.where((c) => c.id != cat.id).toList();
-      });
-    }
   }
 
   void _handleReorder(int oldIndex, int newIndex) {
@@ -131,6 +103,60 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
       final item = _categories.removeAt(oldIndex);
       _categories.insert(newIndex, item);
     });
+  }
+
+  Future<void> _batchDelete() async {
+    final l = L10n.of(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.selectedCount(_selected.length)),
+        content: Text(l.deleteCategoryMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.cancel),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.delete),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    for (final id in _selected) {
+      widget.onDelete(id);
+    }
+    setState(() {
+      _categories = _categories.where((c) => !_selected.contains(c.id)).toList();
+      _selected.clear();
+      _batchMode = false;
+    });
+  }
+
+  Widget _buildBatchBar() {
+    final allIds = _categories
+        .where((c) => c.id != kFallbackCategoryId)
+        .map((c) => c.id)
+        .toSet();
+    final allSelected = allIds.isNotEmpty && _selected.containsAll(allIds);
+    final hasSelection = _selected.isNotEmpty;
+
+    return BatchBar(
+      selectedCount: _selected.length,
+      showCountLabel: true,
+      allSelected: allSelected,
+      onToggleAll: () => setState(() {
+        if (allSelected) {
+          _selected.clear();
+        } else {
+          _selected.addAll(allIds);
+        }
+      }),
+      onDelete: hasSelection ? _batchDelete : null,
+    );
   }
 
   @override
@@ -148,95 +174,137 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
         ),
         actions: [
-          IconButton(
-            onPressed: _openAdd,
-            icon: const Icon(Icons.add_rounded),
-            tooltip: l.add,
-          ),
+          if (_batchMode)
+            IconButton(
+              onPressed: () => setState(() {
+                _batchMode = false;
+                _selected.clear();
+              }),
+              icon: const Icon(Icons.close_rounded),
+            )
+          else
+            IconButton(
+              onPressed: _openAdd,
+              icon: const Icon(Icons.add_rounded),
+              tooltip: l.add,
+            ),
         ],
       ),
       body: SafeArea(
-        child: ReorderableListView.builder(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          itemCount: _categories.length,
-          buildDefaultDragHandles: false,
-          onReorderItem: _handleReorder,
-          proxyDecorator: (child, index, animation) => Material(
-            elevation: 6,
-            borderRadius: BorderRadius.circular(12),
-            shadowColor: Colors.black26,
-            child: child,
-          ),
-          itemBuilder: (ctx, i) {
-            final cat = _categories[i];
-            final isFallback = cat.id == kFallbackCategoryId;
-            return Container(
-              key: ValueKey('cat_${cat.id}'),
-              margin: const EdgeInsets.only(bottom: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: const [
-                  BoxShadow(
-                    color: AppColors.shadow,
-                    blurRadius: 8,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(14),
-                onTap: () => _openEdit(cat),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 14),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 16,
-                        height: 16,
-                        decoration: BoxDecoration(
-                          color: cat.color,
-                          shape: BoxShape.circle,
+        child: Column(
+          children: [
+            Expanded(
+              child: ReorderableListView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                itemCount: _categories.length,
+                buildDefaultDragHandles: false,
+                onReorderItem: _handleReorder,
+                proxyDecorator: (child, index, animation) => Material(
+                  elevation: 6,
+                  borderRadius: BorderRadius.circular(12),
+                  shadowColor: Colors.black26,
+                  child: child,
+                ),
+                itemBuilder: (ctx, i) {
+                  final cat = _categories[i];
+                  final isFallback = cat.id == kFallbackCategoryId;
+                  final isSelected = _selected.contains(cat.id);
+                  return Container(
+                    key: ValueKey('cat_${cat.id}'),
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: AppColors.shadow,
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      ],
+                    ),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: _batchMode
+                          ? (isFallback
+                              ? null
+                              : () => setState(() {
+                                    if (isSelected) {
+                                      _selected.remove(cat.id);
+                                    } else {
+                                      _selected.add(cat.id);
+                                    }
+                                  }))
+                          : () => _openEdit(cat),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        child: Row(
                           children: [
-                            Text(
-                              cat.name,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
+                            if (_batchMode && !isFallback)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 10),
+                                child: Icon(
+                                  isSelected
+                                      ? Icons.check_circle_rounded
+                                      : Icons.circle_outlined,
+                                  size: 20,
+                                  color: isSelected
+                                      ? AppColors.brand
+                                      : AppColors.textDisabled,
+                                ),
+                              ),
+                            Container(
+                              width: 16,
+                              height: 16,
+                              decoration: BoxDecoration(
+                                color: cat.color,
+                                shape: BoxShape.circle,
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '${l.data(cat.shelfZone)} · ${l.days(cat.defaultDays)}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textMuted,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    cat.name,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${l.data(cat.shelfZone)} · ${l.days(cat.defaultDays)}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textMuted,
+                                    ),
+                                  ),
+                                ],
                               ),
+                            ),
+                            DragHandle(
+                              index: i,
+                              onTap: isFallback
+                                  ? null
+                                  : () => setState(() {
+                                        _batchMode = true;
+                                        _selected.add(cat.id);
+                                      }),
                             ),
                           ],
                         ),
                       ),
-                      if (!isFallback)
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline_rounded,
-                              size: 20, color: AppColors.textDisabled),
-                          onPressed: () => _confirmDelete(cat),
-                        ),
-                      DragHandle(index: i),
-                    ],
-                  ),
-                ),
+                    ),
+                  );
+                },
               ),
-            );
-          },
+            ),
+            if (_batchMode) _buildBatchBar(),
+          ],
         ),
       ),
     );

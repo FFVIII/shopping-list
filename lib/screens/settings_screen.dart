@@ -14,6 +14,11 @@ class SettingsScreen extends StatefulWidget {
   final void Function(AppLanguage) onLanguageChanged;
   final List<ShelfZone> shelfZones;
   final void Function(int oldIndex, int newIndex) onReorderShelfZones;
+  final List<String> shelfCodeOrder;
+  final void Function(int oldIndex, int newIndex) onReorderShelfCodes;
+  final void Function(String code) onAddShelfCode;
+  final void Function(String code) onDeleteShelfCode;
+  final void Function(String oldCode, String newCode) onRenameShelfCode;
   final List<Category> categories;
   final Category Function(String name, Color color, String shelfZone, int defaultDays)
       onAddCategory;
@@ -35,6 +40,11 @@ class SettingsScreen extends StatefulWidget {
     required this.onLanguageChanged,
     required this.shelfZones,
     required this.onReorderShelfZones,
+    required this.shelfCodeOrder,
+    required this.onReorderShelfCodes,
+    required this.onAddShelfCode,
+    required this.onDeleteShelfCode,
+    required this.onRenameShelfCode,
     required this.categories,
     required this.onAddCategory,
     required this.onEditCategory,
@@ -398,8 +408,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _openShelfOrder() {
     Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => ShelfOrderScreen(
-        shelfZones: widget.shelfZones,
-        onReorder: widget.onReorderShelfZones,
+        shelfCodes: widget.shelfCodeOrder,
+        onReorderCodes: widget.onReorderShelfCodes,
+        onAddCode: widget.onAddShelfCode,
+        onDeleteCode: widget.onDeleteShelfCode,
+        onRenameCode: widget.onRenameShelfCode,
       ),
     ));
   }

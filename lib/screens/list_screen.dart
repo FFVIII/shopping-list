@@ -6,6 +6,7 @@ import '../l10n/l10n.dart';
 import '../widgets/days_selector.dart';
 import '../widgets/drag_handle.dart';
 import '../widgets/sort_toggle_button.dart';
+import '../widgets/batch_bar.dart';
 
 part 'list_screen.widgets.dart';
 part 'list_screen.simple.dart';
@@ -61,6 +62,9 @@ class ListScreen extends StatefulWidget {
   final void Function(List<String> ids) onBatchDeleteSmart;
   final void Function(List<String> ids) onBatchMarkBought;
   final void Function(List<String> ids) onBatchDeleteBudget;
+  // Custom shelf-code ordering from the Shelf Order screen. Used by
+  // _groupByShelf() to sort sections; empty = fall back to alphabetical.
+  final List<String> shelfCodeOrder;
   // Incremented each time an item is added from the reminder screen;
   // causes this screen to switch to smart mode so the new item is visible.
   final int smartModeRequest;
@@ -91,6 +95,7 @@ class ListScreen extends StatefulWidget {
     required this.onBatchMarkBought,
     required this.onBatchDeleteBudget,
     required this.smartModeRequest,
+    required this.shelfCodeOrder,
   });
 
   @override
@@ -701,101 +706,44 @@ class _ListScreenState extends State<ListScreen> {
         allIds.isNotEmpty && _budgetSelected.containsAll(allIds);
     final hasSelection = _budgetSelected.isNotEmpty;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        boxShadow: [
-          BoxShadow(
-              color: Color(0x12000000), blurRadius: 12, offset: Offset(0, -3)),
-        ],
-      ),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () => setState(() {
-              if (allSelected) {
+    return BatchBar(
+      allSelected: allSelected,
+      selectedCount: _budgetSelected.length,
+      onToggleAll: () => setState(() {
+        if (allSelected) {
+          _budgetSelected.clear();
+        } else {
+          _budgetSelected.addAll(allIds);
+        }
+      }),
+      onDelete: hasSelection
+          ? () async {
+              final ok = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: Text(l.selectedCount(_budgetSelected.length)),
+                  content: const Text('确定要删除吗？此操作无法撤销。'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: Text(l.cancel),
+                    ),
+                    TextButton(
+                      style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: Text(l.delete),
+                    ),
+                  ],
+                ),
+              );
+              if (ok != true) return;
+              widget.onBatchDeleteBudget(_budgetSelected.toList());
+              setState(() {
                 _budgetSelected.clear();
-              } else {
-                _budgetSelected.addAll(allIds);
-              }
-            }),
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: allSelected
-                    ? AppColors.brand.withValues(alpha: 0.12)
-                    : AppColors.fieldBg,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                l.selectAll,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: allSelected
-                      ? AppColors.brand
-                      : AppColors.textSecondary,
-                ),
-              ),
-            ),
-          ),
-          const Spacer(),
-          GestureDetector(
-            onTap: hasSelection
-                ? () async {
-                    final ok = await showDialog<bool>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: Text(l.selectedCount(_budgetSelected.length)),
-                        content: const Text('确定要删除吗？此操作无法撤销。'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx, false),
-                            child: Text(l.cancel),
-                          ),
-                          TextButton(
-                            style: TextButton.styleFrom(
-                                foregroundColor: AppColors.danger),
-                            onPressed: () => Navigator.pop(ctx, true),
-                            child: Text(l.delete),
-                          ),
-                        ],
-                      ),
-                    );
-                    if (ok != true) return;
-                    widget.onBatchDeleteBudget(_budgetSelected.toList());
-                    setState(() {
-                      _budgetSelected.clear();
-                      _budgetBatchMode = false;
-                    });
-                  }
-                : null,
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: hasSelection
-                    ? AppColors.danger.withValues(alpha: 0.10)
-                    : AppColors.fieldBg,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                l.delete,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: hasSelection
-                      ? AppColors.danger
-                      : AppColors.textDisabled,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+                _budgetBatchMode = false;
+              });
+            }
+          : null,
     );
   }
 
@@ -807,80 +755,33 @@ class _ListScreenState extends State<ListScreen> {
     final allSelected = allIds.isNotEmpty && _smartSelected.containsAll(allIds);
     final hasSelection = _smartSelected.isNotEmpty;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        boxShadow: [
-          BoxShadow(color: Color(0x12000000), blurRadius: 12, offset: Offset(0, -3)),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Cancel batch mode
-          GestureDetector(
-            onTap: () => setState(() {
-              _smartBatchMode = false;
-              _smartSelected.clear();
-            }),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.fieldBg,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                l.cancel,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ),
-          ),
-          const Spacer(),
-          // Select all
-          GestureDetector(
-            onTap: () => setState(() {
-              if (allSelected) {
-                _smartSelected.clear();
-              } else {
-                _smartSelected.addAll(allIds);
-              }
-            }),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: allSelected ? AppColors.brand.withValues(alpha: 0.12) : AppColors.fieldBg,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                l.selectAll,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: allSelected ? AppColors.brand : AppColors.textSecondary,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          // Delete
-          GestureDetector(
-            onTap: hasSelection ? () async {
+    return BatchBar(
+      allSelected: allSelected,
+      selectedCount: _smartSelected.length,
+      onCancel: () => setState(() {
+        _smartBatchMode = false;
+        _smartSelected.clear();
+      }),
+      onToggleAll: () => setState(() {
+        if (allSelected) {
+          _smartSelected.clear();
+        } else {
+          _smartSelected.addAll(allIds);
+        }
+      }),
+      onDelete: hasSelection
+          ? () async {
               final ok = await showDialog<bool>(
                 context: context,
                 builder: (ctx) => AlertDialog(
-                  title: Text(L10n.of(context).selectedCount(_smartSelected.length)),
+                  title: Text(l.selectedCount(_smartSelected.length)),
                   content: const Text('确定要删除吗？此操作无法撤销。'),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(L10n.of(context).cancel)),
+                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l.cancel)),
                     TextButton(
                       style: TextButton.styleFrom(foregroundColor: AppColors.danger),
                       onPressed: () => Navigator.pop(ctx, true),
-                      child: Text(L10n.of(context).delete),
+                      child: Text(l.delete),
                     ),
                   ],
                 ),
@@ -891,25 +792,8 @@ class _ListScreenState extends State<ListScreen> {
                 _smartSelected.clear();
                 _smartBatchMode = false;
               });
-            } : null,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: hasSelection ? AppColors.danger.withValues(alpha: 0.10) : AppColors.fieldBg,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                l.delete,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: hasSelection ? AppColors.danger : AppColors.textDisabled,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+            }
+          : null,
     );
   }
 

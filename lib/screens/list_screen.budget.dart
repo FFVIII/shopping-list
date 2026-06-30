@@ -58,14 +58,16 @@ extension _BudgetModeState on _ListScreenState {
         return _BudgetRow(
           key: Key('budget_${item.id}'),
           item: item,
-          reorderIndex: _budgetBatchMode ? null : i,
+          reorderIndex: i,
           batchMode: _budgetBatchMode,
           selected: _budgetSelected.contains(item.id),
           onTap: () => _budgetBatchMode
               ? _toggleBudgetSelection(item.id)
               : _showBudgetSheet(item: item),
           onDelete: () => widget.onDeleteBudget(item.id),
-          onHandleTap: () => _enterBudgetBatchWithItem(item.id),
+          onHandleTap: () => _budgetBatchMode
+              ? _toggleBudgetSelection(item.id)
+              : _enterBudgetBatchWithItem(item.id),
         );
       },
     );
@@ -138,7 +140,7 @@ extension _BudgetModeState on _ListScreenState {
 
 class _BudgetRow extends StatelessWidget {
   final BudgetItem item;
-  final int? reorderIndex;
+  final int reorderIndex;
   final bool batchMode;
   final bool selected;
   final VoidCallback onTap;
@@ -175,9 +177,7 @@ class _BudgetRow extends StatelessWidget {
             color: Colors.white, size: 22),
       ),
       onDismissed: (_) => onDelete(),
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
+      child: Container(
           margin: const EdgeInsets.only(bottom: 6),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
@@ -192,49 +192,60 @@ class _BudgetRow extends StatelessWidget {
           ),
           child: Row(
             children: [
-              if (batchMode)
-                Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: _SelectCircle(selected: selected),
-                ),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l.data(item.name),
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onTap,
+                  child: Row(
+                    children: [
+                      if (batchMode)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 12),
+                          child: _SelectCircle(selected: selected),
+                        ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l.data(item.name),
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              '${item.quantity} × ${l.money(item.unitPrice)}',
+                              style: const TextStyle(
+                                  fontSize: 12, color: AppColors.textMuted),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      '${item.quantity} × ${l.money(item.unitPrice)}',
-                      style: const TextStyle(
-                          fontSize: 12, color: AppColors.textMuted),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(width: 10),
-              Text(
-                l.money(item.lineTotal),
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+              ReorderableDragStartListener(
+                index: reorderIndex,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 10),
+                  child: Text(
+                    l.money(item.lineTotal),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
                 ),
               ),
-              if (reorderIndex != null && !batchMode)
-                DragHandle(index: reorderIndex!, onTap: onHandleTap)
-              else
-                const SizedBox(width: 24),
+              DragHandle(index: reorderIndex, onTap: onHandleTap),
             ],
           ),
         ),
-      ),
     );
   }
 }

@@ -6,6 +6,7 @@ import '../widgets/toast.dart';
 import '../widgets/days_selector.dart';
 import '../widgets/drag_handle.dart';
 import '../widgets/sort_toggle_button.dart';
+import '../widgets/batch_bar.dart';
 
 part 'inventory_screen.widgets.dart';
 
@@ -474,8 +475,16 @@ class _InventoryScreenState extends State<InventoryScreen> {
           batchMode: _batchMode,
           selected: _selected.contains(item.id),
           onHandleTap: () => setState(() {
-            _batchMode = true;
-            _selected.add(item.id);
+            if (_batchMode) {
+              if (_selected.contains(item.id)) {
+                _selected.remove(item.id);
+              } else {
+                _selected.add(item.id);
+              }
+            } else {
+              _batchMode = true;
+              _selected.add(item.id);
+            }
           }),
         );
       },
@@ -505,8 +514,16 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 batchMode: _batchMode,
                 selected: _selected.contains(item.id),
                 onHandleTap: () => setState(() {
-                  _batchMode = true;
-                  _selected.add(item.id);
+                  if (_batchMode) {
+                    if (_selected.contains(item.id)) {
+                      _selected.remove(item.id);
+                    } else {
+                      _selected.add(item.id);
+                    }
+                  } else {
+                    _batchMode = true;
+                    _selected.add(item.id);
+                  }
                 }),
               )),
           const SizedBox(height: 6),
@@ -558,12 +575,20 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   })
               : () => _showDetailSheet(item),
           onDelete: () => widget.onDelete(item.id),
-          reorderIndex: _batchMode ? null : i,
+          reorderIndex: i,
           batchMode: _batchMode,
           selected: _selected.contains(item.id),
           onHandleTap: () => setState(() {
-            _batchMode = true;
-            _selected.add(item.id);
+            if (_batchMode) {
+              if (_selected.contains(item.id)) {
+                _selected.remove(item.id);
+              } else {
+                _selected.add(item.id);
+              }
+            } else {
+              _batchMode = true;
+              _selected.add(item.id);
+            }
           }),
         );
       },
@@ -586,129 +611,60 @@ class _InventoryScreenState extends State<InventoryScreen> {
     final hasSelection = _selected.isNotEmpty;
     final selectedItems = widget.items.where((i) => _selected.contains(i.id)).toList();
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        boxShadow: [
-          BoxShadow(color: Color(0x12000000), blurRadius: 12, offset: Offset(0, -3)),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            l.selectedCount(_selected.length),
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              // Select all
-              GestureDetector(
-                onTap: () => setState(() {
-                  if (allSelected) {
-                    _selected.clear();
-                  } else {
-                    _selected.addAll(allIds);
-                  }
-                }),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: allSelected ? AppColors.brand.withValues(alpha: 0.12) : AppColors.fieldBg,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    l.selectAll,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: allSelected ? AppColors.brand : AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Add to restock
-              GestureDetector(
-                onTap: hasSelection ? () {
+    return BatchBar(
+      selectedCount: _selected.length,
+      showCountLabel: true,
+      allSelected: allSelected,
+      onToggleAll: () => setState(() {
+        if (allSelected) {
+          _selected.clear();
+        } else {
+          _selected.addAll(allIds);
+        }
+      }),
+      extraActions: [
+        BatchBarAction(
+          label: l.batchAddToRestock,
+          color: AppColors.brand,
+          onTap: hasSelection
+              ? () {
                   widget.onBatchAddToRestock(selectedItems);
                   setState(() {
                     _selected.clear();
                     _batchMode = false;
                   });
-                } : null,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: hasSelection ? AppColors.brand.withValues(alpha: 0.12) : AppColors.fieldBg,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    l.batchAddToRestock,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: hasSelection ? AppColors.brand : AppColors.textDisabled,
+                }
+              : null,
+        ),
+      ],
+      onDelete: hasSelection
+          ? () async {
+              final ok = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: Text(l.selectedCount(_selected.length)),
+                  content: const Text('确定要删除吗？此操作无法撤销。'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: Text(l.cancel),
                     ),
-                  ),
+                    TextButton(
+                      style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: Text(l.delete),
+                    ),
+                  ],
                 ),
-              ),
-              const Spacer(),
-              // Delete
-              GestureDetector(
-                onTap: hasSelection ? () async {
-                  final ok = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: Text(l.selectedCount(_selected.length)),
-                      content: const Text('确定要删除吗？此操作无法撤销。'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: Text(l.cancel),
-                        ),
-                        TextButton(
-                          style: TextButton.styleFrom(foregroundColor: AppColors.danger),
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: Text(l.delete),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (ok != true) return;
-                  widget.onBatchDelete(_selected.toList());
-                  setState(() {
-                    _selected.clear();
-                    _batchMode = false;
-                  });
-                } : null,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: hasSelection ? AppColors.danger.withValues(alpha: 0.10) : AppColors.fieldBg,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    l.delete,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: hasSelection ? AppColors.danger : AppColors.textDisabled,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+              );
+              if (ok != true) return;
+              widget.onBatchDelete(_selected.toList());
+              setState(() {
+                _selected.clear();
+                _batchMode = false;
+              });
+            }
+          : null,
     );
   }
 

@@ -173,10 +173,7 @@ class _SimpleRow extends StatelessWidget {
             color: Colors.white, size: 22),
       ),
       onDismissed: (_) => onDelete(),
-      child: GestureDetector(
-        onTap: onToggle,
-        onLongPress: onLongPress,
-        child: Container(
+      child: Container(
           margin: const EdgeInsets.only(bottom: 4),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
           decoration: BoxDecoration(
@@ -192,29 +189,44 @@ class _SimpleRow extends StatelessWidget {
           ),
           child: Row(
             children: [
-              _Checkbox(checked: item.checked),
-              const SizedBox(width: 14),
               Expanded(
-                child: Text(
-                  item.name,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: item.checked
-                        ? AppColors.textDisabled
-                        : AppColors.textPrimary,
-                    decoration:
-                        item.checked ? TextDecoration.lineThrough : null,
-                    decorationColor: AppColors.textDisabled,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onToggle,
+                  onLongPress: onLongPress,
+                  child: Row(
+                    children: [
+                      _Checkbox(checked: item.checked),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Text(
+                          item.name,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: item.checked
+                                ? AppColors.textDisabled
+                                : AppColors.textPrimary,
+                            decoration:
+                                item.checked ? TextDecoration.lineThrough : null,
+                            decorationColor: AppColors.textDisabled,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              if (showDragHandle && !item.checked && reorderIndex != null)
+              if (showDragHandle && !item.checked && reorderIndex != null) ...[
+                ReorderableDragStartListener(
+                  index: reorderIndex!,
+                  child: const SizedBox(width: 12, height: 44),
+                ),
                 DragHandle(index: reorderIndex!),
+              ],
             ],
           ),
         ),
-      ),
     );
   }
 }
