@@ -14,11 +14,28 @@ extension _SmartModeState on _ListScreenState {
         untagged.add(item);
       }
     }
+    final order = widget.shelfCodeOrder;
     final sorted = Map.fromEntries(
       map.entries.toList()
-        ..sort((a, b) => _smartGroupDir == SortDir.asc
-            ? a.key.compareTo(b.key)
-            : b.key.compareTo(a.key)),
+        ..sort((a, b) {
+          int cmp;
+          if (order.isNotEmpty) {
+            final ai = order.indexOf(a.key);
+            final bi = order.indexOf(b.key);
+            if (ai >= 0 && bi >= 0) {
+              cmp = ai.compareTo(bi);
+            } else if (ai >= 0) {
+              cmp = -1;
+            } else if (bi >= 0) {
+              cmp = 1;
+            } else {
+              cmp = a.key.compareTo(b.key);
+            }
+          } else {
+            cmp = a.key.compareTo(b.key);
+          }
+          return _smartGroupDir == SortDir.asc ? cmp : -cmp;
+        }),
     );
     // Untagged items always appear at the end regardless of direction.
     if (untagged.isNotEmpty) {
@@ -100,6 +117,8 @@ extension _SmartModeState on _ListScreenState {
   }
 
   Widget _buildSmartList() {
+    final groupCounts = <String, int>{};
+    final groupColors = <String, Color>{};
     final List<_FlatEntry> flat;
     if (_smartGroup == SmartGroupMode.manual) {
       flat = widget.smartItems
@@ -108,11 +127,6 @@ extension _SmartModeState on _ListScreenState {
     } else {
       final groups = _byShelf ? _groupByShelf() : _groupByCategory();
       flat = _buildFlatEntries(groups);
-    }
-    final groupCounts = <String, int>{};
-    final groupColors = <String, Color>{};
-    if (_smartGroup != SmartGroupMode.manual) {
-      final groups = _byShelf ? _groupByShelf() : _groupByCategory();
       for (final e in groups.entries) {
         groupCounts[e.key] = e.value.length;
         groupColors[e.key] = e.value.first.category.color;
@@ -142,13 +156,15 @@ extension _SmartModeState on _ListScreenState {
           onToggle: () => widget.onToggleSmart(item.id),
           onDelete: () => widget.onDeleteSmart(item.id),
           onLongPress: _smartBatchMode ? null : () => _enterSmartBatchWithItem(item.id),
-          reorderIndex: _smartBatchMode ? null : i,
+          reorderIndex: i,
           batchMode: _smartBatchMode,
           selected: _smartSelected.contains(item.id),
           onSelect: () => _toggleSmartSelection(item.id),
           tripSelected: _tripSelected.contains(item.id),
           onTripToggle: () => _toggleTripSelection(item.id),
-          onHandleTap: _smartBatchMode ? null : () => _enterSmartBatchWithItem(item.id),
+          onHandleTap: _smartBatchMode
+              ? () => _toggleSmartSelection(item.id)
+              : () => _enterSmartBatchWithItem(item.id),
         );
       },
       onReorderItem: (old, newIdx) => _onSmartReorder(old, newIdx, flat),
@@ -216,7 +232,7 @@ class _SmartRow extends StatelessWidget {
   final VoidCallback onToggle;
   final VoidCallback onDelete;
   final VoidCallback? onLongPress;
-  final int? reorderIndex;
+  final int reorderIndex;
   final bool batchMode;
   final bool selected;
   final VoidCallback? onSelect;
@@ -231,7 +247,7 @@ class _SmartRow extends StatelessWidget {
     required this.onToggle,
     required this.onDelete,
     this.onLongPress,
-    this.reorderIndex,
+    required this.reorderIndex,
     this.batchMode = false,
     this.selected = false,
     this.onSelect,
@@ -276,11 +292,14 @@ class _SmartRow extends StatelessWidget {
             ),
           ],
         ),
-        child: IntrinsicHeight(
-          child: Row(
-            children: [
-              // Left color bar
-              Container(
+        child: Stack(
+          children: [
+            // Left color bar — positioned to fill the card height without IntrinsicHeight
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              child: Container(
                 width: 5,
                 decoration: BoxDecoration(
                   color: zoneColor,
@@ -288,91 +307,98 @@ class _SmartRow extends StatelessWidget {
                       left: Radius.circular(14)),
                 ),
               ),
-              // Circle selector (always visible)
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: circleTap,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 16),
-                  child: _SelectCircle(selected: circleSelected),
-                ),
-              ),
-              // Content (tap to edit)
-              Expanded(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: onToggle,
-                  onLongPress: onLongPress,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 5),
+              child: Row(
+                children: [
+                  // Circle selector (always visible)
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: circleTap,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 16),
+                      child: _SelectCircle(selected: circleSelected),
+                    ),
+                  ),
+                  // Content (tap to edit)
+                  Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: onToggle,
+                      onLongPress: onLongPress,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Flexible(
-                              child: Text(
-                                l.data(item.name),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    l.data(item.name),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                if (qty.isNotEmpty) ...[
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      qty,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.textMuted,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
-                            if (qty.isNotEmpty) ...[
-                              const SizedBox(width: 6),
-                              Flexible(
+                            if (code != null) ...[
+                              const SizedBox(height: 5),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: zoneColor.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
                                 child: Text(
-                                  qty,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.textMuted,
+                                  code,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: zoneColor,
                                   ),
                                 ),
                               ),
                             ],
                           ],
                         ),
-                        if (code != null) ...[
-                          const SizedBox(height: 5),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: zoneColor.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              code,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: zoneColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
+                      ),
                     ),
                   ),
-                ),
+                  ReorderableDragStartListener(
+                    index: reorderIndex,
+                    child: const SizedBox(width: 12),
+                  ),
+                  DragHandle(index: reorderIndex, onTap: onHandleTap),
+                ],
               ),
-              // Drag handle (tap = enter batch mode, drag = reorder)
-              if (reorderIndex != null)
-                DragHandle(index: reorderIndex!, onTap: onHandleTap)
-              else
-                const SizedBox(width: 24),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -558,6 +584,7 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
   @override
   Widget build(BuildContext context) {
     final l = L10n.of(context);
+    final daysParts = l.estimatedDaysSelected(_days).split(RegExp(r'\d+'));
     return Padding(
       padding: EdgeInsets.only(
         left: 20,
@@ -674,18 +701,12 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
                     color: AppColors.textSecondary,
                   ),
                   children: [
-                    TextSpan(
-                        text: l
-                            .estimatedDaysSelected(_days)
-                            .split(RegExp(r'\d+'))[0]),
+                    TextSpan(text: daysParts[0]),
                     TextSpan(
                       text: '$_days',
                       style: const TextStyle(color: AppColors.brand),
                     ),
-                    TextSpan(
-                        text: l
-                            .estimatedDaysSelected(_days)
-                            .split(RegExp(r'\d+'))[1]),
+                    TextSpan(text: daysParts[1]),
                   ],
                 ),
               ),

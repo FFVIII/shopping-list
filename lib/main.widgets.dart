@@ -97,6 +97,7 @@ class _DaysSheetState extends State<_DaysSheet> {
   @override
   Widget build(BuildContext context) {
     final l = L10n.of(context);
+    final daysParts = l.estimatedDaysSelected(_days).split(RegExp(r'\d+'));
     return Padding(
       padding: EdgeInsets.only(
         left: 20,
@@ -220,12 +221,12 @@ class _DaysSheetState extends State<_DaysSheet> {
                   color: AppColors.textSecondary,
                 ),
                 children: [
-                  TextSpan(text: l.estimatedDaysSelected(_days).split(RegExp(r'\d+'))[0]),
+                  TextSpan(text: daysParts[0]),
                   TextSpan(
                     text: '$_days',
                     style: const TextStyle(color: AppColors.brand),
                   ),
-                  TextSpan(text: l.estimatedDaysSelected(_days).split(RegExp(r'\d+'))[1]),
+                  TextSpan(text: daysParts[1]),
                 ],
               ),
             ),

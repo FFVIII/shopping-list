@@ -96,6 +96,7 @@ class _AppShellState extends State<AppShell> {
   late List<BudgetItem> _budget;
   late AppSettings _settings;
   late List<ShelfZone> _shelfZones;
+  List<String> _shelfCodeOrder = [];
   late List<Category> _categories;
 
   @override
@@ -193,6 +194,48 @@ class _AppShellState extends State<AppShell> {
   }
 
   // ── 货架：重排顺序 → 同步重排清单/库存 ────────────────────────────────────────
+
+  // Ordered shelf codes: user-defined order first, then any unseen codes from
+  // current smart items appended alphabetically.
+  List<String> get _orderedShelfCodes {
+    final all = _shopping
+        .where((i) => i.shelfCode != null && i.shelfCode!.trim().isNotEmpty)
+        .map((i) => i.shelfCode!.trim())
+        .toSet();
+    final known = _shelfCodeOrder.where(all.contains).toList();
+    final unseen = (all.difference(known.toSet()).toList()..sort());
+    return [...known, ...unseen];
+  }
+
+  void _reorderShelfCodes(int oldIndex, int newIndex) {
+    setState(() {
+      final codes = _orderedShelfCodes;
+      final code = codes.removeAt(oldIndex);
+      codes.insert(newIndex, code);
+      _shelfCodeOrder = codes;
+    });
+  }
+
+  void _addShelfCode(String code) {
+    if (code.isEmpty || _shelfCodeOrder.contains(code)) return;
+    setState(() => _shelfCodeOrder = [..._orderedShelfCodes, code]);
+  }
+
+  void _deleteShelfCode(String code) {
+    setState(() => _shelfCodeOrder = _orderedShelfCodes.where((c) => c != code).toList());
+  }
+
+  void _renameShelfCode(String oldCode, String newCode) {
+    if (newCode.isEmpty || newCode == oldCode) return;
+    setState(() {
+      _shelfCodeOrder = _orderedShelfCodes
+          .map((c) => c == oldCode ? newCode : c)
+          .toList();
+      for (final item in _shopping) {
+        if (item.shelfCode == oldCode) item.shelfCode = newCode;
+      }
+    });
+  }
 
   void _reorderShelfZones(int oldIndex, int newIndex) {
     setState(() {
@@ -647,6 +690,7 @@ class _AppShellState extends State<AppShell> {
     final reminderCount = _inventory
         .where((i) => i.statusFor(threshold) != StockStatus.sufficient)
         .length;
+    final shelfCodeOrder = _orderedShelfCodes;
 
     return Scaffold(
       body: Builder(
@@ -678,6 +722,7 @@ class _AppShellState extends State<AppShell> {
               onBatchMarkBought: _batchMarkBought,
               onBatchDeleteBudget: _batchDeleteBudget,
               smartModeRequest: _smartModeRequest,
+              shelfCodeOrder: shelfCodeOrder,
             ),
             InventoryScreen(
               items: _inventory,
@@ -710,6 +755,11 @@ class _AppShellState extends State<AppShell> {
               onLanguageChanged: widget.onLanguageChanged,
               shelfZones: _shelfZones,
               onReorderShelfZones: _reorderShelfZones,
+              shelfCodeOrder: shelfCodeOrder,
+              onReorderShelfCodes: _reorderShelfCodes,
+              onAddShelfCode: _addShelfCode,
+              onDeleteShelfCode: _deleteShelfCode,
+              onRenameShelfCode: _renameShelfCode,
               categories: _categories,
               onAddCategory: _addCategory,
               onEditCategory: _editCategory,
