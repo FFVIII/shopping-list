@@ -183,6 +183,7 @@ class _AppShellState extends State<AppShell> {
     setState(() {
       _categories = [..._categories, cat];
     });
+    _persistCategories();
     return cat;
   }
 
@@ -204,6 +205,7 @@ class _AppShellState extends State<AppShell> {
         ..defaultDays = defaultDays;
       _categories = List<Category>.from(_categories);
     });
+    _persistCategories();
   }
 
   void _deleteCategory(String id) {
@@ -225,6 +227,10 @@ class _AppShellState extends State<AppShell> {
       _shoppingSimple = List<ShoppingItem>.from(_shoppingSimple);
       _inventory = List<InventoryItem>.from(_inventory);
     });
+    _persistCategories();
+    _persistShoppingSmart();
+    _persistShoppingSimple();
+    _persistInventory();
   }
 
   void _reorderCategories(int oldIndex, int newIndex) {
@@ -239,6 +245,9 @@ class _AppShellState extends State<AppShell> {
       _shopping = List<ShoppingItem>.from(_shopping);
       _inventory = List<InventoryItem>.from(_inventory);
     });
+    _persistCategories();
+    _persistShoppingSmart();
+    _persistInventory();
   }
 
   // ── 货架：重排顺序 → 同步重排清单/库存 ────────────────────────────────────────
@@ -262,15 +271,18 @@ class _AppShellState extends State<AppShell> {
       codes.insert(newIndex, code);
       _shelfCodeOrder = codes;
     });
+    _persistShelfCodeOrder();
   }
 
   void _addShelfCode(String code) {
     if (code.isEmpty || _shelfCodeOrder.contains(code)) return;
     setState(() => _shelfCodeOrder = [..._orderedShelfCodes, code]);
+    _persistShelfCodeOrder();
   }
 
   void _deleteShelfCode(String code) {
     setState(() => _shelfCodeOrder = _orderedShelfCodes.where((c) => c != code).toList());
+    _persistShelfCodeOrder();
   }
 
   void _renameShelfCode(String oldCode, String newCode) {
@@ -283,6 +295,8 @@ class _AppShellState extends State<AppShell> {
         if (item.shelfCode == oldCode) item.shelfCode = newCode;
       }
     });
+    _persistShelfCodeOrder();
+    _persistShoppingSmart();
   }
 
   void _reorderShelfZones(int oldIndex, int newIndex) {
@@ -300,6 +314,9 @@ class _AppShellState extends State<AppShell> {
       _shopping = List<ShoppingItem>.from(_shopping);
       _inventory = List<InventoryItem>.from(_inventory);
     });
+    _persistShelfZones();
+    _persistShoppingSmart();
+    _persistInventory();
   }
 
   // ── 清单：记账模式增 / 改 / 删 ───────────────────────────────────────────────
@@ -834,7 +851,10 @@ class _AppShellState extends State<AppShell> {
             ),
             SettingsScreen(
               settings: _settings,
-              onChanged: (s) => setState(() => _settings = s),
+              onChanged: (s) {
+                setState(() => _settings = s);
+                _persistSettings();
+              },
               language: widget.language,
               onLanguageChanged: widget.onLanguageChanged,
               shelfZones: _shelfZones,
