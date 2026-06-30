@@ -347,6 +347,7 @@ class _AppShellState extends State<AppShell> {
         shelfZone: '其他',
       ));
     });
+    _persistShoppingSimple();
   }
 
   // ── 清单：智能模式添加（带分类）────────────────────────────────────────────
@@ -363,6 +364,7 @@ class _AppShellState extends State<AppShell> {
         estimatedDays: estimatedDays,
       ));
     });
+    _persistShoppingSmart();
   }
 
   // ── 清单：简单模式勾选（只标记，不入库存）──────────────────────────────────
@@ -373,6 +375,7 @@ class _AppShellState extends State<AppShell> {
       if (idx == -1) return;
       _shoppingSimple[idx].checked = !_shoppingSimple[idx].checked;
     });
+    _persistShoppingSimple();
   }
 
   // ── 清单：智能模式勾选 → 弹出天数 → 入库存 ──────────────────────────────
@@ -422,6 +425,7 @@ class _AppShellState extends State<AppShell> {
           ..shelfZone = zone;
       }
     });
+    _persistShoppingSmart();
   }
 
   // ── 清单：拖动排序（简单模式）────────────────────────────────────────────
@@ -432,6 +436,7 @@ class _AppShellState extends State<AppShell> {
           .map((id) => _shoppingSimple.firstWhere((i) => i.id == id))
           .toList();
     });
+    _persistShoppingSimple();
   }
 
   // ── 清单：拖动排序（智能模式，支持跨组）─────────────────────────────────
@@ -457,21 +462,25 @@ class _AppShellState extends State<AppShell> {
           .map((id) => _shopping.firstWhere((i) => i.id == id))
           .toList();
     });
+    _persistShoppingSmart();
   }
 
   // ── 清单：删除 ────────────────────────────────────────────────────────────
 
   void _deleteSimpleItem(String id) {
     setState(() => _shoppingSimple.removeWhere((i) => i.id == id));
+    _persistShoppingSimple();
   }
 
   void _deleteSmartItem(String id) {
     setState(() => _shopping.removeWhere((i) => i.id == id));
+    _persistShoppingSmart();
   }
 
   void _batchDeleteSmart(List<String> ids) {
     final idSet = ids.toSet();
     setState(() => _shopping = _shopping.where((i) => !idSet.contains(i.id)).toList());
+    _persistShoppingSmart();
   }
 
   void _batchDeleteBudget(List<String> ids) {
@@ -521,6 +530,8 @@ class _AppShellState extends State<AppShell> {
         }
       }
     });
+    _persistShoppingSmart();
+    _persistInventory();
   }
 
   // ── 清单：重命名 ──────────────────────────────────────────────────────────
@@ -530,6 +541,7 @@ class _AppShellState extends State<AppShell> {
       final idx = _shoppingSimple.indexWhere((i) => i.id == id);
       if (idx != -1) _shoppingSimple[idx].name = newName;
     });
+    _persistShoppingSimple();
   }
 
   void _editSmartItem(
@@ -551,12 +563,14 @@ class _AppShellState extends State<AppShell> {
         ..shelfZone = shelfZone;
       _shopping = List<ShoppingItem>.from(_shopping);
     });
+    _persistShoppingSmart();
   }
 
   // ── 清单：完成购物（清掉已勾，留下未买到的）──────────────────────────────
 
   void _completeTripSimple() {
     setState(() => _shoppingSimple.removeWhere((i) => i.checked));
+    _persistShoppingSimple();
   }
 
   void _completeTripSmart(List<String> selectedIds) {
@@ -592,6 +606,8 @@ class _AppShellState extends State<AppShell> {
       _inventory = inv;
       _shopping.clear();
     });
+    _persistInventory();
+    _persistShoppingSmart();
   }
 
   // ── 提醒：加入清单 ────────────────────────────────────────────────────────
@@ -612,6 +628,7 @@ class _AppShellState extends State<AppShell> {
       ];
       _smartModeRequest++;
     });
+    _persistShoppingSmart();
   }
 
   // ── 提醒：从清单移除（取消加入）──────────────────────────────────────────────
@@ -622,6 +639,7 @@ class _AppShellState extends State<AppShell> {
           .where((s) => !(s.name == inv.name && !s.checked))
           .toList();
     });
+    _persistShoppingSmart();
   }
 
   // ── 库存 CRUD ──────────────────────────────────────────────────────────────
@@ -667,6 +685,7 @@ class _AppShellState extends State<AppShell> {
         ];
       }
     });
+    _persistShoppingSmart();
   }
 
   void _editInventoryItem(
@@ -728,6 +747,7 @@ class _AppShellState extends State<AppShell> {
       _shopping = [..._shopping, ...newItems];
       _smartModeRequest++;
     });
+    _persistShoppingSmart();
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
