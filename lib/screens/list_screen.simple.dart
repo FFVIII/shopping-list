@@ -5,7 +5,12 @@ part of 'list_screen.dart';
 extension _SimpleModeState on _ListScreenState {
   Widget _buildSimpleList() {
     final l = L10n.of(context);
-    final pending = widget.simpleItems.where((i) => !i.checked).toList();
+    final pendingRaw = widget.simpleItems.where((i) => !i.checked).toList();
+    final pending = _simpleDir != null
+        ? ([...pendingRaw]..sort((a, b) => _simpleDir == SortDir.asc
+            ? a.name.compareTo(b.name)
+            : b.name.compareTo(a.name)))
+        : pendingRaw;
     final done = widget.simpleItems.where((i) => i.checked).toList();
 
     return CustomScrollView(
@@ -39,7 +44,16 @@ extension _SimpleModeState on _ListScreenState {
                 showDragHandle: true,
               );
             },
-            onReorderItem: widget.onReorderSimple,
+            onReorderItem: (oldIdx, newIdx) {
+              final newPending = [...pending];
+              final moved = newPending.removeAt(oldIdx);
+              newPending.insert(newIdx, moved);
+              widget.onReorderSimple([
+                ...newPending.map((i) => i.id),
+                ...done.map((i) => i.id),
+              ]);
+              if (_simpleDir != null) setState(() => _simpleDir = null);
+            },
             proxyDecorator: (child, index, animation) => Material(
               elevation: 6,
               borderRadius: BorderRadius.circular(12),
@@ -196,14 +210,7 @@ class _SimpleRow extends StatelessWidget {
                 ),
               ),
               if (showDragHandle && !item.checked && reorderIndex != null)
-                ReorderableDragStartListener(
-                  index: reorderIndex!,
-                  child: const Padding(
-                    padding: EdgeInsets.only(left: 6),
-                    child: Icon(Icons.drag_handle_rounded,
-                        size: 20, color: AppColors.border),
-                  ),
-                ),
+                DragHandle(index: reorderIndex!),
             ],
           ),
         ),

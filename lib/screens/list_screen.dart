@@ -3,6 +3,9 @@ import '../theme/app_colors.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import '../models/item.dart';
 import '../l10n/l10n.dart';
+import '../widgets/days_selector.dart';
+import '../widgets/drag_handle.dart';
+import '../widgets/sort_toggle_button.dart';
 
 part 'list_screen.widgets.dart';
 part 'list_screen.simple.dart';
@@ -11,6 +14,10 @@ part 'list_screen.budget.dart';
 
 /// List page modes, in display order: Simple · Budget · Smart.
 enum ListMode { simple, budget, smart }
+
+enum BudgetSortMode { manual, name, price }
+
+enum SmartGroupMode { shelf, category, manual }
 
 class ListScreen extends StatefulWidget {
   final List<ShoppingItem> simpleItems;
@@ -21,17 +28,18 @@ class ListScreen extends StatefulWidget {
   // Smart mode: triggers "how many days?" sheet → inventory
   final void Function(String id) onToggleSmart;
   final void Function(String name) onAddSimple;
-  final void Function(String name, String quantityLabel, String? shelfCode, Category category, String shelfZone) onAddSmart;
+  final void Function(String name, String quantityLabel, String? shelfCode, int estimatedDays, Category category, String shelfZone) onAddSmart;
   final void Function(String id) onDeleteSimple;
   final void Function(String id) onDeleteSmart;
   final VoidCallback onCompleteSimple;
-  final VoidCallback onCompleteSmart;
-  final void Function(int oldIndex, int newIndex) onReorderSimple;
+  final void Function(List<String> selectedIds) onCompleteSmart;
+  final void Function(List<String> orderedIds) onReorderSimple;
   final void Function(
     String movedId,
     String? newShelfZone,
     Category? newCategory,
     List<String> orderedIds,
+    String? newShelfCode,
   ) onReorderSmart;
   final void Function(String id, String newName) onRenameSimple;
   final void Function(
@@ -48,7 +56,7 @@ class ListScreen extends StatefulWidget {
   final void Function(String id, String name, int quantity, double unitPrice)
       onEditBudget;
   final void Function(String id) onDeleteBudget;
-  final void Function(int oldIndex, int newIndex) onReorderBudget;
+  final void Function(List<String> orderedIds) onReorderBudget;
   // Batch operations
   final void Function(List<String> ids) onBatchDeleteSmart;
   final void Function(List<String> ids) onBatchMarkBought;
@@ -91,16 +99,26 @@ class ListScreen extends StatefulWidget {
 
 class _ListScreenState extends State<ListScreen> {
   ListMode _mode = ListMode.simple;
-  bool _byShelf = true;
+  SmartGroupMode _smartGroup = SmartGroupMode.shelf;
+  SortDir _smartGroupDir = SortDir.asc;
+  bool get _byShelf => _smartGroup == SmartGroupMode.shelf;
   bool _smartHintDismissed = false;
 
   // Batch selection state (smart mode)
   bool _smartBatchMode = false;
   final Set<String> _smartSelected = {};
 
+  // Trip selection: which items to save to inventory on complete (default: all)
+  final Set<String> _tripSelected = {};
+
+  // Simple list sort: by name, off → asc → desc → off. null = off.
+  SortDir? _simpleDir;
+
   // Batch selection state (budget mode)
   bool _budgetBatchMode = false;
   final Set<String> _budgetSelected = {};
+  BudgetSortMode _budgetSort = BudgetSortMode.manual;
+  SortDir _budgetDir = SortDir.asc;
 
   bool get _isSmart => _mode == ListMode.smart;
   bool get _isBudget => _mode == ListMode.budget;
@@ -115,6 +133,7 @@ class _ListScreenState extends State<ListScreen> {
   void initState() {
     super.initState();
     _initSpeech();
+    _tripSelected.addAll(widget.smartItems.map((i) => i.id));
   }
 
   @override
@@ -123,6 +142,11 @@ class _ListScreenState extends State<ListScreen> {
     if (widget.smartModeRequest != old.smartModeRequest) {
       setState(() => _mode = ListMode.smart);
     }
+    // Keep trip selection in sync with item list
+    final currentIds = widget.smartItems.map((i) => i.id).toSet();
+    _tripSelected
+      ..addAll(currentIds.difference(_tripSelected))
+      ..removeAll(_tripSelected.difference(currentIds));
   }
 
   Future<void> _initSpeech() async {
@@ -172,34 +196,31 @@ class _ListScreenState extends State<ListScreen> {
   List<ShoppingItem> get _activeItems =>
       _isSmart ? widget.smartItems : widget.simpleItems;
   int get _pendingCount => _activeItems.where((i) => !i.checked).length;
-  bool get _hasChecked => _activeItems.any((i) => i.checked);
-  int get _checkedCount => _activeItems.where((i) => i.checked).length;
 
-  Future<void> _confirmCompleteTrip() async {
-    final l = L10n.of(context);
-    final bought = _checkedCount;
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l.completeTripTitle),
-        content: Text(l.completeTripMessage(bought)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l.cancel),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(
-                foregroundColor: AppColors.brand),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l.completeTrip),
-          ),
-        ],
-      ),
-    );
-    if (ok != true) return;
+  void _confirmCompleteTrip() {
     if (_isSmart) {
-      widget.onCompleteSmart();
+      // Ensure every current item is in _tripSelected before opening the sheet
+      _tripSelected.addAll(widget.smartItems.map((i) => i.id));
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.white,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (ctx) => _CompleteTripSheet(
+          items: widget.smartItems,
+          initialSelected: Set<String>.from(_tripSelected),
+          onConfirm: (selectedIds) {
+            setState(() {
+              _tripSelected
+                ..clear()
+                ..addAll(selectedIds);
+            });
+            widget.onCompleteSmart(selectedIds);
+          },
+        ),
+      );
     } else {
       widget.onCompleteSimple();
     }
@@ -217,6 +238,8 @@ class _ListScreenState extends State<ListScreen> {
             _buildHeader(today),
             _buildModeToggle(),
             if (_isSmart) _buildSmartSubToggle(),
+            if (!_isSmart && !_isBudget) _buildSimpleSortToggle(),
+            if (_isBudget && !_budgetBatchMode) _buildBudgetSortToggle(),
             if (_isBudget && _budgetBatchMode) _buildBudgetBatchSubBar(),
             if (_isSmart && !_smartHintDismissed) _buildSmartHint(),
             const SizedBox(height: 4),
@@ -279,7 +302,7 @@ class _ListScreenState extends State<ListScreen> {
               ],
             ),
           ),
-          if (_hasChecked)
+          if (_isSmart && widget.smartItems.isNotEmpty)
             GestureDetector(
               onTap: _confirmCompleteTrip,
               child: Container(
@@ -352,43 +375,102 @@ class _ListScreenState extends State<ListScreen> {
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
       child: Row(
         children: [
-          if (!_smartBatchMode) ...[
-            _TextToggleBtn(
-              label: l.byShelf,
-              selected: _byShelf,
-              onTap: () => setState(() => _byShelf = true),
-            ),
-            const SizedBox(width: 4),
-            _TextToggleBtn(
-              label: l.byCategory,
-              selected: !_byShelf,
-              onTap: () => setState(() => _byShelf = false),
-            ),
-          ] else ...[
-            Text(
-              l.selectedCount(_smartSelected.length),
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const Spacer(),
-            GestureDetector(
-              onTap: () => setState(() {
-                _smartBatchMode = false;
-                _smartSelected.clear();
-              }),
-              child: Text(
-                l.batchDone,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.brand,
-                ),
-              ),
-            ),
-          ],
+          _TextToggleBtn(
+            label: l.byShelf,
+            selected: _smartGroup == SmartGroupMode.shelf,
+            direction: _smartGroup == SmartGroupMode.shelf
+                ? _smartGroupDir
+                : null,
+            onTap: () => setState(() {
+              if (_smartGroup != SmartGroupMode.shelf) {
+                _smartGroup = SmartGroupMode.shelf;
+                _smartGroupDir = SortDir.asc;
+              } else if (_smartGroupDir == SortDir.asc) {
+                _smartGroupDir = SortDir.desc;
+              } else {
+                _smartGroup = SmartGroupMode.manual;
+              }
+            }),
+          ),
+          const SizedBox(width: 4),
+          _TextToggleBtn(
+            label: l.byCategory,
+            selected: _smartGroup == SmartGroupMode.category,
+            direction: _smartGroup == SmartGroupMode.category
+                ? _smartGroupDir
+                : null,
+            onTap: () => setState(() {
+              if (_smartGroup != SmartGroupMode.category) {
+                _smartGroup = SmartGroupMode.category;
+                _smartGroupDir = SortDir.asc;
+              } else if (_smartGroupDir == SortDir.asc) {
+                _smartGroupDir = SortDir.desc;
+              } else {
+                _smartGroup = SmartGroupMode.manual;
+              }
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSimpleSortToggle() {
+    final l = L10n.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
+      child: Row(
+        children: [
+          _TextToggleBtn(
+            label: l.sortByName,
+            selected: _simpleDir != null,
+            direction: _simpleDir,
+            onTap: () => setState(() => _simpleDir = _cycleDir(_simpleDir)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // off → asc → desc → off, for a single-key value sort (nullable direction).
+  SortDir? _cycleDir(SortDir? current) => current == null
+      ? SortDir.asc
+      : current == SortDir.asc
+          ? SortDir.desc
+          : null;
+
+  // Cycle a multi-key value sort. Tapping a different key activates it ascending;
+  // tapping the active key cycles asc → desc → off.
+  void _cycleBudgetSort(BudgetSortMode mode) {
+    if (_budgetSort != mode) {
+      _budgetSort = mode;
+      _budgetDir = SortDir.asc;
+    } else if (_budgetDir == SortDir.asc) {
+      _budgetDir = SortDir.desc;
+    } else {
+      _budgetSort = BudgetSortMode.manual;
+    }
+  }
+
+  Widget _buildBudgetSortToggle() {
+    final l = L10n.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
+      child: Row(
+        children: [
+          _TextToggleBtn(
+            label: l.sortByName,
+            selected: _budgetSort == BudgetSortMode.name,
+            direction: _budgetSort == BudgetSortMode.name ? _budgetDir : null,
+            onTap: () => setState(() => _cycleBudgetSort(BudgetSortMode.name)),
+          ),
+          const SizedBox(width: 4),
+          _TextToggleBtn(
+            label: l.sortByPrice,
+            selected: _budgetSort == BudgetSortMode.price,
+            direction: _budgetSort == BudgetSortMode.price ? _budgetDir : null,
+            onTap: () => setState(() => _cycleBudgetSort(BudgetSortMode.price)),
+          ),
         ],
       ),
     );
@@ -535,7 +617,9 @@ class _ListScreenState extends State<ListScreen> {
   void _enterSmartBatchWithItem(String id) {
     setState(() {
       _smartBatchMode = true;
-      _smartSelected.add(id);
+      _smartSelected
+        ..clear()
+        ..addAll(widget.smartItems.map((i) => i.id));
     });
   }
 
@@ -545,6 +629,16 @@ class _ListScreenState extends State<ListScreen> {
         _smartSelected.remove(id);
       } else {
         _smartSelected.add(id);
+      }
+    });
+  }
+
+  void _toggleTripSelection(String id) {
+    setState(() {
+      if (_tripSelected.contains(id)) {
+        _tripSelected.remove(id);
+      } else {
+        _tripSelected.add(id);
       }
     });
   }
@@ -724,6 +818,29 @@ class _ListScreenState extends State<ListScreen> {
       ),
       child: Row(
         children: [
+          // Cancel batch mode
+          GestureDetector(
+            onTap: () => setState(() {
+              _smartBatchMode = false;
+              _smartSelected.clear();
+            }),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.fieldBg,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                l.cancel,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+          ),
+          const Spacer(),
           // Select all
           GestureDetector(
             onTap: () => setState(() {
@@ -749,7 +866,7 @@ class _ListScreenState extends State<ListScreen> {
               ),
             ),
           ),
-          const Spacer(),
+          const SizedBox(width: 8),
           // Delete
           GestureDetector(
             onTap: hasSelection ? () async {
@@ -853,8 +970,8 @@ class _ListScreenState extends State<ListScreen> {
       builder: (ctx) => _SmartAddSheet(
         name: name,
         categories: widget.categories,
-        onConfirm: (category, zone, quantityLabel, shelfCode) {
-          widget.onAddSmart(name, quantityLabel, shelfCode, category, zone);
+        onConfirm: (category, zone, quantityLabel, shelfCode, estimatedDays) {
+          widget.onAddSmart(name, quantityLabel, shelfCode, estimatedDays, category, zone);
           _nameCtrl.clear();
         },
       ),

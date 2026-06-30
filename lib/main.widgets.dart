@@ -82,8 +82,8 @@ class _DaysSheetState extends State<_DaysSheet> {
         isDense: true,
       );
 
-  Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 6, top: 10),
+  Widget _fieldLabel(String text) => Padding(
+        padding: const EdgeInsets.only(bottom: 6),
         child: Text(
           text,
           style: const TextStyle(
@@ -97,95 +97,122 @@ class _DaysSheetState extends State<_DaysSheet> {
   @override
   Widget build(BuildContext context) {
     final l = L10n.of(context);
-    return SingleChildScrollView(
+    return Padding(
       padding: EdgeInsets.only(
         left: 20,
         right: 20,
         top: 20,
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Edit fields ───────────────────────────────────────────────────
-          _label(l.productNameHint),
-          TextField(
-            controller: _nameCtrl,
-            style: const TextStyle(fontSize: 15),
-            maxLength: 10,
-            decoration: _dec('').copyWith(
-              counterStyle: const TextStyle(
-                  fontSize: 10, color: AppColors.textDisabled),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Header ────────────────────────────────────────────────────
+            Text(
+              l.editItem,
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
             ),
-          ),
-          _label(l.quantityFieldLabel),
-          TextField(
-            controller: _qtyCtrl,
-            style: const TextStyle(fontSize: 15),
-            maxLength: 8,
-            decoration: _dec('1').copyWith(
-              counterStyle: const TextStyle(
-                  fontSize: 10, color: AppColors.textDisabled),
+            const SizedBox(height: 6),
+            Text(
+              l.chooseCategoryHint,
+              style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
             ),
-          ),
-          _label(l.shelfCodeFieldLabel),
-          TextField(
-            controller: _shelfCtrl,
-            style: const TextStyle(fontSize: 15),
-            maxLength: 10,
-            decoration: _dec('').copyWith(
-              counterStyle: const TextStyle(
-                  fontSize: 10, color: AppColors.textDisabled),
+            const SizedBox(height: 16),
+            // ── Name field ────────────────────────────────────────────────
+            TextField(
+              controller: _nameCtrl,
+              style: const TextStyle(fontSize: 15),
+              maxLength: 10,
+              decoration: _dec('').copyWith(
+                counterStyle: const TextStyle(
+                    fontSize: 10, color: AppColors.textDisabled),
+              ),
             ),
-          ),
-          _label(l.categoryLabel),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: widget.categories.map((cat) {
-              final sel = _category == cat;
-              return GestureDetector(
-                onTap: () => setState(() {
-                  _category = cat;
-                  _zone = cat.shelfZone;
-                }),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: sel ? cat.color : cat.bgColor,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    cat.name,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: sel ? Colors.white : cat.color,
-                    ),
+            const SizedBox(height: 12),
+            // ── Qty + Shelf row ───────────────────────────────────────────
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _fieldLabel(l.quantityFieldLabel),
+                      TextField(
+                        controller: _qtyCtrl,
+                        style: const TextStyle(fontSize: 15),
+                        decoration: _dec('1件'),
+                      ),
+                    ],
                   ),
                 ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const Icon(Icons.location_on_outlined,
-                  size: 14, color: AppColors.textDisabled),
-              const SizedBox(width: 4),
-              Text(
-                l.shelfZoneInline(l.data(_zone)),
-                style: const TextStyle(
-                    fontSize: 12, color: AppColors.textMuted),
-              ),
-            ],
-          ),
-          // ── Days section ──────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6, top: 10),
-            child: RichText(
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _fieldLabel(l.shelfCodeFieldLabel),
+                      TextField(
+                        controller: _shelfCtrl,
+                        style: const TextStyle(fontSize: 15),
+                        decoration: _dec(''),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            // ── Category chips ────────────────────────────────────────────
+            _fieldLabel(l.categoryLabel),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: widget.categories.map((cat) {
+                final sel = _category == cat;
+                return GestureDetector(
+                  onTap: () => setState(() {
+                    _category = cat;
+                    _zone = cat.shelfZone;
+                  }),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: sel ? cat.color : cat.bgColor,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      cat.name,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: sel ? Colors.white : cat.color,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.location_on_outlined,
+                    size: 14, color: AppColors.textDisabled),
+                const SizedBox(width: 4),
+                Text(
+                  l.shelfZoneInline(l.data(_zone)),
+                  style: const TextStyle(
+                      fontSize: 12, color: AppColors.textMuted),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            // ── Days section ──────────────────────────────────────────────
+            RichText(
               text: TextSpan(
                 style: const TextStyle(
                   fontSize: 13,
@@ -202,77 +229,33 @@ class _DaysSheetState extends State<_DaysSheet> {
                 ],
               ),
             ),
-          ),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [3, 5, 7, 14, 30].map((d) {
-              final sel = _days == d;
-              return GestureDetector(
-                onTap: () => setState(() => _days = d),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 9),
-                  decoration: BoxDecoration(
-                    color: sel ? AppColors.brand : AppColors.fieldBg,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    l.days(d),
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: sel ? Colors.white : AppColors.textChip,
-                    ),
-                  ),
+            const SizedBox(height: 10),
+            DaysSelector(
+              initialDays: _days,
+              onChanged: (d) => setState(() => _days = d),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.brand,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
                 ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 4),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                activeTrackColor: AppColors.brand,
-                inactiveTrackColor: AppColors.divider,
-                thumbColor: AppColors.brand,
-                overlayColor: AppColors.brand.withValues(alpha: 0.15),
-                trackHeight: 3,
-                thumbShape:
-                    const RoundSliderThumbShape(enabledThumbRadius: 10),
-              ),
-              child: Slider(
-                value: _days.toDouble().clamp(1, 60),
-                min: 1,
-                max: 60,
-                divisions: 59,
-                label: l.days(_days),
-                onChanged: (v) => setState(() => _days = v.round()),
+                onPressed: _confirm,
+                child: Text(
+                  l.confirmEdit,
+                  style: const TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.w600),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brand,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-                elevation: 0,
-              ),
-              onPressed: _confirm,
-              child: Text(
-                l.confirmEdit,
-                style: const TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

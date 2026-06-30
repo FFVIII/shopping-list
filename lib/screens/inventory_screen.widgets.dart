@@ -211,19 +211,9 @@ class _InventoryCard extends StatelessWidget {
               ),
               // Drag handle (tap = batch mode, drag = reorder)
               if (reorderIndex != null && !batchMode)
-                GestureDetector(
-                  onTap: onHandleTap,
-                  child: ReorderableDragStartListener(
-                    index: reorderIndex!,
-                    child: const Padding(
-                      padding: EdgeInsets.only(left: 8),
-                      child: Icon(Icons.drag_handle_rounded,
-                          size: 20, color: AppColors.border),
-                    ),
-                  ),
-                )
+                DragHandle(index: reorderIndex!, onTap: onHandleTap)
               else
-                const SizedBox(width: 2),
+                const SizedBox(width: 24),
             ],
           ),
         ),
@@ -300,14 +290,9 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
   late final TextEditingController _nameCtrl;
   late final TextEditingController _qtyCtrl;
   late final TextEditingController _shelfCtrl;
-  late final TextEditingController _customDaysCtrl;
   late int _selectedDays;
-  bool _usingCustom = false;
   bool _resetPending = false;
   bool _addedToList = false;
-  bool _customDaysOverflow = false;
-
-  static const _maxCustomDays = 1000;
 
   _DetailDraft get _draft => widget.draft;
 
@@ -317,7 +302,6 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
     _nameCtrl = TextEditingController(text: _draft.name);
     _qtyCtrl = TextEditingController(text: _draft.quantity);
     _shelfCtrl = TextEditingController(text: _draft.shelfCode);
-    _customDaysCtrl = TextEditingController();
     _selectedDays = widget.item.estimatedDays;
   }
 
@@ -326,7 +310,6 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
     _nameCtrl.dispose();
     _qtyCtrl.dispose();
     _shelfCtrl.dispose();
-    _customDaysCtrl.dispose();
     super.dispose();
   }
 
@@ -567,133 +550,16 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
               ),
             ),
             const SizedBox(height: 10),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  ...[3, 5, 7, 14, 30].map((d) {
-                    final sel = !_usingCustom && _selectedDays == d;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedDays = d;
-                            _customDaysCtrl.clear();
-                            _usingCustom = false;
-                            _resetPending = true;
-                          });
-                          widget.onRestock(d);
-                        },
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 150),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: sel ? AppColors.brand : AppColors.fieldBg,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            l.days(d),
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: sel ? Colors.white : AppColors.textChip,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                  // Custom days chip
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                    decoration: BoxDecoration(
-                      color: _usingCustom ? AppColors.brand : AppColors.fieldBg,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          width: 44,
-                          height: 36,
-                          child: TextField(
-                            controller: _customDaysCtrl,
-                            keyboardType: TextInputType.number,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: _usingCustom ? Colors.white : AppColors.textChip,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: l.customDaysLabel,
-                              hintStyle: TextStyle(
-                                fontSize: 12,
-                                color: _usingCustom
-                                    ? Colors.white70
-                                    : AppColors.textDisabled,
-                              ),
-                              border: InputBorder.none,
-                              isDense: true,
-                              contentPadding:
-                                  const EdgeInsets.symmetric(vertical: 10),
-                            ),
-                            onChanged: (v) {
-                              final n = int.tryParse(v.trim());
-                              final overflow = n != null && n > _maxCustomDays;
-                              setState(() {
-                                _usingCustom = v.trim().isNotEmpty;
-                                _resetPending = _usingCustom;
-                                _customDaysOverflow = overflow;
-                                if (n != null && n > 0 && !overflow) {
-                                  _selectedDays = n;
-                                }
-                              });
-                            },
-                            onSubmitted: (v) {
-                              final raw = int.tryParse(v.trim());
-                              if (raw == null || raw <= 0) return;
-                              final n = raw.clamp(1, _maxCustomDays);
-                              if (raw > _maxCustomDays) {
-                                _customDaysCtrl.text = '$n';
-                                _customDaysCtrl.selection =
-                                    TextSelection.collapsed(
-                                        offset: '$n'.length);
-                              }
-                              setState(() {
-                                _selectedDays = n;
-                                _usingCustom = true;
-                                _resetPending = true;
-                                _customDaysOverflow = false;
-                              });
-                              widget.onRestock(n);
-                            },
-                          ),
-                        ),
-                        Text(
-                          l.dayUnit,
-                          style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: _usingCustom ? Colors.white : AppColors.textChip,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                ],
-              ),
+            DaysSelector(
+              initialDays: _selectedDays,
+              onChanged: (d) {
+                setState(() {
+                  _selectedDays = d;
+                  _resetPending = true;
+                });
+                widget.onRestock(d);
+              },
             ),
-            if (_customDaysOverflow) ...[
-              const SizedBox(height: 6),
-              Text(
-                l.customDaysMaxHint,
-                style: const TextStyle(fontSize: 12, color: AppColors.danger),
-              ),
-            ],
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
@@ -736,19 +602,14 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
   final _nameCtrl = TextEditingController();
   final _qtyCtrl = TextEditingController();
   final _shelfCtrl = TextEditingController();
-  final _customDaysCtrl = TextEditingController();
   late Category _category = widget.categories.first;
   late int _days = _category.defaultDays;
-  bool _usingCustom = false;
-  bool _customDaysOverflow = false;
-  static const _maxCustomDays = 1000;
 
   @override
   void dispose() {
     _nameCtrl.dispose();
     _qtyCtrl.dispose();
     _shelfCtrl.dispose();
-    _customDaysCtrl.dispose();
     super.dispose();
   }
 
@@ -896,123 +757,10 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
             ),
           ),
           const SizedBox(height: 8),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                ...[3, 5, 7, 14, 30].map((d) {
-                  final sel = !_usingCustom && _days == d;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: GestureDetector(
-                      onTap: () => setState(() {
-                        _days = d;
-                        _customDaysCtrl.clear();
-                        _usingCustom = false;
-                      }),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: sel ? AppColors.brand : AppColors.fieldBg,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          l.days(d),
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: sel ? Colors.white : AppColors.textChip,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-                // Custom days chip
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                  decoration: BoxDecoration(
-                    color: _usingCustom ? AppColors.brand : AppColors.fieldBg,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: 44,
-                        height: 36,
-                        child: TextField(
-                          controller: _customDaysCtrl,
-                          keyboardType: TextInputType.number,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: _usingCustom ? Colors.white : AppColors.textChip,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: l.customDaysLabel,
-                            hintStyle: TextStyle(
-                              fontSize: 12,
-                              color: _usingCustom
-                                  ? Colors.white70
-                                  : AppColors.textDisabled,
-                            ),
-                            border: InputBorder.none,
-                            isDense: true,
-                            contentPadding:
-                                const EdgeInsets.symmetric(vertical: 10),
-                          ),
-                          onChanged: (v) {
-                            final n = int.tryParse(v.trim());
-                            final overflow = n != null && n > _maxCustomDays;
-                            setState(() {
-                              _usingCustom = v.trim().isNotEmpty;
-                              _customDaysOverflow = overflow;
-                              if (n != null && n > 0 && !overflow) _days = n;
-                            });
-                          },
-                          onSubmitted: (v) {
-                            final raw = int.tryParse(v.trim());
-                            if (raw == null || raw <= 0) return;
-                            final n = raw.clamp(1, _maxCustomDays);
-                            if (raw > _maxCustomDays) {
-                              _customDaysCtrl.text = '$n';
-                              _customDaysCtrl.selection =
-                                  TextSelection.collapsed(offset: '$n'.length);
-                            }
-                            setState(() {
-                              _days = n;
-                              _usingCustom = true;
-                              _customDaysOverflow = false;
-                            });
-                          },
-                        ),
-                      ),
-                      Text(
-                        l.dayUnit,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: _usingCustom ? Colors.white : AppColors.textChip,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          DaysSelector(
+            initialDays: _days,
+            onChanged: (d) => setState(() => _days = d),
           ),
-          if (_customDaysOverflow) ...[
-            const SizedBox(height: 6),
-            Text(
-              l.customDaysMaxHint,
-              style: const TextStyle(fontSize: 12, color: AppColors.danger),
-            ),
-          ],
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,

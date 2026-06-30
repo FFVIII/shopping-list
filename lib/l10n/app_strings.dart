@@ -19,6 +19,7 @@ abstract class AppStrings {
   String get completeTrip;
   String get completeTripTitle; // "完成购物？" / "Finish shopping?"
   String completeTripMessage(int bought); // explains what completing does
+  String get tripInventoryHint; // sheet hint about saving to inventory
   String get cancel; // "取消" / "Cancel"
   String get smartHint; // smart-mode explanation banner
   String get modeSimple;
@@ -37,6 +38,11 @@ abstract class AppStrings {
   String money(double v); // "¥12.50" / "$12.50"
   String get byShelf;
   String get byCategory;
+  String get sortByName;  // "按名字" / "By name"
+  String get sortByPrice; // "按金钱" / "By price"
+  String get sortByCategory; // "按品类" / "By type"
+  String get sortByExpiry;   // "按到期" / "By expiry"
+  String get sortByLastTime; // "按上次" / "By last"
   String get untaggedShelf; // "未标记" / "Untagged"
   String get pendingSection; // "待购" / "To buy"
   String get purchasedSection;
@@ -176,9 +182,11 @@ class ZhStrings extends AppStrings {
   @override String get completeTripTitle => '完成购物？';
   @override String completeTripMessage(int bought) =>
       '已买到的 $bought 件会从清单移除，未买到的会保留在清单里。';
+  @override String get tripInventoryHint =>
+      '购买后将保存到库存，取消勾选则不保存。';
   @override String get cancel => '取消';
   @override String get smartHint =>
-      '勾选 = 已买到并记入库存；点「完成购物」清除已买商品。';
+      '圆圈选中=将存入库存；点「完成购物」完成本次采购。';
   @override String get modeSimple => '简单';
   @override String get modeSmart => '计划';
   @override String get budgetMode => '记账';
@@ -195,6 +203,11 @@ class ZhStrings extends AppStrings {
   @override String money(double v) => '¥${v.toStringAsFixed(2)}';
   @override String get byShelf => '按货架';
   @override String get byCategory => '按分类';
+  @override String get sortByName => '按名字';
+  @override String get sortByPrice => '按金钱';
+  @override String get sortByCategory => '按品类';
+  @override String get sortByExpiry => '按到期';
+  @override String get sortByLastTime => '按上次';
   @override String get untaggedShelf => '未标记';
   @override String get pendingSection => '待购';
   @override String get purchasedSection => '已购';
@@ -339,9 +352,11 @@ class EnStrings extends AppStrings {
   @override String get completeTripTitle => 'Finish shopping?';
   @override String completeTripMessage(int bought) =>
       '$bought bought item(s) will be removed from the list; unbought ones stay.';
+  @override String get tripInventoryHint =>
+      'Unchecked items won\'t be saved to inventory.';
   @override String get cancel => 'Cancel';
   @override String get smartHint =>
-      'Check = bought & logged to inventory. "Done" removes checked items.';
+      'Circles mark items to save to inventory. Tap \'Done\' to finish shopping.';
   @override String get modeSimple => 'Simple';
   @override String get modeSmart => 'Plan';
   @override String get budgetMode => 'Budget';
@@ -358,6 +373,11 @@ class EnStrings extends AppStrings {
   @override String money(double v) => '\$${v.toStringAsFixed(2)}';
   @override String get byShelf => 'By aisle';
   @override String get byCategory => 'By category';
+  @override String get sortByName => 'By name';
+  @override String get sortByPrice => 'By price';
+  @override String get sortByCategory => 'By type';
+  @override String get sortByExpiry => 'By expiry';
+  @override String get sortByLastTime => 'By last';
   @override String get untaggedShelf => 'Untagged';
   @override String get pendingSection => 'To buy';
   @override String get purchasedSection => 'Bought';

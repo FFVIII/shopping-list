@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import '../widgets/drag_handle.dart';
 import '../models/item.dart';
 import '../l10n/l10n.dart';
 
@@ -229,14 +230,7 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
                               size: 20, color: AppColors.textDisabled),
                           onPressed: () => _confirmDelete(cat),
                         ),
-                      ReorderableDragStartListener(
-                        index: i,
-                        child: const Padding(
-                          padding: EdgeInsets.only(left: 4),
-                          child: Icon(Icons.drag_handle_rounded,
-                              size: 20, color: AppColors.border),
-                        ),
-                      ),
+                      DragHandle(index: i),
                     ],
                   ),
                 ),

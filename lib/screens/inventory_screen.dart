@@ -3,8 +3,17 @@ import '../theme/app_colors.dart';
 import '../models/item.dart';
 import '../l10n/l10n.dart';
 import '../widgets/toast.dart';
+import '../widgets/days_selector.dart';
+import '../widgets/drag_handle.dart';
+import '../widgets/sort_toggle_button.dart';
 
 part 'inventory_screen.widgets.dart';
+
+/// Grouping mode (base view): items shown under section headers, draggable.
+enum InvGroupMode { shelf, category }
+
+/// Value sort overlay: when active, overrides grouping with a flat sorted list.
+enum InvSortMode { none, expiry, lastTime }
 
 class InventoryScreen extends StatefulWidget {
   final List<InventoryItem> items;
@@ -14,8 +23,12 @@ class InventoryScreen extends StatefulWidget {
   final void Function(String id, int newEstimatedDays) onRestock;
   final void Function(String id) onDelete;
   final void Function(InventoryItem item) onAddToShoppingList;
-  final void Function(String movedId, String newZone, List<String> orderedIds)
-      onReorder;
+  final void Function(
+    String movedId,
+    String? newZone,
+    Category? newCategory,
+    List<String> orderedIds,
+  ) onReorder;
   final void Function(
     String id,
     String name,
@@ -54,6 +67,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
   bool _batchMode = false;
   final Set<String> _selected = {};
 
+  // Sort state: grouping mode (base) + optional value-sort overlay
+  InvGroupMode _invGroup = InvGroupMode.shelf;
+  InvSortMode _invSort = InvSortMode.none;
+  SortDir _invDir = SortDir.asc;
+  SortDir _invGroupDir = SortDir.asc;
+  bool get _byCategory => _invGroup == InvGroupMode.category;
+
   @override
   void dispose() {
     _searchCtrl.dispose();
@@ -74,9 +94,30 @@ class _InventoryScreenState extends State<InventoryScreen> {
   Map<String, List<InventoryItem>> get _grouped {
     final map = <String, List<InventoryItem>>{};
     for (final item in _filtered) {
-      map.putIfAbsent(item.shelfZone, () => []).add(item);
+      final key = _byCategory ? item.category.name : item.shelfZone;
+      map.putIfAbsent(key, () => []).add(item);
     }
-    return map;
+    final entries = map.entries.toList()
+      ..sort((a, b) => _invGroupDir == SortDir.asc
+          ? a.key.compareTo(b.key)
+          : b.key.compareTo(a.key));
+    return Map.fromEntries(entries);
+  }
+
+  // Flat list sorted by the active value sort (expiry / last purchase time).
+  // Ascending = small → large (soonest expiry / oldest purchase first);
+  // _invDir flips it.
+  List<InventoryItem> get _sortedFlat {
+    final items = [..._filtered];
+    if (_invSort != InvSortMode.none) {
+      items.sort((a, b) {
+        final cmp = _invSort == InvSortMode.expiry
+            ? a.daysRemaining.compareTo(b.daysRemaining)
+            : a.purchasedAt.compareTo(b.purchasedAt);
+        return _invDir == SortDir.asc ? cmp : -cmp;
+      });
+    }
+    return items;
   }
 
   int get _needRestockCount => widget.items
@@ -182,13 +223,16 @@ class _InventoryScreenState extends State<InventoryScreen> {
           children: [
             _buildHeader(),
             _buildSearchBar(),
+            if (!_batchMode) _buildSortToggle(),
             const SizedBox(height: 4),
             Expanded(
               child: _filtered.isEmpty
                   ? _emptyState()
-                  : _query.isEmpty
-                      ? _buildReorderableGroupedList()
-                      : _buildGroupedList(),
+                  : _invSort != InvSortMode.none
+                      ? _buildSortedFlatList()
+                      : _query.isEmpty
+                          ? _buildReorderableGroupedList()
+                          : _buildGroupedList(),
             ),
             if (_batchMode) _buildBatchBar(),
           ],
@@ -313,6 +357,128 @@ class _InventoryScreenState extends State<InventoryScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  // Cycle a value sort: tapping a different key activates it ascending;
+  // tapping the active key cycles asc → desc → off.
+  void _cycleInvSort(InvSortMode mode) {
+    if (_invSort != mode) {
+      _invSort = mode;
+      _invDir = SortDir.asc;
+    } else if (_invDir == SortDir.asc) {
+      _invDir = SortDir.desc;
+    } else {
+      _invSort = InvSortMode.none;
+    }
+  }
+
+  // Sort toggle row: grouping pills (按货架/按品类) + value-sort pills
+  // (按到期/按上次). Value sorts override grouping; tapping a grouping pill
+  // clears the value sort.
+  Widget _buildSortToggle() {
+    final l = L10n.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            SortToggleButton(
+              label: l.byShelf,
+              selected: _invSort == InvSortMode.none && !_byCategory,
+              direction: _invSort == InvSortMode.none && !_byCategory
+                  ? _invGroupDir
+                  : null,
+              onTap: () => setState(() {
+                if (_invGroup == InvGroupMode.shelf &&
+                    _invSort == InvSortMode.none) {
+                  _invGroupDir = _invGroupDir == SortDir.asc
+                      ? SortDir.desc
+                      : SortDir.asc;
+                } else {
+                  _invGroup = InvGroupMode.shelf;
+                  _invSort = InvSortMode.none;
+                  _invGroupDir = SortDir.asc;
+                }
+              }),
+            ),
+            const SizedBox(width: 4),
+            SortToggleButton(
+              label: l.sortByCategory,
+              selected: _invSort == InvSortMode.none && _byCategory,
+              direction: _invSort == InvSortMode.none && _byCategory
+                  ? _invGroupDir
+                  : null,
+              onTap: () => setState(() {
+                if (_invGroup == InvGroupMode.category &&
+                    _invSort == InvSortMode.none) {
+                  _invGroupDir = _invGroupDir == SortDir.asc
+                      ? SortDir.desc
+                      : SortDir.asc;
+                } else {
+                  _invGroup = InvGroupMode.category;
+                  _invSort = InvSortMode.none;
+                  _invGroupDir = SortDir.asc;
+                }
+              }),
+            ),
+            Container(
+              width: 1,
+              height: 16,
+              margin: const EdgeInsets.symmetric(horizontal: 8),
+              color: AppColors.border,
+            ),
+            SortToggleButton(
+              label: l.sortByExpiry,
+              selected: _invSort == InvSortMode.expiry,
+              direction: _invSort == InvSortMode.expiry ? _invDir : null,
+              onTap: () => setState(() => _cycleInvSort(InvSortMode.expiry)),
+            ),
+            const SizedBox(width: 4),
+            SortToggleButton(
+              label: l.sortByLastTime,
+              selected: _invSort == InvSortMode.lastTime,
+              direction: _invSort == InvSortMode.lastTime ? _invDir : null,
+              onTap: () => setState(() => _cycleInvSort(InvSortMode.lastTime)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Flat, value-sorted list (no headers, no drag). Used when a value sort
+  // overlay is active.
+  Widget _buildSortedFlatList() {
+    final items = _sortedFlat;
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+      itemCount: items.length,
+      itemBuilder: (ctx, i) {
+        final item = items[i];
+        return _InventoryCard(
+          key: Key('invs_${item.id}'),
+          item: item,
+          thresholdDays: widget.thresholdDays,
+          onTap: _batchMode
+              ? () => setState(() {
+                    if (_selected.contains(item.id)) {
+                      _selected.remove(item.id);
+                    } else {
+                      _selected.add(item.id);
+                    }
+                  })
+              : () => _showDetailSheet(item),
+          onDelete: () => widget.onDelete(item.id),
+          batchMode: _batchMode,
+          selected: _selected.contains(item.id),
+          onHandleTap: () => setState(() {
+            _batchMode = true;
+            _selected.add(item.id);
+          }),
+        );
+      },
     );
   }
 
@@ -574,13 +740,26 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
     final orderedIds =
         mutable.where((e) => !e.isHeader).map((e) => e.item!.id).toList();
-    widget.onReorder(movedItem.id, newZone, orderedIds);
+    if (_byCategory) {
+      // Cross-group drag in category mode updates the item's category.
+      final newCat = widget.categories.firstWhere(
+        (c) => c.name == newZone,
+        orElse: () => movedItem.category,
+      );
+      widget.onReorder(movedItem.id, null, newCat, orderedIds);
+    } else {
+      widget.onReorder(movedItem.id, newZone, null, orderedIds);
+    }
   }
 
   Widget _buildSectionHeader(String zone, int count, {Key? key}) {
     final l = L10n.of(context);
-    final color =
-        defaultShelfZones.findByName(zone)?.dotColor ?? AppColors.textMuted;
+    final color = _byCategory
+        ? (widget.categories
+                .firstWhere((c) => c.name == zone,
+                    orElse: () => widget.categories.fallback)
+                .color)
+        : (defaultShelfZones.findByName(zone)?.dotColor ?? AppColors.textMuted);
     return Padding(
       key: key,
       padding: const EdgeInsets.fromLTRB(4, 14, 0, 6),

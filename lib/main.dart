@@ -10,6 +10,7 @@ import 'screens/list_screen.dart';
 import 'screens/inventory_screen.dart';
 import 'screens/reminder_screen.dart';
 import 'screens/settings_screen.dart';
+import 'widgets/days_selector.dart';
 
 part 'main.widgets.dart';
 
@@ -259,7 +260,7 @@ class _AppShellState extends State<AppShell> {
 
   // ── 清单：智能模式添加（带分类）────────────────────────────────────────────
 
-  void _addSmart(String name, String quantityLabel, String? shelfCode, Category category, String shelfZone) {
+  void _addSmart(String name, String quantityLabel, String? shelfCode, int estimatedDays, Category category, String shelfZone) {
     setState(() {
       _shopping.add(ShoppingItem(
         id: 'u_${DateTime.now().millisecondsSinceEpoch}',
@@ -268,6 +269,7 @@ class _AppShellState extends State<AppShell> {
         quantityLabel: quantityLabel.isEmpty ? '1件' : quantityLabel,
         shelfZone: shelfZone,
         shelfCode: shelfCode,
+        estimatedDays: estimatedDays,
       ));
     });
   }
@@ -287,16 +289,7 @@ class _AppShellState extends State<AppShell> {
   void _toggleShoppingItem(BuildContext context, String id) {
     final idx = _shopping.indexWhere((i) => i.id == id);
     if (idx == -1) return;
-    final item = _shopping[idx];
-
-    if (!item.checked) {
-      _showDaysSheet(context, item);
-    } else {
-      setState(() {
-        _shopping[idx].checked = false;
-        _shopping[idx].addedToInventory = false;
-      });
-    }
+    _showDaysSheet(context, _shopping[idx]);
   }
 
   void _showDaysSheet(BuildContext context, ShoppingItem item) {
@@ -309,7 +302,7 @@ class _AppShellState extends State<AppShell> {
       ),
       builder: (ctx) => _DaysSheet(
         item: item,
-        initialDays: item.category.defaultDays,
+        initialDays: item.estimatedDays ?? item.category.defaultDays,
         categories: _categories,
         onConfirm: (days, name, quantity, shelfCode, category, zone) =>
             _confirmPurchase(item, days, name, quantity, shelfCode, category, zone),
@@ -327,59 +320,26 @@ class _AppShellState extends State<AppShell> {
     String zone,
   ) {
     setState(() {
-      // Update shopping item fields with any edits
       final idx = _shopping.indexWhere((i) => i.id == shoppingItem.id);
       if (idx != -1) {
         _shopping[idx]
-          ..checked = true
-          ..addedToInventory = true
-          ..name = name
-          ..quantityLabel = quantity
-          ..shelfCode = shelfCode
-          ..category = category
-          ..shelfZone = zone;
-      }
-
-      // Update or add inventory entry using the (possibly edited) data
-      final invIdx = _inventory.indexWhere((i) => i.name == shoppingItem.name);
-      if (invIdx != -1) {
-        _inventory[invIdx]
-          ..purchasedAt = DateTime.now()
           ..estimatedDays = estimatedDays
           ..name = name
           ..quantityLabel = quantity
           ..shelfCode = shelfCode
           ..category = category
           ..shelfZone = zone;
-        _inventory = List<InventoryItem>.from(_inventory);
-      } else {
-        _inventory = [
-          ..._inventory,
-          InventoryItem(
-            id: 'inv_${DateTime.now().millisecondsSinceEpoch}',
-            name: name,
-            category: category,
-            shelfZone: zone,
-            shelfCode: shelfCode,
-            quantityLabel: quantity,
-            purchasedAt: DateTime.now(),
-            estimatedDays: estimatedDays,
-          ),
-        ];
       }
     });
   }
 
   // ── 清单：拖动排序（简单模式）────────────────────────────────────────────
 
-  void _reorderSimple(int oldIndex, int newIndex) {
+  void _reorderSimple(List<String> orderedIds) {
     setState(() {
-      final pending = _shoppingSimple.where((i) => !i.checked).toList();
-      final done = _shoppingSimple.where((i) => i.checked).toList();
-      // onReorderItem already adjusts newIndex; no manual correction needed
-      final item = pending.removeAt(oldIndex);
-      pending.insert(newIndex, item);
-      _shoppingSimple = [...pending, ...done];
+      _shoppingSimple = orderedIds
+          .map((id) => _shoppingSimple.firstWhere((i) => i.id == id))
+          .toList();
     });
   }
 
@@ -390,12 +350,17 @@ class _AppShellState extends State<AppShell> {
     String? newShelfZone,
     Category? newCategory,
     List<String> orderedIds,
+    String? newShelfCode,
   ) {
     setState(() {
       final idx = _shopping.indexWhere((i) => i.id == movedId);
       if (idx != -1) {
         if (newShelfZone != null) _shopping[idx].shelfZone = newShelfZone;
         if (newCategory != null) _shopping[idx].category = newCategory;
+        // newShelfCode non-null means shelf-mode drag: "" = clear code, else set
+        if (newShelfCode != null) {
+          _shopping[idx].shelfCode = newShelfCode.isEmpty ? null : newShelfCode;
+        }
       }
       _shopping = orderedIds
           .map((id) => _shopping.firstWhere((i) => i.id == id))
@@ -423,10 +388,11 @@ class _AppShellState extends State<AppShell> {
     setState(() => _budget = _budget.where((i) => !idSet.contains(i.id)).toList());
   }
 
-  void _reorderBudget(int oldIndex, int newIndex) {
+  void _reorderBudget(List<String> orderedIds) {
     setState(() {
-      final item = _budget.removeAt(oldIndex);
-      _budget.insert(newIndex, item);
+      _budget = orderedIds
+          .map((id) => _budget.firstWhere((i) => i.id == id))
+          .toList();
     });
   }
 
@@ -502,8 +468,39 @@ class _AppShellState extends State<AppShell> {
     setState(() => _shoppingSimple.removeWhere((i) => i.checked));
   }
 
-  void _completeTripSmart() {
-    setState(() => _shopping.removeWhere((i) => i.checked));
+  void _completeTripSmart(List<String> selectedIds) {
+    final selectedSet = selectedIds.toSet();
+    setState(() {
+      // Work on a mutable copy so new entries are visible to subsequent lookups
+      final inv = List<InventoryItem>.from(_inventory);
+      int idx = 0;
+      for (final item in _shopping) {
+        if (!selectedSet.contains(item.id)) { idx++; continue; }
+        final days = item.estimatedDays ?? item.category.defaultDays;
+        final invIdx = inv.indexWhere((i) => i.name == item.name);
+        if (invIdx != -1) {
+          inv[invIdx]
+            ..purchasedAt = DateTime.now()
+            ..estimatedDays = days
+            ..quantityLabel = item.quantityLabel;
+          if (item.shelfCode != null) inv[invIdx].shelfCode = item.shelfCode;
+        } else {
+          inv.add(InventoryItem(
+            id: 'inv_${DateTime.now().millisecondsSinceEpoch}_$idx',
+            name: item.name,
+            category: item.category,
+            shelfZone: item.shelfZone,
+            shelfCode: item.shelfCode,
+            quantityLabel: item.quantityLabel,
+            purchasedAt: DateTime.now(),
+            estimatedDays: days,
+          ));
+        }
+        idx++;
+      }
+      _inventory = inv;
+      _shopping.clear();
+    });
   }
 
   // ── 提醒：加入清单 ────────────────────────────────────────────────────────
@@ -602,11 +599,14 @@ class _AppShellState extends State<AppShell> {
     });
   }
 
-  void _reorderInventory(
-      String movedId, String newZone, List<String> orderedIds) {
+  void _reorderInventory(String movedId, String? newZone,
+      Category? newCategory, List<String> orderedIds) {
     setState(() {
       final idx = _inventory.indexWhere((i) => i.id == movedId);
-      if (idx != -1) _inventory[idx].shelfZone = newZone;
+      if (idx != -1) {
+        if (newZone != null) _inventory[idx].shelfZone = newZone;
+        if (newCategory != null) _inventory[idx].category = newCategory;
+      }
       _inventory = orderedIds
           .map((id) => _inventory.firstWhere((i) => i.id == id))
           .toList();

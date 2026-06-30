@@ -154,6 +154,7 @@ class ShoppingItem {
   String quantityLabel;
   String shelfZone;
   String? shelfCode;
+  int? estimatedDays;
   bool checked;
   bool addedToInventory;
 
@@ -164,6 +165,7 @@ class ShoppingItem {
     required this.quantityLabel,
     required this.shelfZone,
     this.shelfCode,
+    this.estimatedDays,
     this.checked = false,
     this.addedToInventory = false,
   });

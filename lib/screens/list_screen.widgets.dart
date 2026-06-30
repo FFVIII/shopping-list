@@ -210,34 +210,17 @@ class _TextToggleBtn extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final SortDir? direction;
 
   const _TextToggleBtn(
-      {required this.label, required this.selected, required this.onTap});
+      {required this.label,
+      required this.selected,
+      required this.onTap,
+      this.direction});
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-        decoration: BoxDecoration(
-          color: selected
-              ? AppColors.brand.withValues(alpha: 0.12)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-            color: selected ? AppColors.brand : AppColors.textMuted,
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => SortToggleButton(
+      label: label, selected: selected, onTap: onTap, direction: direction);
 }
 
 // ── Rename Sheet ──────────────────────────────────────────────────────────────

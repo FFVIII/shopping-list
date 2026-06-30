@@ -26,19 +26,35 @@ extension _BudgetModeState on _ListScreenState {
   }
 
   Widget _buildBudgetList() {
+    final sorted = _budgetSort != BudgetSortMode.manual
+        ? ([...widget.budgetItems]..sort((a, b) {
+            final cmp = _budgetSort == BudgetSortMode.name
+                ? a.name.compareTo(b.name)
+                : a.lineTotal.compareTo(b.lineTotal);
+            return _budgetDir == SortDir.asc ? cmp : -cmp;
+          }))
+        : widget.budgetItems;
     return ReorderableListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       buildDefaultDragHandles: false,
-      onReorderItem: widget.onReorderBudget,
+      onReorderItem: (oldIdx, newIdx) {
+        final newSorted = [...sorted];
+        final moved = newSorted.removeAt(oldIdx);
+        newSorted.insert(newIdx, moved);
+        widget.onReorderBudget(newSorted.map((i) => i.id).toList());
+        if (_budgetSort != BudgetSortMode.manual) {
+          setState(() => _budgetSort = BudgetSortMode.manual);
+        }
+      },
       proxyDecorator: (child, index, animation) => Material(
         elevation: 6,
         borderRadius: BorderRadius.circular(14),
         shadowColor: Colors.black26,
         child: child,
       ),
-      itemCount: widget.budgetItems.length,
+      itemCount: sorted.length,
       itemBuilder: (ctx, i) {
-        final item = widget.budgetItems[i];
+        final item = sorted[i];
         return _BudgetRow(
           key: Key('budget_${item.id}'),
           item: item,
@@ -212,19 +228,9 @@ class _BudgetRow extends StatelessWidget {
                 ),
               ),
               if (reorderIndex != null && !batchMode)
-                GestureDetector(
-                  onTap: onHandleTap,
-                  child: ReorderableDragStartListener(
-                    index: reorderIndex!,
-                    child: const Padding(
-                      padding: EdgeInsets.only(left: 8),
-                      child: Icon(Icons.drag_handle_rounded,
-                          size: 20, color: AppColors.border),
-                    ),
-                  ),
-                )
+                DragHandle(index: reorderIndex!, onTap: onHandleTap)
               else
-                const SizedBox(width: 2),
+                const SizedBox(width: 24),
             ],
           ),
         ),
