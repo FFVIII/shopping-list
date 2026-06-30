@@ -20,9 +20,13 @@ part 'main.widgets.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Hive.initFlutter();
   final repository = AppRepository();
-  await repository.init();
+  try {
+    await Hive.initFlutter();
+    await repository.init();
+  } catch (e) {
+    debugPrint('Hive init failed, falling back to in-memory sample data: $e');
+  }
   final lang = await LanguageStore.load();
   runApp(ShoppingListApp(initialLanguage: lang, repository: repository));
 }
@@ -126,7 +130,13 @@ class _AppShellState extends State<AppShell> {
   Future<void> _loadData() async {
     final deviceLocale = WidgetsBinding.instance.platformDispatcher.locale;
     final lang = resolveLang(widget.language, deviceLocale);
-    final data = await _repo.load(lang: lang);
+    AppData data;
+    try {
+      data = await _repo.load(lang: lang);
+    } catch (e) {
+      debugPrint('Failed to load persisted data, falling back to in-memory sample data: $e');
+      data = _buildFallbackData(lang);
+    }
     if (!mounted) return;
     setState(() {
       _shoppingSimple = data.shoppingSimple;
@@ -139,6 +149,26 @@ class _AppShellState extends State<AppShell> {
       _shelfCodeOrder = data.shelfCodeOrder;
       _loading = false;
     });
+  }
+
+  AppData _buildFallbackData(Lang lang) {
+    final categories = buildDefaultCategories();
+    if (lang == Lang.en) {
+      final en = EnStrings();
+      for (final c in categories) {
+        c.name = en.data(c.name);
+      }
+    }
+    return AppData(
+      shoppingSimple: [],
+      shoppingSmart: buildSampleShopping(categories),
+      inventory: buildSampleInventory(categories),
+      budget: buildSampleBudget(),
+      categories: categories,
+      settings: AppSettings(),
+      shelfZones: defaultShelfZones.toList(),
+      shelfCodeOrder: [],
+    );
   }
 
   // ── Persistence: one helper per persisted collection, called after the ──
