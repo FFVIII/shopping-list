@@ -1,9 +1,32 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shopping_list/main.dart';
+import 'package:hive/hive.dart';
 import 'package:shopping_list/l10n/app_language.dart';
+import 'package:shopping_list/main.dart';
+import 'package:shopping_list/storage/app_repository.dart';
 
 void main() {
+  late Directory tempDir;
+  late AppRepository repository;
+
+  setUp(() async {
+    tempDir = await Directory.systemTemp.createTemp('hive_widget_test_');
+    Hive.init(tempDir.path);
+    repository = AppRepository();
+    await repository.init();
+    // Pre-seed so the widget's own AppRepository.load() call (made from
+    // _loadData() during the test) hits the fast already-seeded path rather
+    // than performing the slower first-install writes.
+    await repository.load(lang: Lang.zh);
+  });
+
+  tearDown(() async {
+    await Hive.deleteFromDisk();
+    if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
+  });
+
   testWidgets('App smoke test (zh): renders bottom nav labels',
       (WidgetTester tester) async {
     // Use a tall iPhone-sized surface so the list content does not overflow
@@ -14,9 +37,20 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      const ShoppingListApp(initialLanguage: AppLanguage.zh),
+      ShoppingListApp(initialLanguage: AppLanguage.zh, repository: repository),
     );
-    await tester.pump();
+    // _loadData() awaits AppRepository.load(), which performs real dart:io
+    // file I/O (Hive's VM backend). That never progresses inside
+    // flutter_test's fake-async pump loop, so a plain pumpAndSettle() hangs
+    // forever. runAsync opens a real-time window so the in-flight I/O can
+    // complete; pump() then applies the resulting setState.
+    for (var i = 0;
+        i < 20 && find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
+        i++) {
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await tester.pump();
+    }
 
     // The four bottom-nav labels for the zh locale.
     expect(find.text('清单'), findsOneWidget);
@@ -33,9 +67,15 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      const ShoppingListApp(initialLanguage: AppLanguage.en),
+      ShoppingListApp(initialLanguage: AppLanguage.en, repository: repository),
     );
-    await tester.pump();
+    for (var i = 0;
+        i < 20 && find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
+        i++) {
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await tester.pump();
+    }
 
     expect(find.text('List'), findsOneWidget);
     expect(find.text('Inventory'), findsOneWidget);

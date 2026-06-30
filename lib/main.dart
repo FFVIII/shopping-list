@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'theme/app_colors.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'models/item.dart';
@@ -10,19 +13,28 @@ import 'screens/list_screen.dart';
 import 'screens/inventory_screen.dart';
 import 'screens/reminder_screen.dart';
 import 'screens/settings_screen.dart';
+import 'storage/app_repository.dart';
 import 'widgets/days_selector.dart';
 
 part 'main.widgets.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  final repository = AppRepository();
+  await repository.init();
   final lang = await LanguageStore.load();
-  runApp(ShoppingListApp(initialLanguage: lang));
+  runApp(ShoppingListApp(initialLanguage: lang, repository: repository));
 }
 
 class ShoppingListApp extends StatefulWidget {
   final AppLanguage initialLanguage;
-  const ShoppingListApp({super.key, required this.initialLanguage});
+  final AppRepository repository;
+  const ShoppingListApp({
+    super.key,
+    required this.initialLanguage,
+    required this.repository,
+  });
 
   @override
   State<ShoppingListApp> createState() => _ShoppingListAppState();
@@ -68,6 +80,7 @@ class _ShoppingListAppState extends State<ShoppingListApp> {
         home: AppShell(
           language: _language,
           onLanguageChanged: _setLanguage,
+          repository: widget.repository,
         ),
       ),
     );
@@ -77,10 +90,12 @@ class _ShoppingListAppState extends State<ShoppingListApp> {
 class AppShell extends StatefulWidget {
   final AppLanguage language;
   final void Function(AppLanguage) onLanguageChanged;
+  final AppRepository repository;
   const AppShell({
     super.key,
     required this.language,
     required this.onLanguageChanged,
+    required this.repository,
   });
 
   @override
@@ -90,6 +105,7 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _tab = 0;
   int _smartModeRequest = 0;
+  bool _loading = true;
   late List<ShoppingItem> _shoppingSimple;
   late List<ShoppingItem> _shopping;
   late List<InventoryItem> _inventory;
@@ -99,27 +115,59 @@ class _AppShellState extends State<AppShell> {
   List<String> _shelfCodeOrder = [];
   late List<Category> _categories;
 
+  AppRepository get _repo => widget.repository;
+
   @override
   void initState() {
     super.initState();
-    _shoppingSimple = [];
-    _categories = buildDefaultCategories();
-    // Seed default category names in the active language (English if resolved
-    // to en). After seeding, names are plain user-editable strings.
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
     final deviceLocale = WidgetsBinding.instance.platformDispatcher.locale;
     final lang = resolveLang(widget.language, deviceLocale);
-    if (lang == Lang.en) {
-      final en = EnStrings();
-      for (final c in _categories) {
-        c.name = en.data(c.name);
-      }
-    }
-    _shopping = buildSampleShopping(_categories);
-    _inventory = buildSampleInventory(_categories);
-    _budget = buildSampleBudget();
-    _settings = AppSettings();
-    _shelfZones = defaultShelfZones.toList();
+    final data = await _repo.load(lang: lang);
+    if (!mounted) return;
+    setState(() {
+      _shoppingSimple = data.shoppingSimple;
+      _shopping = data.shoppingSmart;
+      _inventory = data.inventory;
+      _budget = data.budget;
+      _categories = data.categories;
+      _settings = data.settings;
+      _shelfZones = data.shelfZones;
+      _shelfCodeOrder = data.shelfCodeOrder;
+      _loading = false;
+    });
   }
+
+  // ── Persistence: one helper per persisted collection, called after the ──
+  // matching field is mutated. Fire-and-forget: write failures are logged,
+  // not surfaced to the user (see design spec §5).
+  void _persistShoppingSimple() => unawaited(_repo
+      .saveShoppingSimple(_shoppingSimple)
+      .catchError((e) => debugPrint('save shoppingSimple failed: $e')));
+  void _persistShoppingSmart() => unawaited(_repo
+      .saveShoppingSmart(_shopping)
+      .catchError((e) => debugPrint('save shoppingSmart failed: $e')));
+  void _persistInventory() => unawaited(_repo
+      .saveInventory(_inventory)
+      .catchError((e) => debugPrint('save inventory failed: $e')));
+  void _persistBudget() => unawaited(_repo
+      .saveBudget(_budget)
+      .catchError((e) => debugPrint('save budget failed: $e')));
+  void _persistCategories() => unawaited(_repo
+      .saveCategories(_categories)
+      .catchError((e) => debugPrint('save categories failed: $e')));
+  void _persistSettings() => unawaited(_repo
+      .saveSettings(_settings)
+      .catchError((e) => debugPrint('save settings failed: $e')));
+  void _persistShelfZones() => unawaited(_repo
+      .saveShelfZones(_shelfZones)
+      .catchError((e) => debugPrint('save shelfZones failed: $e')));
+  void _persistShelfCodeOrder() => unawaited(_repo
+      .saveShelfCodeOrder(_shelfCodeOrder)
+      .catchError((e) => debugPrint('save shelfCodeOrder failed: $e')));
 
   // ── 分类：增 / 改 / 删 / 重排 ─────────────────────────────────────────────────
 
@@ -686,6 +734,11 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     final threshold = _settings.reminderThresholdDays;
     final reminderCount = _inventory
         .where((i) => i.statusFor(threshold) != StockStatus.sufficient)
