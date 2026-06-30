@@ -46,3 +46,6 @@ app.*.map.json
 
 # Flutter DevTools generated options
 devtools_options.yaml
+
+# Local git worktrees
+.worktrees/
