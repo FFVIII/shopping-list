@@ -646,6 +646,7 @@ class _AppShellState extends State<AppShell> {
 
   void _addInventoryItem(InventoryItem item) {
     setState(() => _inventory = [..._inventory, item]);
+    _persistInventory();
   }
 
   void _restockInventoryItem(String id, int days) {
@@ -657,15 +658,18 @@ class _AppShellState extends State<AppShell> {
         _inventory = List<InventoryItem>.from(_inventory);
       }
     });
+    _persistInventory();
   }
 
   void _deleteInventoryItem(String id) {
     setState(() => _inventory = _inventory.where((i) => i.id != id).toList());
+    _persistInventory();
   }
 
   void _batchDeleteInventory(List<String> ids) {
     final idSet = ids.toSet();
     setState(() => _inventory = _inventory.where((i) => !idSet.contains(i.id)).toList());
+    _persistInventory();
   }
 
   void _batchAddToRestock(List<InventoryItem> items) {
@@ -707,6 +711,7 @@ class _AppShellState extends State<AppShell> {
         ..shelfZone = shelfZone;
       _inventory = List<InventoryItem>.from(_inventory);
     });
+    _persistInventory();
   }
 
   void _reorderInventory(String movedId, String? newZone,
@@ -721,6 +726,7 @@ class _AppShellState extends State<AppShell> {
           .map((id) => _inventory.firstWhere((i) => i.id == id))
           .toList();
     });
+    _persistInventory();
   }
 
   void _addAllToList() {
