@@ -436,14 +436,14 @@ class _ListScreenState extends State<ListScreen> {
       child: Row(
         children: [
           _TextToggleBtn(
-            label: l.byShelf,
-            selected: _smartGroup == SmartGroupMode.shelf,
-            direction: _smartGroup == SmartGroupMode.shelf
+            label: l.byCategory,
+            selected: _smartGroup == SmartGroupMode.category,
+            direction: _smartGroup == SmartGroupMode.category
                 ? _smartGroupDir
                 : null,
             onTap: () => setState(() {
-              if (_smartGroup != SmartGroupMode.shelf) {
-                _smartGroup = SmartGroupMode.shelf;
+              if (_smartGroup != SmartGroupMode.category) {
+                _smartGroup = SmartGroupMode.category;
                 _smartGroupDir = SortDir.asc;
               } else if (_smartGroupDir == SortDir.asc) {
                 _smartGroupDir = SortDir.desc;
@@ -454,14 +454,14 @@ class _ListScreenState extends State<ListScreen> {
           ),
           const SizedBox(width: 4),
           _TextToggleBtn(
-            label: l.byCategory,
-            selected: _smartGroup == SmartGroupMode.category,
-            direction: _smartGroup == SmartGroupMode.category
+            label: l.byShelf,
+            selected: _smartGroup == SmartGroupMode.shelf,
+            direction: _smartGroup == SmartGroupMode.shelf
                 ? _smartGroupDir
                 : null,
             onTap: () => setState(() {
-              if (_smartGroup != SmartGroupMode.category) {
-                _smartGroup = SmartGroupMode.category;
+              if (_smartGroup != SmartGroupMode.shelf) {
+                _smartGroup = SmartGroupMode.shelf;
                 _smartGroupDir = SortDir.asc;
               } else if (_smartGroupDir == SortDir.asc) {
                 _smartGroupDir = SortDir.desc;
