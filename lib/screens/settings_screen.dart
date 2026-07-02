@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/cupertino.dart' show CupertinoDatePicker, CupertinoDatePickerMode;
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -530,23 +531,68 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _pickReminderTime() async {
-    final picked = await showTimePicker(
+    final l = L10n.of(context);
+    // Material showTimePicker's dial asserts on Flutter 3.44 when the
+    // hour/minute selection changes inside the double-tap window (framework
+    // bug in _DialTimeSelectorControl's conditional onDoubleTap), so we use
+    // a Cupertino time wheel in an app-style sheet instead.
+    var selected =
+        DateTime(2000, 1, 1, _settings.reminderHour, _settings.reminderMinute);
+    final saved = await showModalBottomSheet<bool>(
       context: context,
-      initialTime: TimeOfDay(
-        hour: _settings.reminderHour,
-        minute: _settings.reminderMinute,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx, child) => MediaQuery(
-        data: MediaQuery.of(ctx).copyWith(alwaysUse24HourFormat: true),
-        child: child!,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: Text(l.cancel,
+                        style: const TextStyle(color: AppColors.textMuted)),
+                  ),
+                  Text(l.reminderTimeLabel,
+                      style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary)),
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: Text(l.save,
+                        style: const TextStyle(
+                            color: AppColors.brand,
+                            fontWeight: FontWeight.w600)),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              height: 216,
+              child: CupertinoDatePicker(
+                mode: CupertinoDatePickerMode.time,
+                use24hFormat: true,
+                initialDateTime: selected,
+                onDateTimeChanged: (dt) => selected = dt,
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
-    if (picked == null) return;
+    if (saved != true) return;
     _update(AppSettings(
       reminderThresholdDays: _settings.reminderThresholdDays,
       restockReminderEnabled: _settings.restockReminderEnabled,
-      reminderHour: picked.hour,
-      reminderMinute: picked.minute,
+      reminderHour: selected.hour,
+      reminderMinute: selected.minute,
     ));
   }
 
