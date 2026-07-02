@@ -112,7 +112,7 @@ extension AppSettingsHiveX on AppSettings {
 
 AppSettings appSettingsFromMap(Map map) => AppSettings(
       reminderThresholdDays: map['reminderThresholdDays'] as int? ?? 5,
-      restockReminderEnabled: map['restockReminderEnabled'] as bool? ?? true,
+      restockReminderEnabled: map['restockReminderEnabled'] as bool? ?? false,
       reminderHour: map['reminderHour'] as int? ?? 18,
       reminderMinute: map['reminderMinute'] as int? ?? 0,
     );

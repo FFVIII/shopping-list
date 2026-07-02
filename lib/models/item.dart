@@ -240,7 +240,10 @@ class AppSettings {
 
   AppSettings({
     this.reminderThresholdDays = 5,
-    this.restockReminderEnabled = true,
+    // Off by default: the toggle is what triggers the iOS permission
+    // request (spec §4.4). Defaulting to true meant most users never saw
+    // the request at all, since the on->off->on edge never fired.
+    this.restockReminderEnabled = false,
     this.reminderHour = 18,
     this.reminderMinute = 0,
   });
