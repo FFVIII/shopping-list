@@ -17,8 +17,9 @@ class BatchBarAction {
 
 /// Shared bottom bar for batch-select mode.
 ///
-/// Layout (no cancel):  [SelectAll] [extraActions…] [Spacer] [Delete]
-/// Layout (with cancel): [Cancel] [Spacer] [SelectAll] [extraActions…] [Delete]
+/// Layout: [SelectAll] [extraActions…] [Spacer] [Cancel?] [Delete]
+/// SelectAll always sits on the far left; Cancel (when present) and Delete
+/// are grouped together on the far right, in that order.
 class BatchBar extends StatelessWidget {
   final int selectedCount;
   final bool showCountLabel;
@@ -29,7 +30,7 @@ class BatchBar extends StatelessWidget {
   /// Pass an async VoidCallback to show a confirmation dialog before deleting.
   final VoidCallback? onDelete;
 
-  /// If set, a Cancel pill appears on the left to exit batch mode.
+  /// If set, a Cancel pill appears next to Delete to exit batch mode.
   final VoidCallback? onCancel;
 
   /// Extra action pills inserted after SelectAll, before the spacer/Delete.
@@ -97,10 +98,6 @@ class BatchBar extends StatelessWidget {
           ],
           Row(
             children: [
-              if (onCancel != null) ...[
-                _pill(l.cancel, AppColors.textSecondary, AppColors.fieldBg, onCancel),
-                const Spacer(),
-              ],
               _pill(
                 l.selectAll,
                 allSelected ? AppColors.brand : AppColors.textSecondary,
@@ -116,8 +113,11 @@ class BatchBar extends StatelessWidget {
                   action.onTap,
                 ),
               ],
-              if (onCancel == null) const Spacer(),
-              const SizedBox(width: 8),
+              const Spacer(),
+              if (onCancel != null) ...[
+                _pill(l.cancel, AppColors.textSecondary, AppColors.fieldBg, onCancel),
+                const SizedBox(width: 8),
+              ],
               _pill(
                 l.delete,
                 hasSelection ? AppColors.danger : AppColors.textDisabled,

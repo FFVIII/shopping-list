@@ -765,6 +765,10 @@ class _ListScreenState extends State<ListScreen> {
     return BatchBar(
       allSelected: allSelected,
       selectedCount: _budgetSelected.length,
+      onCancel: () => setState(() {
+        _budgetBatchMode = false;
+        _budgetSelected.clear();
+      }),
       onToggleAll: () => setState(() {
         if (allSelected) {
           _budgetSelected.clear();
