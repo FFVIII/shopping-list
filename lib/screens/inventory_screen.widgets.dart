@@ -629,7 +629,7 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
     final shelf = _shelfCtrl.text.trim();
     Navigator.pop(context);
     widget.onAdd(InventoryItem(
-      id: 'inv_${DateTime.now().millisecondsSinceEpoch}',
+      id: generateId('inv'),
       name: name,
       category: _category,
       shelfZone: _category.shelfZone,

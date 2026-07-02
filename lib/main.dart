@@ -257,7 +257,7 @@ class _AppShellState extends State<AppShell> {
 
   Category _addCategory(String name, Color color, String shelfZone, int defaultDays) {
     final cat = Category(
-      id: 'cat_${DateTime.now().millisecondsSinceEpoch}',
+      id: generateId('cat'),
       name: name,
       color: color,
       bgColor: Category.tintOf(color),
@@ -410,7 +410,7 @@ class _AppShellState extends State<AppShell> {
       _budget = [
         ..._budget,
         BudgetItem(
-          id: 'bud_${DateTime.now().millisecondsSinceEpoch}',
+          id: generateId('bud'),
           name: name,
           quantity: quantity,
           unitPrice: unitPrice,
@@ -444,7 +444,7 @@ class _AppShellState extends State<AppShell> {
   void _addSimple(String name) {
     setState(() {
       _shoppingSimple.add(ShoppingItem(
-        id: 's_${DateTime.now().millisecondsSinceEpoch}',
+        id: generateId('s'),
         name: name,
         category: _categories.fallback,
         quantityLabel: '',
@@ -459,7 +459,7 @@ class _AppShellState extends State<AppShell> {
   void _addSmart(String name, String quantityLabel, String? shelfCode, int estimatedDays, Category category, String shelfZone) {
     setState(() {
       _shopping.add(ShoppingItem(
-        id: 'u_${DateTime.now().millisecondsSinceEpoch}',
+        id: generateId('u'),
         name: name,
         category: category,
         quantityLabel: quantityLabel.isEmpty ? '1件' : quantityLabel,
@@ -641,7 +641,7 @@ class _AppShellState extends State<AppShell> {
           _inventory = [
             ..._inventory,
             InventoryItem(
-              id: 'inv_${DateTime.now().millisecondsSinceEpoch}_$id',
+              id: generateId('inv'),
               name: item.name,
               category: item.category,
               shelfZone: item.shelfZone,
@@ -702,9 +702,8 @@ class _AppShellState extends State<AppShell> {
     setState(() {
       // Work on a mutable copy so new entries are visible to subsequent lookups
       final inv = List<InventoryItem>.from(_inventory);
-      int idx = 0;
       for (final item in _shopping) {
-        if (!selectedSet.contains(item.id)) { idx++; continue; }
+        if (!selectedSet.contains(item.id)) continue;
         final days = item.estimatedDays ?? item.category.defaultDays;
         final invIdx = _inventoryIndexForShoppingItem(inv, item);
         if (invIdx != -1) {
@@ -715,7 +714,7 @@ class _AppShellState extends State<AppShell> {
           if (item.shelfCode != null) inv[invIdx].shelfCode = item.shelfCode;
         } else {
           inv.add(InventoryItem(
-            id: 'inv_${DateTime.now().millisecondsSinceEpoch}_$idx',
+            id: generateId('inv'),
             name: item.name,
             category: item.category,
             shelfZone: item.shelfZone,
@@ -725,7 +724,6 @@ class _AppShellState extends State<AppShell> {
             estimatedDays: days,
           ));
         }
-        idx++;
       }
       _inventory = inv;
       _shopping.clear();
@@ -742,7 +740,7 @@ class _AppShellState extends State<AppShell> {
       _shopping = [
         ..._shopping,
         ShoppingItem(
-          id: 'r_${DateTime.now().millisecondsSinceEpoch}',
+          id: generateId('r'),
           name: inv.name,
           category: inv.category,
           quantityLabel: '1件',
@@ -804,7 +802,7 @@ class _AppShellState extends State<AppShell> {
         _shopping = [
           ..._shopping,
           ShoppingItem(
-            id: 'shop_${DateTime.now().millisecondsSinceEpoch}_${inv.id}',
+            id: generateId('shop'),
             name: inv.name,
             category: inv.category,
             shelfZone: inv.shelfZone,
@@ -862,13 +860,12 @@ class _AppShellState extends State<AppShell> {
         .where((i) => !_shopping.any((s) => !s.checked && _sameProduct(s, i)))
         .toList();
     if (toAdd.isEmpty) return;
-    final base = DateTime.now().millisecondsSinceEpoch;
     setState(() {
       final newItems = <ShoppingItem>[];
       for (var idx = 0; idx < toAdd.length; idx++) {
         final inv = toAdd[idx];
         newItems.add(ShoppingItem(
-          id: 'r_${base}_$idx',
+          id: generateId('r'),
           name: inv.name,
           category: inv.category,
           quantityLabel: '1件',

@@ -1,5 +1,16 @@
 import 'package:flutter/material.dart';
 
+// ─── Id generation ────────────────────────────────────────────────────────────
+
+int _idSeq = 0;
+
+/// A unique id of the form `<prefix>_<millis>_<seq>`. The trailing counter
+/// guarantees uniqueness even when several ids are requested within the same
+/// millisecond (e.g. rapid consecutive taps) — a plain millisecond timestamp
+/// alone can collide there.
+String generateId(String prefix) =>
+    '${prefix}_${DateTime.now().millisecondsSinceEpoch}_${_idSeq++}';
+
 // ─── Category ────────────────────────────────────────────────────────────────
 
 /// Mutable category model. Identity is `id` (stable across renames).
