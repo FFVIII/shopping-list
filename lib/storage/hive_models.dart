@@ -36,6 +36,7 @@ extension ShoppingItemHiveX on ShoppingItem {
         'estimatedDays': estimatedDays,
         'checked': checked,
         'addedToInventory': addedToInventory,
+        'sourceInventoryId': sourceInventoryId,
       };
 }
 
@@ -51,6 +52,7 @@ ShoppingItem shoppingItemFromMap(Map map, List<Category> categories) =>
       estimatedDays: map['estimatedDays'] as int?,
       checked: map['checked'] as bool? ?? false,
       addedToInventory: map['addedToInventory'] as bool? ?? false,
+      sourceInventoryId: map['sourceInventoryId'] as String?,
     );
 
 // ─── InventoryItem ────────────────────────────────────────────────────────────

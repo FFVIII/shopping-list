@@ -157,6 +157,13 @@ class ShoppingItem {
   int? estimatedDays;
   bool checked;
   bool addedToInventory;
+  // Set when this entry was created from an existing InventoryItem (restock /
+  // reminder "add to list"). Lets purchase/dedup logic match the exact
+  // inventory row by id instead of by name, so it survives renames and
+  // doesn't collide with other items that happen to share a name. Manually
+  // typed items (via the add bar) have no source, so they still fall back
+  // to name matching.
+  String? sourceInventoryId;
 
   ShoppingItem({
     required this.id,
@@ -168,6 +175,7 @@ class ShoppingItem {
     this.estimatedDays,
     this.checked = false,
     this.addedToInventory = false,
+    this.sourceInventoryId,
   });
 }
 

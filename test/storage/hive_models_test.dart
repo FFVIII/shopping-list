@@ -47,6 +47,7 @@ void main() {
         estimatedDays: 6,
         checked: true,
         addedToInventory: true,
+        sourceInventoryId: 'inv_1',
       );
 
       final restored = shoppingItemFromMap(item.toMap(), categories);
@@ -60,6 +61,33 @@ void main() {
       expect(restored.estimatedDays, item.estimatedDays);
       expect(restored.checked, item.checked);
       expect(restored.addedToInventory, item.addedToInventory);
+      expect(restored.sourceInventoryId, item.sourceInventoryId);
+    });
+
+    test('sourceInventoryId defaults to null when absent from the map', () {
+      final fallback = Category(
+        id: kFallbackCategoryId,
+        name: '其他',
+        color: const Color(0xFF78909C),
+        bgColor: const Color(0xFFECEFF1),
+        shelfZone: '其他',
+        defaultDays: 7,
+      );
+      final map = {
+        'id': 's3',
+        'name': '手动添加',
+        'categoryId': kFallbackCategoryId,
+        'quantityLabel': '',
+        'shelfZone': '其他',
+        'shelfCode': null,
+        'estimatedDays': null,
+        'checked': false,
+        'addedToInventory': false,
+      };
+
+      final restored = shoppingItemFromMap(map, [fallback]);
+
+      expect(restored.sourceInventoryId, isNull);
     });
 
     test('falls back to the fallback category when categoryId is unknown', () {
