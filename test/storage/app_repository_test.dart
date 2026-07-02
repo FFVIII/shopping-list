@@ -92,4 +92,36 @@ void main() {
     expect(reloaded.settings.reminderHour, 7);
     expect(reloaded.shelfCodeOrder, ['货架A1', '货架B2']);
   });
+
+  test('replaceAll overwrites every collection', () async {
+    final repo = AppRepository();
+    await repo.init();
+    await repo.load(lang: Lang.zh); // seeds sample data
+
+    final categories = buildDefaultCategories();
+    final replacement = AppData(
+      shoppingSimple: [],
+      shoppingSmart: [],
+      inventory: [],
+      budget: [BudgetItem(id: 'only', name: '替换', quantity: 2, unitPrice: 3.5)],
+      categories: categories,
+      settings: AppSettings(
+        reminderThresholdDays: 1,
+        restockReminderEnabled: false,
+        reminderHour: 6,
+        reminderMinute: 15,
+      ),
+      shelfZones: defaultShelfZones.toList(),
+      shelfCodeOrder: ['A1'],
+    );
+    await repo.replaceAll(replacement);
+
+    final reloaded = await repo.load(lang: Lang.zh);
+    expect(reloaded.shoppingSmart, isEmpty);
+    expect(reloaded.inventory, isEmpty);
+    expect(reloaded.budget.single.name, '替换');
+    expect(reloaded.settings.reminderHour, 6);
+    expect(reloaded.settings.restockReminderEnabled, false);
+    expect(reloaded.shelfCodeOrder, ['A1']);
+  });
 }

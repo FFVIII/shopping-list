@@ -147,4 +147,17 @@ class AppRepository {
 
   Future<void> saveShelfCodeOrder(List<String> order) =>
       _metaBox.put('shelf_code_order', order);
+
+  /// Overwrites every persisted collection with [data] (backup import,
+  /// spec 2026-07-02 §5.3).
+  Future<void> replaceAll(AppData data) async {
+    await saveCategories(data.categories);
+    await saveShoppingSimple(data.shoppingSimple);
+    await saveShoppingSmart(data.shoppingSmart);
+    await saveInventory(data.inventory);
+    await saveBudget(data.budget);
+    await saveSettings(data.settings);
+    await saveShelfZones(data.shelfZones);
+    await saveShelfCodeOrder(data.shelfCodeOrder);
+  }
 }
