@@ -170,25 +170,11 @@ class _SegmentBtn extends StatelessWidget {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          margin: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-            color: selected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    )
-                  ]
-                : null,
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
+        behavior: HitTestBehavior.opaque,
+        child: Center(
+          child: AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOut,
             style: TextStyle(
               fontSize: 13,
               fontWeight:
@@ -197,7 +183,52 @@ class _SegmentBtn extends StatelessWidget {
                   ? AppColors.textPrimary
                   : const Color(0xFF8A8A8A),
             ),
+            child: Text(label),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The white "thumb" behind a row of [_SegmentBtn]s. Slides to
+/// [selectedIndex]'s slot (one of [count] equal segments) instead of each
+/// button fading its own background in/out independently.
+///
+/// Must be a direct child of the enclosing [Stack] — [segmentWidth] is
+/// resolved by the caller via an outer LayoutBuilder rather than one nested
+/// in here, because a RenderObjectWidget like LayoutBuilder sitting between
+/// Stack and this widget's [AnimatedPositioned] would break Positioned's
+/// parent-data lookup (it needs Stack as its immediate render ancestor).
+class _SegmentIndicator extends StatelessWidget {
+  final int selectedIndex;
+  final double segmentWidth;
+
+  const _SegmentIndicator({
+    required this.selectedIndex,
+    required this.segmentWidth,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+      top: 0,
+      bottom: 0,
+      left: segmentWidth * selectedIndex,
+      width: segmentWidth,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ],
         ),
       ),
     );

@@ -402,32 +402,49 @@ class _ListScreenState extends State<ListScreen> {
 
   Widget _buildModeToggle() {
     final l = L10n.of(context);
+    const modeCount = 3;
+    final selectedIndex = switch (_mode) {
+      ListMode.simple => 0,
+      ListMode.budget => 1,
+      ListMode.smart => 2,
+    };
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
       child: Container(
         height: 38,
+        padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(
           color: const Color(0xFFE8E8E3),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Row(
-          children: [
-            _SegmentBtn(
-              label: l.modeSimple,
-              selected: _mode == ListMode.simple,
-              onTap: () => setState(() => _mode = ListMode.simple),
-            ),
-            _SegmentBtn(
-              label: l.budgetMode,
-              selected: _mode == ListMode.budget,
-              onTap: () => setState(() => _mode = ListMode.budget),
-            ),
-            _SegmentBtn(
-              label: l.modeSmart,
-              selected: _mode == ListMode.smart,
-              onTap: () => setState(() => _mode = ListMode.smart),
-            ),
-          ],
+        child: LayoutBuilder(
+          builder: (context, constraints) => Stack(
+            children: [
+              _SegmentIndicator(
+                selectedIndex: selectedIndex,
+                segmentWidth: constraints.maxWidth / modeCount,
+              ),
+              Row(
+                children: [
+                  _SegmentBtn(
+                    label: l.modeSimple,
+                    selected: _mode == ListMode.simple,
+                    onTap: () => setState(() => _mode = ListMode.simple),
+                  ),
+                  _SegmentBtn(
+                    label: l.budgetMode,
+                    selected: _mode == ListMode.budget,
+                    onTap: () => setState(() => _mode = ListMode.budget),
+                  ),
+                  _SegmentBtn(
+                    label: l.modeSmart,
+                    selected: _mode == ListMode.smart,
+                    onTap: () => setState(() => _mode = ListMode.smart),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
