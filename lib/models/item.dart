@@ -73,6 +73,14 @@ List<Category> buildDefaultCategories() => [
         defaultDays: 30,
       ),
       Category(
+        id: 'household',
+        name: '日用品',
+        color: const Color(0xFF7B1FA2),
+        bgColor: const Color(0xFFF3E5F5),
+        shelfZone: '日用品',
+        defaultDays: 30,
+      ),
+      Category(
         id: kFallbackCategoryId,
         name: '其他',
         color: const Color(0xFF78909C),
@@ -413,9 +421,9 @@ List<InventoryItem> buildSampleInventory(List<Category> categories) {
     InventoryItem(
       id: 'i2',
       name: '鸡蛋',
-      category: cat('produce'),
-      shelfZone: '果蔬区',
-      shelfCode: '货架B1',
+      category: cat('dairy'),
+      shelfZone: '乳制品',
+      shelfCode: '冷柜C1',
       quantityLabel: '1打',
       purchasedAt: now.subtract(const Duration(days: 8)),
       estimatedDays: 9,
@@ -423,7 +431,7 @@ List<InventoryItem> buildSampleInventory(List<Category> categories) {
     InventoryItem(
       id: 'i3',
       name: '洗洁精',
-      category: cat('cleaning'),
+      category: cat('household'),
       shelfZone: '日用品',
       shelfCode: '货架D1',
       quantityLabel: '1瓶',
