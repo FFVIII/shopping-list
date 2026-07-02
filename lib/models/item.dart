@@ -154,14 +154,6 @@ extension ShelfZoneListLookup on List<ShelfZone> {
 enum StockStatus { sufficient, low, empty }
 
 extension StockStatusInfo on StockStatus {
-  String get label {
-    switch (this) {
-      case StockStatus.sufficient: return '充足';
-      case StockStatus.low:        return '快没';
-      case StockStatus.empty:      return '用完';
-    }
-  }
-
   Color get color {
     switch (this) {
       case StockStatus.sufficient: return const Color(0xFF4CAF50);

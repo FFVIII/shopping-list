@@ -42,4 +42,13 @@ void main() {
     expect(zh.data('果蔬区'), '果蔬区'); // zh is always passthrough
     expect(zh.data('香蕉'), '香蕉');
   });
+
+  test('data() translates the generic default quantity label', () {
+    // Regression test: '1件' is the app's own fallback quantity label
+    // (used whenever the user leaves quantity blank), not sample data —
+    // it was missing from the translation map, so English users saw the
+    // literal Chinese string.
+    expect(en.data('1件'), '1 item');
+    expect(zh.data('1件'), '1件');
+  });
 }

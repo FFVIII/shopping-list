@@ -594,8 +594,12 @@ String _enDate(DateTime d) {
 }
 
 /// Canonical (zh) → English display for the fixed sample-data set,
-/// shelf-zone display names, and the default reminder time.
+/// shelf-zone display names, the default reminder time, and generic
+/// data-layer defaults (e.g. the fallback quantity label).
 const Map<String, String> _enData = {
+  // generic defaults (not sample-data specific — used whenever the app
+  // itself picks a value, e.g. quantity left blank by the user)
+  '1件': '1 item',
   // shelf zones (DISPLAY ONLY — keys in code stay Chinese)
   '果蔬区': 'Produce',
   '冷藏': 'Fridge',
