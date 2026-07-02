@@ -297,6 +297,71 @@ class _StorageWarningBanner extends StatelessWidget {
   }
 }
 
+// ── Animated tab content ──────────────────────────────────────────────────────
+
+/// Wraps the bottom-tab IndexedStack with a fade + settle-up transition that
+/// plays whenever [index] changes, instead of the instant hard-cut IndexedStack
+/// gives you on its own. Keeps IndexedStack itself (all tabs stay mounted, so
+/// each tab's own scroll position / search text / batch-mode selection survive
+/// switching away and back) — only the *reveal* of the newly-visible tab is
+/// animated.
+class _AnimatedTabContent extends StatefulWidget {
+  final int index;
+  final List<Widget> children;
+
+  const _AnimatedTabContent({required this.index, required this.children});
+
+  @override
+  State<_AnimatedTabContent> createState() => _AnimatedTabContentState();
+}
+
+class _AnimatedTabContentState extends State<_AnimatedTabContent>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _fade;
+  late final Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 260),
+      value: 1.0, // no flash on first render
+    );
+    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.02),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+  }
+
+  @override
+  void didUpdateWidget(_AnimatedTabContent old) {
+    super.didUpdateWidget(old);
+    if (old.index != widget.index) {
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(
+        position: _slide,
+        child: IndexedStack(index: widget.index, children: widget.children),
+      ),
+    );
+  }
+}
+
 // ── Bottom Navigation ─────────────────────────────────────────────────────────
 
 class _BottomNav extends StatelessWidget {

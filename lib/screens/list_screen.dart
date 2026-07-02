@@ -295,12 +295,16 @@ class _ListScreenState extends State<ListScreen> {
             ),
             if (_isBudget && widget.budgetItems.isNotEmpty && !_budgetBatchMode)
               _buildBudgetTotalBar(),
-            if (_isSmart && _smartBatchMode)
-              _buildSmartBatchBar()
-            else if (_isBudget && _budgetBatchMode)
-              _buildBudgetBatchBar()
-            else
-              _buildAddBar(context),
+            _AnimatedBottomBar(
+              mode: _isSmart && _smartBatchMode
+                  ? 0
+                  : (_isBudget && _budgetBatchMode ? 1 : 2),
+              child: _isSmart && _smartBatchMode
+                  ? _buildSmartBatchBar()
+                  : (_isBudget && _budgetBatchMode
+                      ? _buildBudgetBatchBar()
+                      : _buildAddBar(context)),
+            ),
           ],
         ),
       ),

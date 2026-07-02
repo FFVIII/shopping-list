@@ -886,7 +886,7 @@ class _AppShellState extends State<AppShell> {
           if (_storageUnavailable) const _StorageWarningBanner(),
           Expanded(
             child: Builder(
-              builder: (ctx) => IndexedStack(
+              builder: (ctx) => _AnimatedTabContent(
                 index: _tab,
                 children: [
                   ListScreen(

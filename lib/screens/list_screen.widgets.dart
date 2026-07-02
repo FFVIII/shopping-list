@@ -318,3 +318,63 @@ class _RenameSheetState extends State<_RenameSheet> {
     );
   }
 }
+
+// ── Animated bottom bar switch ────────────────────────────────────────────────
+
+/// Wraps the bottom bar that alternates between the smart/budget batch bars
+/// and the normal add bar. [mode] identifies which one [child] currently is;
+/// whenever it changes, the new bar fades + settles up into place instead of
+/// hard-cutting in.
+class _AnimatedBottomBar extends StatefulWidget {
+  final int mode;
+  final Widget child;
+
+  const _AnimatedBottomBar({required this.mode, required this.child});
+
+  @override
+  State<_AnimatedBottomBar> createState() => _AnimatedBottomBarState();
+}
+
+class _AnimatedBottomBarState extends State<_AnimatedBottomBar>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _fade;
+  late final Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 260),
+      value: 1.0, // no flash on first render
+    );
+    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.08),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+  }
+
+  @override
+  void didUpdateWidget(_AnimatedBottomBar old) {
+    super.didUpdateWidget(old);
+    if (old.mode != widget.mode) {
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(position: _slide, child: widget.child),
+    );
+  }
+}
