@@ -53,7 +53,7 @@ List<Category> buildDefaultCategories() => [
         name: '乳制品',
         color: const Color(0xFF2196F3),
         bgColor: const Color(0xFFE3F2FD),
-        shelfZone: '冷藏/乳制品',
+        shelfZone: '乳制品',
         defaultDays: 7,
       ),
       Category(
@@ -61,7 +61,7 @@ List<Category> buildDefaultCategories() => [
         name: '肉类',
         color: const Color(0xFFE53935),
         bgColor: const Color(0xFFFFEBEE),
-        shelfZone: '冷藏/乳制品',
+        shelfZone: '冷藏',
         defaultDays: 5,
       ),
       Category(
@@ -103,11 +103,12 @@ class ShelfZone {
 
 /// Default shelf zones in default order. App state owns a mutable copy.
 const List<ShelfZone> defaultShelfZones = [
-  ShelfZone('果蔬区',      Color(0xFF4CAF50)),
-  ShelfZone('冷藏/乳制品', Color(0xFF2196F3)),
-  ShelfZone('粮油区',      Color(0xFF8D6E63)),
-  ShelfZone('日用品',      Color(0xFF7B1FA2)),
-  ShelfZone('其他',        Color(0xFF78909C)),
+  ShelfZone('果蔬区', Color(0xFF4CAF50)),
+  ShelfZone('乳制品', Color(0xFF2196F3)),
+  ShelfZone('冷藏',   Color(0xFF00ACC1)),
+  ShelfZone('粮油区', Color(0xFF8D6E63)),
+  ShelfZone('日用品', Color(0xFF7B1FA2)),
+  ShelfZone('其他',   Color(0xFF78909C)),
 ];
 
 extension ShelfZoneListLookup on List<ShelfZone> {
@@ -302,7 +303,7 @@ List<ShoppingItem> buildSampleShopping(List<Category> categories) {
       name: '牛奶',
       category: cat('dairy'),
       quantityLabel: '2盒',
-      shelfZone: '冷藏/乳制品',
+      shelfZone: '乳制品',
       shelfCode: '冷柜C2',
     ),
     ShoppingItem(
@@ -310,7 +311,7 @@ List<ShoppingItem> buildSampleShopping(List<Category> categories) {
       name: '鸡蛋',
       category: cat('dairy'),
       quantityLabel: '1打',
-      shelfZone: '冷藏/乳制品',
+      shelfZone: '乳制品',
       shelfCode: '冷柜C1',
     ),
   ];
@@ -330,7 +331,7 @@ List<InventoryItem> buildSampleInventory(List<Category> categories) {
       id: 'i1',
       name: '牛奶',
       category: cat('dairy'),
-      shelfZone: '冷藏/乳制品',
+      shelfZone: '乳制品',
       shelfCode: '冷柜C2',
       quantityLabel: '2盒',
       purchasedAt: now.subtract(const Duration(days: 1)),
@@ -370,7 +371,7 @@ List<InventoryItem> buildSampleInventory(List<Category> categories) {
       id: 'i5',
       name: '酸奶',
       category: cat('dairy'),
-      shelfZone: '冷藏/乳制品',
+      shelfZone: '乳制品',
       shelfCode: '冷柜C3',
       quantityLabel: '4杯',
       purchasedAt: now.subtract(const Duration(days: 8)),

@@ -598,7 +598,7 @@ String _enDate(DateTime d) {
 const Map<String, String> _enData = {
   // shelf zones (DISPLAY ONLY — keys in code stay Chinese)
   '果蔬区': 'Produce',
-  '冷藏/乳制品': 'Fridge / Dairy',
+  '冷藏': 'Fridge',
   '粮油区': 'Pantry',
   '日用品': 'Household',
   '其他': 'Other',
