@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import '../models/item.dart';
+import '../l10n/app_strings.dart';
 import '../l10n/l10n.dart';
 import '../widgets/days_selector.dart';
 import '../widgets/drag_handle.dart';
 import '../widgets/sort_toggle_button.dart';
 import '../widgets/batch_bar.dart';
+import '../widgets/toast.dart';
 
 part 'list_screen.widgets.dart';
 part 'list_screen.simple.dart';
@@ -128,6 +130,7 @@ class _ListScreenState extends State<ListScreen> {
   bool get _isSmart => _mode == ListMode.smart;
   bool get _isBudget => _mode == ListMode.budget;
   final _nameCtrl = TextEditingController();
+  final _nameFocus = FocusNode();
 
   // ── Speech-to-text ──────────────────────────────────────────────────────────
   final SpeechToText _speech = SpeechToText();
@@ -168,7 +171,10 @@ class _ListScreenState extends State<ListScreen> {
   }
 
   Future<void> _toggleListening() async {
-    if (!_speechAvailable) return;
+    if (!_speechAvailable) {
+      showAppToast(context, L10n.of(context).micPermissionDenied);
+      return;
+    }
 
     if (_isListening) {
       await _speech.stop();
@@ -178,12 +184,14 @@ class _ListScreenState extends State<ListScreen> {
         _isListening = true;
         _nameCtrl.clear();
       });
+      final localeId =
+          L10n.of(context) is ZhStrings ? 'zh_CN' : 'en_US';
       await _speech.listen(
         onResult: (result) {
           setState(() => _nameCtrl.text = result.recognizedWords);
         },
         listenOptions: SpeechListenOptions(
-          localeId: 'zh_CN',
+          localeId: localeId,
           listenFor: const Duration(seconds: 15),
           pauseFor: const Duration(seconds: 2),
         ),
@@ -194,6 +202,7 @@ class _ListScreenState extends State<ListScreen> {
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _nameFocus.dispose();
     _speech.cancel();
     super.dispose();
   }
@@ -229,6 +238,31 @@ class _ListScreenState extends State<ListScreen> {
     } else {
       widget.onCompleteSimple();
     }
+  }
+
+  Future<void> _confirmClearBudget() async {
+    final l = L10n.of(context);
+    final count = widget.budgetItems.length;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.clearBudgetTitle),
+        content: Text(l.clearBudgetMessage(count)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.cancel),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.delete),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    widget.onBatchDeleteBudget(widget.budgetItems.map((i) => i.id).toList());
   }
 
   @override
@@ -307,7 +341,8 @@ class _ListScreenState extends State<ListScreen> {
               ],
             ),
           ),
-          if (_isSmart && widget.smartItems.isNotEmpty)
+          if ((_isSmart && widget.smartItems.isNotEmpty) ||
+              (!_isSmart && !_isBudget && widget.simpleItems.isNotEmpty))
             GestureDetector(
               onTap: _confirmCompleteTrip,
               child: Container(
@@ -319,6 +354,26 @@ class _ListScreenState extends State<ListScreen> {
                 ),
                 child: Text(
                   l.completeTrip,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            )
+          else if (_isBudget && widget.budgetItems.isNotEmpty)
+            GestureDetector(
+              onTap: _confirmClearBudget,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 7),
+                decoration: BoxDecoration(
+                  color: AppColors.danger,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  l.clearBudget,
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -578,6 +633,7 @@ class _ListScreenState extends State<ListScreen> {
           Expanded(
             child: TextField(
               controller: _nameCtrl,
+              focusNode: _nameFocus,
               style: const TextStyle(fontSize: 15),
               decoration: InputDecoration(
                 hintText: _isListening
@@ -840,6 +896,9 @@ class _ListScreenState extends State<ListScreen> {
       // Simple: just add directly, no category needed
       widget.onAddSimple(name);
       _nameCtrl.clear();
+      // Keep the keyboard open for rapid consecutive entries instead of
+      // letting the OS dismiss it after the submit action.
+      _nameFocus.requestFocus();
     }
   }
 

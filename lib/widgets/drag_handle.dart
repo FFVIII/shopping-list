@@ -28,8 +28,12 @@ class _DragHandleState extends State<DragHandle> {
 
   @override
   Widget build(BuildContext context) {
-    Widget bar = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+    // Transparent `color` (not `Padding`) so the padded area still
+    // registers pointer hits — Listener/ReorderableDragStartListener
+    // defer hit-testing to the child's painted bounds.
+    Widget bar = Container(
+      color: Colors.transparent,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: AnimatedContainer(
         duration: _pressed
             ? const Duration(milliseconds: 80)

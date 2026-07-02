@@ -386,26 +386,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
         child: Row(
           children: [
             SortToggleButton(
-              label: l.byShelf,
-              selected: _invSort == InvSortMode.none && !_byCategory,
-              direction: _invSort == InvSortMode.none && !_byCategory
-                  ? _invGroupDir
-                  : null,
-              onTap: () => setState(() {
-                if (_invGroup == InvGroupMode.shelf &&
-                    _invSort == InvSortMode.none) {
-                  _invGroupDir = _invGroupDir == SortDir.asc
-                      ? SortDir.desc
-                      : SortDir.asc;
-                } else {
-                  _invGroup = InvGroupMode.shelf;
-                  _invSort = InvSortMode.none;
-                  _invGroupDir = SortDir.asc;
-                }
-              }),
-            ),
-            const SizedBox(width: 4),
-            SortToggleButton(
               label: l.sortByCategory,
               selected: _invSort == InvSortMode.none && _byCategory,
               direction: _invSort == InvSortMode.none && _byCategory
@@ -419,6 +399,26 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       : SortDir.asc;
                 } else {
                   _invGroup = InvGroupMode.category;
+                  _invSort = InvSortMode.none;
+                  _invGroupDir = SortDir.asc;
+                }
+              }),
+            ),
+            const SizedBox(width: 4),
+            SortToggleButton(
+              label: l.byShelf,
+              selected: _invSort == InvSortMode.none && !_byCategory,
+              direction: _invSort == InvSortMode.none && !_byCategory
+                  ? _invGroupDir
+                  : null,
+              onTap: () => setState(() {
+                if (_invGroup == InvGroupMode.shelf &&
+                    _invSort == InvSortMode.none) {
+                  _invGroupDir = _invGroupDir == SortDir.asc
+                      ? SortDir.desc
+                      : SortDir.asc;
+                } else {
+                  _invGroup = InvGroupMode.shelf;
                   _invSort = InvSortMode.none;
                   _invGroupDir = SortDir.asc;
                 }

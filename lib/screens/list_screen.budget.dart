@@ -183,6 +183,7 @@ class _BudgetRow extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.divider),
             boxShadow: const [
               BoxShadow(
                   color: AppColors.shadow,

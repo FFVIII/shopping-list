@@ -22,7 +22,7 @@ class AppColors {
   static const textChip = Color(0xFF424242);
 
   // 背景 / 分隔
-  static const scaffoldBg = Color(0xFFF2F2ED);
+  static const scaffoldBg = Color(0xFFFFFFFF);
   static const fieldBg = Color(0xFFF5F5F0);
   static const divider = Color(0xFFE0E0E0);
   static const border = Color(0xFFD0D0D0);
