@@ -30,6 +30,9 @@ abstract class AppStrings {
   String budgetCount(int n); // "共 N 项" / "N items"
   String get addBudgetTitle; // "记一笔" / "Add expense"
   String get editBudgetTitle; // "编辑记录" / "Edit expense"
+  String get clearBudget; // "清空" / "Clear"
+  String get clearBudgetTitle; // "清空记账？" / "Clear expenses?"
+  String clearBudgetMessage(int count); // explains what clearing does
   String get budgetAddHint; // add-bar hint
   String get budgetEmptyTitle;
   String get budgetEmptySubtitle;
@@ -50,6 +53,7 @@ abstract class AppStrings {
   String get listEmptyTitle;
   String get listEmptySubtitle;
   String get listeningHint;
+  String get micPermissionDenied; // toast shown when mic tapped w/o permission
   String get smartAddHint;
   String get simpleAddHint;
   String addItemTitle(String name);
@@ -152,6 +156,17 @@ abstract class AppStrings {
   String get sectionData;
   String get backupExport;
   String get importRestore;
+
+  // ── Notifications & backup ──
+  String get notifRestockTitle;                       // "该补货了" / "Time to restock"
+  String notifRestockBody(int count, List<String> names); // 最多列 3 个名字
+  String get notifPermissionDenied; // 开关打开但授权被拒时的 toast
+  String get importConfirmTitle;    // "导入备份？" / "Import backup?"
+  String get importConfirmMessage;  // 覆盖警告
+  String get importAction;          // "导入" / "Import"
+  String get importInvalidFile;     // "文件无效，无法导入"
+  String get importSuccessToast;    // "已恢复备份"
+  String get exportFailedToast;     // "导出失败"
   String get appFooter; // "购物清单 v1.0 · 本地优先"
   String get language; // "语言" / "Language"
   String get languageSystem; // "跟随系统"
@@ -201,6 +216,9 @@ class ZhStrings extends AppStrings {
   @override String budgetCount(int n) => '共 $n 项';
   @override String get addBudgetTitle => '记一笔';
   @override String get editBudgetTitle => '编辑记录';
+  @override String get clearBudget => '清空';
+  @override String get clearBudgetTitle => '清空记账？';
+  @override String clearBudgetMessage(int count) => '将删除全部 $count 条记账记录，开始新一轮记账。此操作无法撤销。';
   @override String get budgetAddHint => '记一笔花费…';
   @override String get budgetEmptyTitle => '还没有记账';
   @override String get budgetEmptySubtitle => '在下方记一笔花费';
@@ -221,6 +239,7 @@ class ZhStrings extends AppStrings {
   @override String get listEmptyTitle => '清单是空的';
   @override String get listEmptySubtitle => '在下方输入要买的商品';
   @override String get listeningHint => '正在听，请说商品名称...';
+  @override String get micPermissionDenied => '没有麦克风/语音识别权限，请在系统设置中开启';
   @override String get smartAddHint => '添加商品，选分类后入库...';
   @override String get simpleAddHint => '随手记，添加到清单...';
   @override String addItemTitle(String name) => '添加「$name」';
@@ -321,6 +340,20 @@ class ZhStrings extends AppStrings {
   @override String get sectionData => '数据';
   @override String get backupExport => '备份导出';
   @override String get importRestore => '导入恢复';
+  @override String get notifRestockTitle => '该补货了';
+  @override String notifRestockBody(int count, List<String> names) {
+    final shown = names.take(3).join('、');
+    final suffix = count > 3 ? ' 等' : '';
+    return '有 $count 件物品需要补货：$shown$suffix';
+  }
+  @override String get notifPermissionDenied => '通知权限未开启，请在系统设置中允许通知';
+  @override String get importConfirmTitle => '导入备份？';
+  @override String get importConfirmMessage =>
+      '将覆盖当前全部数据（清单、库存、记账、分类、设置），此操作不可撤销。';
+  @override String get importAction => '导入';
+  @override String get importInvalidFile => '文件无效，无法导入';
+  @override String get importSuccessToast => '已恢复备份';
+  @override String get exportFailedToast => '导出失败';
   @override String get appFooter => '购物清单 v1.0 · 本地优先';
   @override String get language => '语言';
   @override String get languageSystem => '跟随系统';
@@ -378,6 +411,10 @@ class EnStrings extends AppStrings {
   @override String budgetCount(int n) => '$n items';
   @override String get addBudgetTitle => 'Add expense';
   @override String get editBudgetTitle => 'Edit expense';
+  @override String get clearBudget => 'Clear';
+  @override String get clearBudgetTitle => 'Clear expenses?';
+  @override String clearBudgetMessage(int count) =>
+      'This will delete all $count recorded expenses and start a new round. This cannot be undone.';
   @override String get budgetAddHint => 'Add an expense…';
   @override String get budgetEmptyTitle => 'No expenses yet';
   @override String get budgetEmptySubtitle => 'Add an expense below';
@@ -398,6 +435,8 @@ class EnStrings extends AppStrings {
   @override String get listEmptyTitle => 'Your list is empty';
   @override String get listEmptySubtitle => 'Add items to buy below';
   @override String get listeningHint => 'Listening, say the item name...';
+  @override String get micPermissionDenied =>
+      'No microphone/speech recognition permission. Please enable it in Settings.';
   @override String get smartAddHint => 'Add item, pick a category...';
   @override String get simpleAddHint => 'Jot it down, add to list...';
   @override String addItemTitle(String name) => 'Add "$name"';
@@ -499,6 +538,23 @@ class EnStrings extends AppStrings {
   @override String get sectionData => 'Data';
   @override String get backupExport => 'Backup & export';
   @override String get importRestore => 'Import & restore';
+  @override String get notifRestockTitle => 'Time to restock';
+  @override String notifRestockBody(int count, List<String> names) {
+    final shown = names.take(3).join(', ');
+    final suffix = count > 3 ? '…' : '';
+    return count == 1
+        ? '1 item needs restocking: $shown'
+        : '$count items need restocking: $shown$suffix';
+  }
+  @override String get notifPermissionDenied =>
+      'Notifications are off. Enable them in system Settings.';
+  @override String get importConfirmTitle => 'Import backup?';
+  @override String get importConfirmMessage =>
+      'This will replace ALL current data (lists, inventory, expenses, categories, settings). This cannot be undone.';
+  @override String get importAction => 'Import';
+  @override String get importInvalidFile => 'Invalid backup file';
+  @override String get importSuccessToast => 'Backup restored';
+  @override String get exportFailedToast => 'Export failed';
   @override String get appFooter => 'Shopping List v1.0 · Local-first';
   @override String get language => 'Language';
   @override String get languageSystem => 'Follow system';
