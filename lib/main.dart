@@ -23,11 +23,13 @@ part 'main.widgets.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final repository = AppRepository();
+  bool storageAvailable = true;
   try {
     await Hive.initFlutter();
     await repository.init();
   } catch (e) {
     debugPrint('Hive init failed, falling back to in-memory sample data: $e');
+    storageAvailable = false;
   }
   final notifications = NotificationService();
   try {
@@ -40,6 +42,7 @@ Future<void> main() async {
     initialLanguage: lang,
     repository: repository,
     notifications: notifications,
+    storageAvailable: storageAvailable,
   ));
 }
 
@@ -47,11 +50,13 @@ class ShoppingListApp extends StatefulWidget {
   final AppLanguage initialLanguage;
   final AppRepository repository;
   final NotificationService notifications;
+  final bool storageAvailable;
   const ShoppingListApp({
     super.key,
     required this.initialLanguage,
     required this.repository,
     required this.notifications,
+    this.storageAvailable = true,
   });
 
   @override
@@ -101,6 +106,7 @@ class _ShoppingListAppState extends State<ShoppingListApp> {
           onLanguageChanged: _setLanguage,
           repository: widget.repository,
           notifications: widget.notifications,
+          storageInitFailed: !widget.storageAvailable,
         ),
       ),
     );
@@ -112,12 +118,14 @@ class AppShell extends StatefulWidget {
   final void Function(AppLanguage) onLanguageChanged;
   final AppRepository repository;
   final NotificationService notifications;
+  final bool storageInitFailed;
   const AppShell({
     super.key,
     required this.language,
     required this.onLanguageChanged,
     required this.repository,
     required this.notifications,
+    this.storageInitFailed = false,
   });
 
   @override
@@ -136,6 +144,7 @@ class _AppShellState extends State<AppShell> {
   late List<ShelfZone> _shelfZones;
   List<String> _shelfCodeOrder = [];
   late List<Category> _categories;
+  late bool _storageUnavailable = widget.storageInitFailed;
 
   AppRepository get _repo => widget.repository;
 
@@ -164,11 +173,13 @@ class _AppShellState extends State<AppShell> {
     final deviceLocale = WidgetsBinding.instance.platformDispatcher.locale;
     final lang = resolveLang(widget.language, deviceLocale);
     AppData data;
+    bool loadFailed = false;
     try {
       data = await _repo.load(lang: lang);
     } catch (e) {
       debugPrint('Failed to load persisted data, falling back to in-memory sample data: $e');
       data = _buildFallbackData(lang);
+      loadFailed = true;
     }
     if (!mounted) return;
     setState(() {
@@ -181,6 +192,7 @@ class _AppShellState extends State<AppShell> {
       _shelfZones = data.shelfZones;
       _shelfCodeOrder = data.shelfCodeOrder;
       _loading = false;
+      if (loadFailed) _storageUnavailable = true;
     });
     // Top up the 14-day pre-scheduled window in case the app hasn't been
     // opened for a while (spec §4.3).
@@ -901,88 +913,95 @@ class _AppShellState extends State<AppShell> {
     final shelfCodeOrder = _orderedShelfCodes;
 
     return Scaffold(
-      body: Builder(
-        builder: (ctx) => IndexedStack(
-          index: _tab,
-          children: [
-            ListScreen(
-              simpleItems: _shoppingSimple,
-              smartItems: _shopping,
-              categories: _categories,
-              onToggleSimple: _toggleSimple,
-              onToggleSmart: (id) => _toggleShoppingItem(ctx, id),
-              onAddSimple: _addSimple,
-              onAddSmart: _addSmart,
-              onDeleteSimple: _deleteSimpleItem,
-              onDeleteSmart: _deleteSmartItem,
-              onCompleteSimple: _completeTripSimple,
-              onCompleteSmart: _completeTripSmart,
-              onReorderSimple: _reorderSimple,
-              onReorderSmart: _reorderSmart,
-              onRenameSimple: _renameSimpleItem,
-              onEditSmart: _editSmartItem,
-              budgetItems: _budget,
-              onAddBudget: _addBudgetItem,
-              onEditBudget: _editBudgetItem,
-              onDeleteBudget: _deleteBudgetItem,
-              onReorderBudget: _reorderBudget,
-              onBatchDeleteSmart: _batchDeleteSmart,
-              onBatchMarkBought: _batchMarkBought,
-              onBatchDeleteBudget: _batchDeleteBudget,
-              smartModeRequest: _smartModeRequest,
-              shelfCodeOrder: shelfCodeOrder,
+      body: Column(
+        children: [
+          if (_storageUnavailable) const _StorageWarningBanner(),
+          Expanded(
+            child: Builder(
+              builder: (ctx) => IndexedStack(
+                index: _tab,
+                children: [
+                  ListScreen(
+                    simpleItems: _shoppingSimple,
+                    smartItems: _shopping,
+                    categories: _categories,
+                    onToggleSimple: _toggleSimple,
+                    onToggleSmart: (id) => _toggleShoppingItem(ctx, id),
+                    onAddSimple: _addSimple,
+                    onAddSmart: _addSmart,
+                    onDeleteSimple: _deleteSimpleItem,
+                    onDeleteSmart: _deleteSmartItem,
+                    onCompleteSimple: _completeTripSimple,
+                    onCompleteSmart: _completeTripSmart,
+                    onReorderSimple: _reorderSimple,
+                    onReorderSmart: _reorderSmart,
+                    onRenameSimple: _renameSimpleItem,
+                    onEditSmart: _editSmartItem,
+                    budgetItems: _budget,
+                    onAddBudget: _addBudgetItem,
+                    onEditBudget: _editBudgetItem,
+                    onDeleteBudget: _deleteBudgetItem,
+                    onReorderBudget: _reorderBudget,
+                    onBatchDeleteSmart: _batchDeleteSmart,
+                    onBatchMarkBought: _batchMarkBought,
+                    onBatchDeleteBudget: _batchDeleteBudget,
+                    smartModeRequest: _smartModeRequest,
+                    shelfCodeOrder: shelfCodeOrder,
+                  ),
+                  InventoryScreen(
+                    items: _inventory,
+                    categories: _categories,
+                    thresholdDays: threshold,
+                    onAdd: _addInventoryItem,
+                    onRestock: _restockInventoryItem,
+                    onDelete: _deleteInventoryItem,
+                    onAddToShoppingList: _addToListFromReminder,
+                    onReorder: _reorderInventory,
+                    onEdit: _editInventoryItem,
+                    onBatchDelete: _batchDeleteInventory,
+                    onBatchAddToRestock: _batchAddToRestock,
+                  ),
+                  ReminderScreen(
+                    inventoryItems: _inventory,
+                    thresholdDays: threshold,
+                    onAddToList: _addToListFromReminder,
+                    onRemoveFromList: _removeFromListByReminder,
+                    onAddAll: _addAllToList,
+                    activeListNames: _shopping
+                        .where((s) => !s.checked)
+                        .map((s) => s.name)
+                        .toSet(),
+                  ),
+                  SettingsScreen(
+                    settings: _settings,
+                    onChanged: (s) {
+                      setState(() => _settings = s);
+                      _persistSettings();
+                    },
+                    language: widget.language,
+                    onLanguageChanged: widget.onLanguageChanged,
+                    shelfZones: _shelfZones,
+                    onReorderShelfZones: _reorderShelfZones,
+                    shelfCodeOrder: shelfCodeOrder,
+                    onReorderShelfCodes: _reorderShelfCodes,
+                    onAddShelfCode: _addShelfCode,
+                    onDeleteShelfCode: _deleteShelfCode,
+                    onRenameShelfCode: _renameShelfCode,
+                    categories: _categories,
+                    onAddCategory: _addCategory,
+                    onEditCategory: _editCategory,
+                    onDeleteCategory: _deleteCategory,
+                    onReorderCategories: _reorderCategories,
+                    buildBackupJson: _buildBackupJson,
+                    onImportBackup: _applyBackup,
+                    requestNotificationPermission:
+                        widget.notifications.requestPermission,
+                  ),
+                ],
+              ),
             ),
-            InventoryScreen(
-              items: _inventory,
-              categories: _categories,
-              thresholdDays: threshold,
-              onAdd: _addInventoryItem,
-              onRestock: _restockInventoryItem,
-              onDelete: _deleteInventoryItem,
-              onAddToShoppingList: _addToListFromReminder,
-              onReorder: _reorderInventory,
-              onEdit: _editInventoryItem,
-              onBatchDelete: _batchDeleteInventory,
-              onBatchAddToRestock: _batchAddToRestock,
-            ),
-            ReminderScreen(
-              inventoryItems: _inventory,
-              thresholdDays: threshold,
-              onAddToList: _addToListFromReminder,
-              onRemoveFromList: _removeFromListByReminder,
-              onAddAll: _addAllToList,
-              activeListNames: _shopping
-                  .where((s) => !s.checked)
-                  .map((s) => s.name)
-                  .toSet(),
-            ),
-            SettingsScreen(
-              settings: _settings,
-              onChanged: (s) {
-                setState(() => _settings = s);
-                _persistSettings();
-              },
-              language: widget.language,
-              onLanguageChanged: widget.onLanguageChanged,
-              shelfZones: _shelfZones,
-              onReorderShelfZones: _reorderShelfZones,
-              shelfCodeOrder: shelfCodeOrder,
-              onReorderShelfCodes: _reorderShelfCodes,
-              onAddShelfCode: _addShelfCode,
-              onDeleteShelfCode: _deleteShelfCode,
-              onRenameShelfCode: _renameShelfCode,
-              categories: _categories,
-              onAddCategory: _addCategory,
-              onEditCategory: _editCategory,
-              onDeleteCategory: _deleteCategory,
-              onReorderCategories: _reorderCategories,
-              buildBackupJson: _buildBackupJson,
-              onImportBackup: _applyBackup,
-              requestNotificationPermission:
-                  widget.notifications.requestPermission,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
       bottomNavigationBar: _BottomNav(
         currentIndex: _tab,

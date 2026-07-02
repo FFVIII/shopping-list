@@ -167,6 +167,7 @@ abstract class AppStrings {
   String get importInvalidFile;     // "文件无效，无法导入"
   String get importSuccessToast;    // "已恢复备份"
   String get exportFailedToast;     // "导出失败"
+  String get storageUnavailableBanner; // shown when local storage failed to initialize
   String get appFooter; // "购物清单 v1.0 · 本地优先"
   String get language; // "语言" / "Language"
   String get languageSystem; // "跟随系统"
@@ -354,6 +355,7 @@ class ZhStrings extends AppStrings {
   @override String get importInvalidFile => '文件无效，无法导入';
   @override String get importSuccessToast => '已恢复备份';
   @override String get exportFailedToast => '导出失败';
+  @override String get storageUnavailableBanner => '存储初始化失败，当前的修改不会被保存';
   @override String get appFooter => '购物清单 v1.0 · 本地优先';
   @override String get language => '语言';
   @override String get languageSystem => '跟随系统';
@@ -555,6 +557,8 @@ class EnStrings extends AppStrings {
   @override String get importInvalidFile => 'Invalid backup file';
   @override String get importSuccessToast => 'Backup restored';
   @override String get exportFailedToast => 'Export failed';
+  @override String get storageUnavailableBanner =>
+      'Storage failed to start — your changes won\'t be saved';
   @override String get appFooter => 'Shopping List v1.0 · Local-first';
   @override String get language => 'Language';
   @override String get languageSystem => 'Follow system';

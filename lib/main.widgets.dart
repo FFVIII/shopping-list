@@ -262,6 +262,41 @@ class _DaysSheetState extends State<_DaysSheet> {
   }
 }
 
+// ── Storage warning banner ────────────────────────────────────────────────────
+
+class _StorageWarningBanner extends StatelessWidget {
+  const _StorageWarningBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = L10n.of(context);
+    return SafeArea(
+      bottom: false,
+      child: Container(
+        width: double.infinity,
+        color: AppColors.danger,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            const Icon(Icons.error_outline_rounded, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                l.storageUnavailableBanner,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ── Bottom Navigation ─────────────────────────────────────────────────────────
 
 class _BottomNav extends StatelessWidget {
@@ -291,8 +326,8 @@ class _BottomNav extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        child: SizedBox(
-          height: 60,
+        child: Padding(
+          padding: const EdgeInsets.only(top: 14, bottom: 6),
           child: Row(
             children: [
               _NavItem(
@@ -366,7 +401,7 @@ class _NavItem extends StatelessWidget {
         onTap: () => onTap(index),
         behavior: HitTestBehavior.opaque,
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Stack(
               clipBehavior: Clip.none,
@@ -374,23 +409,23 @@ class _NavItem extends StatelessWidget {
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 5),
+                      horizontal: 16, vertical: 7),
                   decoration: BoxDecoration(
                     color: _selected
                         ? green.withValues(alpha: 0.12)
                         : Colors.transparent,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(22),
                   ),
                   child: Icon(
                     _selected ? (activeIcon ?? icon) : icon,
-                    size: 22,
+                    size: 26,
                     color: _selected ? green : inactive,
                   ),
                 ),
                 if (badge > 0)
                   Positioned(
-                    top: -2,
-                    right: -2,
+                    top: 0,
+                    right: 4,
                     child: Container(
                       width: 16,
                       height: 16,
@@ -412,11 +447,11 @@ class _NavItem extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 3),
             Text(
               label,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 11.5,
                 fontWeight:
                     _selected ? FontWeight.w600 : FontWeight.normal,
                 color: _selected ? green : inactive,
