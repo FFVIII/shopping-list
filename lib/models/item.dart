@@ -93,6 +93,28 @@ extension CategoryListLookup on List<Category> {
   Category get fallback => findById(kFallbackCategoryId) ?? first;
 }
 
+/// Reassigns every item referencing category [categoryId] (in [shopping],
+/// [shoppingSimple], and [inventory]) to [fallback]. Mutates the items in
+/// place; does not rebuild the lists themselves — callers still need to
+/// replace their list fields to trigger a rebuild, same as before extraction.
+void reassignCategoryToFallback({
+  required String categoryId,
+  required Category fallback,
+  required List<ShoppingItem> shopping,
+  required List<ShoppingItem> shoppingSimple,
+  required List<InventoryItem> inventory,
+}) {
+  for (final s in shopping) {
+    if (s.category.id == categoryId) s.category = fallback;
+  }
+  for (final s in shoppingSimple) {
+    if (s.category.id == categoryId) s.category = fallback;
+  }
+  for (final inv in inventory) {
+    if (inv.category.id == categoryId) inv.category = fallback;
+  }
+}
+
 // ─── Shelf Zone ───────────────────────────────────────────────────────────────
 
 class ShelfZone {
@@ -230,6 +252,65 @@ class InventoryItem {
     if (remaining <= thresholdDays) return StockStatus.low;
     return StockStatus.sufficient;
   }
+}
+
+// ─── Purchasing: shopping-list item → inventory ──────────────────────────────
+
+/// True if [s] and [inv] represent the same product. Prefers matching by
+/// [ShoppingItem.sourceInventoryId] when set (survives renames and doesn't
+/// collide with same-named products); falls back to matching by name for
+/// entries that never had a source (manually typed items).
+bool sameProduct(ShoppingItem s, InventoryItem inv) =>
+    s.sourceInventoryId != null
+        ? s.sourceInventoryId == inv.id
+        : s.name == inv.name;
+
+/// Index of the entry in [inventory] that corresponds to [item], per
+/// [sameProduct]'s matching rule; -1 if none.
+int inventoryIndexForShoppingItem(
+    List<InventoryItem> inventory, ShoppingItem item) {
+  if (item.sourceInventoryId != null) {
+    final idx = inventory.indexWhere((i) => i.id == item.sourceInventoryId);
+    if (idx != -1) return idx;
+  }
+  return inventory.indexWhere((i) => i.name == item.name);
+}
+
+/// Applies a purchase of [item] to [inventory]: updates the matching
+/// existing entry in place (see [inventoryIndexForShoppingItem]) — setting
+/// purchasedAt, estimatedDays, and quantityLabel, plus shelfCode when the
+/// shopping item has one — or appends a freshly created entry with id
+/// [newId]. Returns the resulting list; the matched entry (if any) is
+/// mutated in place, so only a new List wrapper is allocated in that case.
+List<InventoryItem> applyPurchase({
+  required List<InventoryItem> inventory,
+  required ShoppingItem item,
+  required int estimatedDays,
+  required String newId,
+  required DateTime now,
+}) {
+  final invIdx = inventoryIndexForShoppingItem(inventory, item);
+  if (invIdx != -1) {
+    inventory[invIdx]
+      ..purchasedAt = now
+      ..estimatedDays = estimatedDays
+      ..quantityLabel = item.quantityLabel;
+    if (item.shelfCode != null) inventory[invIdx].shelfCode = item.shelfCode;
+    return inventory;
+  }
+  return [
+    ...inventory,
+    InventoryItem(
+      id: newId,
+      name: item.name,
+      category: item.category,
+      shelfZone: item.shelfZone,
+      shelfCode: item.shelfCode,
+      quantityLabel: item.quantityLabel,
+      purchasedAt: now,
+      estimatedDays: estimatedDays,
+    ),
+  ];
 }
 
 // ─── Budget Item (记账) ────────────────────────────────────────────────────────

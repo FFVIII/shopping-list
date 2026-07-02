@@ -295,17 +295,13 @@ class _AppShellState extends State<AppShell> {
   void _deleteCategory(String id) {
     if (id == kFallbackCategoryId) return; // never delete fallback
     setState(() {
-      final fallback = _categories.fallback;
-      // Reassign any items using the deleted category to the fallback.
-      for (final s in _shopping) {
-        if (s.category.id == id) s.category = fallback;
-      }
-      for (final s in _shoppingSimple) {
-        if (s.category.id == id) s.category = fallback;
-      }
-      for (final inv in _inventory) {
-        if (inv.category.id == id) inv.category = fallback;
-      }
+      reassignCategoryToFallback(
+        categoryId: id,
+        fallback: _categories.fallback,
+        shopping: _shopping,
+        shoppingSimple: _shoppingSimple,
+        inventory: _inventory,
+      );
       _categories = _categories.where((c) => c.id != id).toList();
       _shopping = List<ShoppingItem>.from(_shopping);
       _shoppingSimple = List<ShoppingItem>.from(_shoppingSimple);
@@ -602,24 +598,6 @@ class _AppShellState extends State<AppShell> {
     _persistBudget();
   }
 
-  // ── 商品身份匹配：优先按来源库存 id，回退按名字 ──────────────────────────
-  // （历史数据、手动新增的清单项没有 sourceInventoryId，只能靠名字兜底；
-  //  见 code review 反馈 #4：纯名字匹配在重命名/同名场景下会认错商品）
-
-  bool _sameProduct(ShoppingItem s, InventoryItem inv) =>
-      s.sourceInventoryId != null
-          ? s.sourceInventoryId == inv.id
-          : s.name == inv.name;
-
-  int _inventoryIndexForShoppingItem(
-      List<InventoryItem> inventory, ShoppingItem item) {
-    if (item.sourceInventoryId != null) {
-      final idx = inventory.indexWhere((i) => i.id == item.sourceInventoryId);
-      if (idx != -1) return idx;
-    }
-    return inventory.indexWhere((i) => i.name == item.name);
-  }
-
   void _batchMarkBought(List<String> ids) {
     setState(() {
       for (final id in ids) {
@@ -630,28 +608,13 @@ class _AppShellState extends State<AppShell> {
         _shopping[idx].checked = true;
         _shopping[idx].addedToInventory = true;
         // Update or create inventory entry using category default days
-        final days = item.category.defaultDays;
-        final invIdx = _inventoryIndexForShoppingItem(_inventory, item);
-        if (invIdx != -1) {
-          _inventory[invIdx].purchasedAt = DateTime.now();
-          _inventory[invIdx].estimatedDays = days;
-          _inventory[invIdx].quantityLabel = item.quantityLabel;
-          if (item.shelfCode != null) _inventory[invIdx].shelfCode = item.shelfCode;
-        } else {
-          _inventory = [
-            ..._inventory,
-            InventoryItem(
-              id: generateId('inv'),
-              name: item.name,
-              category: item.category,
-              shelfZone: item.shelfZone,
-              shelfCode: item.shelfCode,
-              quantityLabel: item.quantityLabel,
-              purchasedAt: DateTime.now(),
-              estimatedDays: days,
-            ),
-          ];
-        }
+        _inventory = applyPurchase(
+          inventory: _inventory,
+          item: item,
+          estimatedDays: item.category.defaultDays,
+          newId: generateId('inv'),
+          now: DateTime.now(),
+        );
       }
     });
     _persistShoppingSmart();
@@ -701,29 +664,16 @@ class _AppShellState extends State<AppShell> {
     final selectedSet = selectedIds.toSet();
     setState(() {
       // Work on a mutable copy so new entries are visible to subsequent lookups
-      final inv = List<InventoryItem>.from(_inventory);
+      var inv = List<InventoryItem>.from(_inventory);
       for (final item in _shopping) {
         if (!selectedSet.contains(item.id)) continue;
-        final days = item.estimatedDays ?? item.category.defaultDays;
-        final invIdx = _inventoryIndexForShoppingItem(inv, item);
-        if (invIdx != -1) {
-          inv[invIdx]
-            ..purchasedAt = DateTime.now()
-            ..estimatedDays = days
-            ..quantityLabel = item.quantityLabel;
-          if (item.shelfCode != null) inv[invIdx].shelfCode = item.shelfCode;
-        } else {
-          inv.add(InventoryItem(
-            id: generateId('inv'),
-            name: item.name,
-            category: item.category,
-            shelfZone: item.shelfZone,
-            shelfCode: item.shelfCode,
-            quantityLabel: item.quantityLabel,
-            purchasedAt: DateTime.now(),
-            estimatedDays: days,
-          ));
-        }
+        inv = applyPurchase(
+          inventory: inv,
+          item: item,
+          estimatedDays: item.estimatedDays ?? item.category.defaultDays,
+          newId: generateId('inv'),
+          now: DateTime.now(),
+        );
       }
       _inventory = inv;
       _shopping.clear();
@@ -735,7 +685,7 @@ class _AppShellState extends State<AppShell> {
   // ── 提醒：加入清单 ────────────────────────────────────────────────────────
 
   void _addToListFromReminder(InventoryItem inv) {
-    if (_shopping.any((s) => !s.checked && _sameProduct(s, inv))) return;
+    if (_shopping.any((s) => !s.checked && sameProduct(s, inv))) return;
     setState(() {
       _shopping = [
         ..._shopping,
@@ -759,7 +709,7 @@ class _AppShellState extends State<AppShell> {
   void _removeFromListByReminder(InventoryItem inv) {
     setState(() {
       _shopping = _shopping
-          .where((s) => !(!s.checked && _sameProduct(s, inv)))
+          .where((s) => !(!s.checked && sameProduct(s, inv)))
           .toList();
     });
     _persistShoppingSmart();
@@ -798,7 +748,7 @@ class _AppShellState extends State<AppShell> {
   void _batchAddToRestock(List<InventoryItem> items) {
     setState(() {
       for (final inv in items) {
-        if (_shopping.any((s) => !s.checked && _sameProduct(s, inv))) continue;
+        if (_shopping.any((s) => !s.checked && sameProduct(s, inv))) continue;
         _shopping = [
           ..._shopping,
           ShoppingItem(
@@ -857,7 +807,7 @@ class _AppShellState extends State<AppShell> {
     final threshold = _settings.reminderThresholdDays;
     final toAdd = _inventory
         .where((i) => i.statusFor(threshold) != StockStatus.sufficient)
-        .where((i) => !_shopping.any((s) => !s.checked && _sameProduct(s, i)))
+        .where((i) => !_shopping.any((s) => !s.checked && sameProduct(s, i)))
         .toList();
     if (toAdd.isEmpty) return;
     setState(() {
