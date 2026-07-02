@@ -73,6 +73,9 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  // Temporarily hidden — not ready to sell Pro yet. Flip back on when it is.
+  static const bool _proCardEnabled = false;
+
   late AppSettings _settings;
 
   @override
@@ -116,8 +119,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsets.fromLTRB(0, 0, 0, 40),
           children: [
             _buildHeader(l),
-            const SizedBox(height: 4),
-            _buildProCard(l),
+            if (_proCardEnabled) ...[
+              const SizedBox(height: 4),
+              _buildProCard(l),
+            ],
             const SizedBox(height: 24),
             _buildSection(l.sectionCategoryShelf, [
               _navRow(

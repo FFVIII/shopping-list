@@ -133,6 +133,10 @@ class _ListScreenState extends State<ListScreen> {
   final _nameFocus = FocusNode();
 
   // ── Speech-to-text ──────────────────────────────────────────────────────────
+  // Temporarily hidden — not used right now. Flip back on to restore the mic
+  // button (and the permission request it triggers on startup via
+  // _initSpeech).
+  static const bool _voiceInputEnabled = false;
   final SpeechToText _speech = SpeechToText();
   bool _speechAvailable = false;
   bool _isListening = false;
@@ -140,7 +144,7 @@ class _ListScreenState extends State<ListScreen> {
   @override
   void initState() {
     super.initState();
-    _initSpeech();
+    if (_voiceInputEnabled) _initSpeech();
     _tripSelected.addAll(widget.smartItems.map((i) => i.id));
   }
 
@@ -386,7 +390,7 @@ class _ListScreenState extends State<ListScreen> {
                 ),
               ),
             )
-          else if (!_isBudget)
+          else if (!_isBudget && _voiceInputEnabled)
             _MicButton(
               isListening: _isListening,
               available: _speechAvailable,
