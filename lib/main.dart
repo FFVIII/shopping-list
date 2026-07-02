@@ -976,6 +976,10 @@ class _AppShellState extends State<AppShell> {
               onEditCategory: _editCategory,
               onDeleteCategory: _deleteCategory,
               onReorderCategories: _reorderCategories,
+              buildBackupJson: _buildBackupJson,
+              onImportBackup: _applyBackup,
+              requestNotificationPermission:
+                  widget.notifications.requestPermission,
             ),
           ],
         ),

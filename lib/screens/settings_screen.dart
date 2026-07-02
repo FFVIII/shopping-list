@@ -1,9 +1,18 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+
 import '../theme/app_colors.dart';
 import '../models/item.dart';
 import '../l10n/l10n.dart';
 import '../l10n/app_language.dart';
 import '../l10n/app_strings.dart';
+import '../storage/app_repository.dart';
+import '../storage/backup.dart';
+import '../widgets/toast.dart';
 import 'shelf_order_screen.dart';
 import 'category_manage_screen.dart';
 
@@ -31,6 +40,9 @@ class SettingsScreen extends StatefulWidget {
   ) onEditCategory;
   final void Function(String id) onDeleteCategory;
   final void Function(int oldIndex, int newIndex) onReorderCategories;
+  final String Function() buildBackupJson;
+  final Future<void> Function(AppData data) onImportBackup;
+  final Future<bool> Function() requestNotificationPermission;
 
   const SettingsScreen({
     super.key,
@@ -50,6 +62,9 @@ class SettingsScreen extends StatefulWidget {
     required this.onEditCategory,
     required this.onDeleteCategory,
     required this.onReorderCategories,
+    required this.buildBackupJson,
+    required this.onImportBackup,
+    required this.requestNotificationPermission,
   });
 
   @override
@@ -68,6 +83,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
       reminderHour: widget.settings.reminderHour,
       reminderMinute: widget.settings.reminderMinute,
     );
+  }
+
+  @override
+  void didUpdateWidget(covariant SettingsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Re-sync the local copy when settings change from outside this screen
+    // (e.g. a backup import replaced them).
+    if (!identical(oldWidget.settings, widget.settings)) {
+      _settings = AppSettings(
+        reminderThresholdDays: widget.settings.reminderThresholdDays,
+        restockReminderEnabled: widget.settings.restockReminderEnabled,
+        reminderHour: widget.settings.reminderHour,
+        reminderMinute: widget.settings.reminderMinute,
+      );
+    }
   }
 
   void _update(AppSettings updated) {
@@ -109,12 +139,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _switchRow(
                 l.restockReminder,
                 _settings.restockReminderEnabled,
-                (v) => _update(AppSettings(
-                  reminderThresholdDays: _settings.reminderThresholdDays,
-                  restockReminderEnabled: v,
-                  reminderHour: _settings.reminderHour,
-                  reminderMinute: _settings.reminderMinute,
-                )),
+                _onReminderToggle,
               ),
               _navRow(
                 l.reminderTimeLabel,
@@ -126,8 +151,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ]),
             const SizedBox(height: 16),
             _buildSection(l.sectionData, [
-              _navRow(l.backupExport),
-              _navRow(l.importRestore),
+              _navRow(l.backupExport, onTap: _exportBackup),
+              _navRow(l.importRestore, onTap: _importBackup),
             ]),
             const SizedBox(height: 32),
             Center(
@@ -252,6 +277,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.divider),
+          ),
           child: Material(
             color: Colors.white,
             borderRadius: BorderRadius.circular(14),
@@ -415,6 +444,89 @@ class _SettingsScreenState extends State<SettingsScreen> {
         onRenameCode: widget.onRenameShelfCode,
       ),
     ));
+  }
+
+  Future<void> _onReminderToggle(bool enabled) async {
+    if (enabled) {
+      final granted = await widget.requestNotificationPermission();
+      if (!mounted) return;
+      if (!granted) {
+        // Leave the switch off; user must enable notifications in system
+        // Settings first (spec §4.4).
+        showAppToast(context, L10n.of(context).notifPermissionDenied);
+        return;
+      }
+    }
+    _update(AppSettings(
+      reminderThresholdDays: _settings.reminderThresholdDays,
+      restockReminderEnabled: enabled,
+      reminderHour: _settings.reminderHour,
+      reminderMinute: _settings.reminderMinute,
+    ));
+  }
+
+  Future<void> _exportBackup() async {
+    final l = L10n.of(context);
+    try {
+      final json = widget.buildBackupJson();
+      final now = DateTime.now();
+      String two(int n) => n.toString().padLeft(2, '0');
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/shopping_list_backup_'
+          '${now.year}-${two(now.month)}-${two(now.day)}.json');
+      await file.writeAsString(json);
+      await SharePlus.instance.share(
+        ShareParams(files: [XFile(file.path, mimeType: 'application/json')]),
+      );
+    } catch (e) {
+      debugPrint('backup export failed: $e');
+      if (mounted) showAppToast(context, l.exportFailedToast);
+    }
+  }
+
+  Future<void> _importBackup() async {
+    final l = L10n.of(context);
+    final picked = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['json'],
+    );
+    final path = picked?.files.single.path;
+    if (path == null || !mounted) return; // user cancelled
+    AppData data;
+    try {
+      data = decodeBackup(await File(path).readAsString());
+    } catch (e) {
+      debugPrint('backup decode failed: $e');
+      if (mounted) showAppToast(context, l.importInvalidFile);
+      return;
+    }
+    if (!mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.importConfirmTitle),
+        content: Text(
+          l.importConfirmMessage,
+          style: const TextStyle(color: Color(0xFFE53935)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              l.importAction,
+              style: const TextStyle(color: Color(0xFFE53935)),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await widget.onImportBackup(data);
+    if (mounted) showAppToast(context, l.importSuccessToast);
   }
 
   Future<void> _pickReminderTime() async {
