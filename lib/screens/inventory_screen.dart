@@ -319,19 +319,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
     final l = L10n.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
+      child: SizedBox(
         height: 44,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: const [
-            BoxShadow(
-              color: AppColors.shadow,
-              blurRadius: 8,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
         child: TextField(
           controller: _searchCtrl,
           onChanged: (v) => setState(() => _query = v),
@@ -342,7 +331,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 const TextStyle(color: AppColors.textDisabled, fontSize: 14),
             prefixIcon: const Icon(Icons.search_rounded,
                 color: AppColors.textDisabled, size: 20),
-            border: InputBorder.none,
+            filled: true,
+            fillColor: AppColors.fieldBg,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
             contentPadding: const EdgeInsets.symmetric(
                 vertical: 12, horizontal: 4),
             suffixIcon: _query.isNotEmpty
