@@ -13,7 +13,9 @@ import 'screens/list_screen.dart';
 import 'screens/inventory_screen.dart';
 import 'screens/reminder_screen.dart';
 import 'screens/settings_screen.dart';
+import 'services/notification_service.dart';
 import 'storage/app_repository.dart';
+import 'storage/backup.dart';
 import 'widgets/days_selector.dart';
 
 part 'main.widgets.dart';
@@ -27,17 +29,29 @@ Future<void> main() async {
   } catch (e) {
     debugPrint('Hive init failed, falling back to in-memory sample data: $e');
   }
+  final notifications = NotificationService();
+  try {
+    await notifications.init();
+  } catch (e) {
+    debugPrint('Notification init failed, reminders disabled: $e');
+  }
   final lang = await LanguageStore.load();
-  runApp(ShoppingListApp(initialLanguage: lang, repository: repository));
+  runApp(ShoppingListApp(
+    initialLanguage: lang,
+    repository: repository,
+    notifications: notifications,
+  ));
 }
 
 class ShoppingListApp extends StatefulWidget {
   final AppLanguage initialLanguage;
   final AppRepository repository;
+  final NotificationService notifications;
   const ShoppingListApp({
     super.key,
     required this.initialLanguage,
     required this.repository,
+    required this.notifications,
   });
 
   @override
@@ -80,11 +94,13 @@ class _ShoppingListAppState extends State<ShoppingListApp> {
             surface: AppColors.scaffoldBg,
           ),
           scaffoldBackgroundColor: AppColors.scaffoldBg,
+          dialogTheme: const DialogThemeData(backgroundColor: Colors.white),
         ),
         home: AppShell(
           language: _language,
           onLanguageChanged: _setLanguage,
           repository: widget.repository,
+          notifications: widget.notifications,
         ),
       ),
     );
@@ -95,11 +111,13 @@ class AppShell extends StatefulWidget {
   final AppLanguage language;
   final void Function(AppLanguage) onLanguageChanged;
   final AppRepository repository;
+  final NotificationService notifications;
   const AppShell({
     super.key,
     required this.language,
     required this.onLanguageChanged,
     required this.repository,
+    required this.notifications,
   });
 
   @override
@@ -120,6 +138,21 @@ class _AppShellState extends State<AppShell> {
   late List<Category> _categories;
 
   AppRepository get _repo => widget.repository;
+
+  AppStrings get _currentStrings {
+    final deviceLocale = WidgetsBinding.instance.platformDispatcher.locale;
+    return resolveLang(widget.language, deviceLocale) == Lang.zh
+        ? ZhStrings()
+        : EnStrings();
+  }
+
+  void _rescheduleNotifications() => unawaited(widget.notifications
+      .reschedule(
+        inventory: _inventory,
+        settings: _settings,
+        strings: _currentStrings,
+      )
+      .catchError((e) => debugPrint('notification reschedule failed: $e')));
 
   @override
   void initState() {
@@ -149,6 +182,9 @@ class _AppShellState extends State<AppShell> {
       _shelfCodeOrder = data.shelfCodeOrder;
       _loading = false;
     });
+    // Top up the 14-day pre-scheduled window in case the app hasn't been
+    // opened for a while (spec §4.3).
+    _rescheduleNotifications();
   }
 
   AppData _buildFallbackData(Lang lang) {
@@ -180,18 +216,24 @@ class _AppShellState extends State<AppShell> {
   void _persistShoppingSmart() => unawaited(_repo
       .saveShoppingSmart(_shopping)
       .catchError((e) => debugPrint('save shoppingSmart failed: $e')));
-  void _persistInventory() => unawaited(_repo
-      .saveInventory(_inventory)
-      .catchError((e) => debugPrint('save inventory failed: $e')));
+  void _persistInventory() {
+    unawaited(_repo
+        .saveInventory(_inventory)
+        .catchError((e) => debugPrint('save inventory failed: $e')));
+    _rescheduleNotifications();
+  }
   void _persistBudget() => unawaited(_repo
       .saveBudget(_budget)
       .catchError((e) => debugPrint('save budget failed: $e')));
   void _persistCategories() => unawaited(_repo
       .saveCategories(_categories)
       .catchError((e) => debugPrint('save categories failed: $e')));
-  void _persistSettings() => unawaited(_repo
-      .saveSettings(_settings)
-      .catchError((e) => debugPrint('save settings failed: $e')));
+  void _persistSettings() {
+    unawaited(_repo
+        .saveSettings(_settings)
+        .catchError((e) => debugPrint('save settings failed: $e')));
+    _rescheduleNotifications();
+  }
   void _persistShelfZones() => unawaited(_repo
       .saveShelfZones(_shelfZones)
       .catchError((e) => debugPrint('save shelfZones failed: $e')));
@@ -806,6 +848,41 @@ class _AppShellState extends State<AppShell> {
       _smartModeRequest++;
     });
     _persistShoppingSmart();
+  }
+
+  // ── 备份：导出快照 / 导入应用 ────────────────────────────────────────────────
+
+  String _buildBackupJson() => encodeBackup(AppData(
+        shoppingSimple: _shoppingSimple,
+        shoppingSmart: _shopping,
+        inventory: _inventory,
+        budget: _budget,
+        categories: _categories,
+        settings: _settings,
+        shelfZones: _shelfZones,
+        shelfCodeOrder: _shelfCodeOrder,
+      ));
+
+  Future<void> _applyBackup(AppData data) async {
+    try {
+      await _repo.replaceAll(data);
+    } catch (e) {
+      // Same policy as all other persistence failures (spec 2026-06-30 §5):
+      // keep the in-memory state, log the write error.
+      debugPrint('backup import write failed: $e');
+    }
+    if (!mounted) return;
+    setState(() {
+      _shoppingSimple = data.shoppingSimple;
+      _shopping = data.shoppingSmart;
+      _inventory = data.inventory;
+      _budget = data.budget;
+      _categories = data.categories;
+      _settings = data.settings;
+      _shelfZones = data.shelfZones;
+      _shelfCodeOrder = data.shelfCodeOrder;
+    });
+    _rescheduleNotifications();
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────

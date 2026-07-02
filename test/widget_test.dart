@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:shopping_list/l10n/app_language.dart';
 import 'package:shopping_list/main.dart';
+import 'package:shopping_list/services/notification_service.dart';
 import 'package:shopping_list/storage/app_repository.dart';
 
 void main() {
@@ -37,7 +38,13 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      ShoppingListApp(initialLanguage: AppLanguage.zh, repository: repository),
+      ShoppingListApp(
+        initialLanguage: AppLanguage.zh,
+        repository: repository,
+        // Never init()ed in tests: reschedule() no-ops without touching
+        // platform channels.
+        notifications: NotificationService(),
+      ),
     );
     // _loadData() awaits AppRepository.load(), which performs real dart:io
     // file I/O (Hive's VM backend). That never progresses inside
@@ -67,7 +74,11 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      ShoppingListApp(initialLanguage: AppLanguage.en, repository: repository),
+      ShoppingListApp(
+        initialLanguage: AppLanguage.en,
+        repository: repository,
+        notifications: NotificationService(),
+      ),
     );
     for (var i = 0;
         i < 20 && find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
