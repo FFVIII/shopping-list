@@ -10,6 +10,8 @@ import '../widgets/sort_toggle_button.dart';
 import '../widgets/batch_bar.dart';
 import '../widgets/toast.dart';
 import '../widgets/tutorial_target.dart';
+import '../services/tutorial_controller.dart';
+import '../services/tutorial_store.dart';
 
 part 'list_screen.widgets.dart';
 part 'list_screen.simple.dart';
@@ -131,6 +133,7 @@ class _ListScreenState extends State<ListScreen> {
   bool get _isBudget => _mode == ListMode.budget;
   final _nameCtrl = TextEditingController();
   final _nameFocus = FocusNode();
+  bool _tutorialPrefilled = false;
 
   // ── Speech-to-text ──────────────────────────────────────────────────────────
   // Temporarily hidden — not used right now. Flip back on to restore the mic
@@ -159,6 +162,17 @@ class _ListScreenState extends State<ListScreen> {
     _tripSelected
       ..addAll(currentIds.difference(_tripSelected))
       ..removeAll(_tripSelected.difference(currentIds));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_tutorialPrefilled &&
+        TutorialController.instance.step == TutorialStep.addItem &&
+        _nameCtrl.text.isEmpty) {
+      _nameCtrl.text = L10n.of(context).tutorialExampleItemName;
+      _tutorialPrefilled = true;
+    }
   }
 
   Future<void> _initSpeech() async {
