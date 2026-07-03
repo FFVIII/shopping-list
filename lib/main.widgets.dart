@@ -143,8 +143,12 @@ class _DaysSheetState extends State<_DaysSheet> {
                       _fieldLabel(l.quantityFieldLabel),
                       TextField(
                         controller: _qtyCtrl,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
                         style: const TextStyle(fontSize: 15),
-                        decoration: _dec(l.data('1件')),
+                        decoration: _dec('1'),
                       ),
                     ],
                   ),

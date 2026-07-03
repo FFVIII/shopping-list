@@ -487,6 +487,10 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                     padding: const EdgeInsets.only(right: 5),
                     child: TextField(
                       controller: _qtyCtrl,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly
+                      ],
                       maxLength: 8,
                       style: const TextStyle(fontSize: 15),
                       decoration: _dec(l.quantityFieldLabel),
@@ -725,6 +729,8 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
               Expanded(
                 child: TextField(
                   controller: _qtyCtrl,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   maxLength: 8,
                   style: const TextStyle(fontSize: 15),
                   decoration: _fieldDecoration(l.quantityFieldLabel),

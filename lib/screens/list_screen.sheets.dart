@@ -255,8 +255,12 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
                       ),
                       TextField(
                         controller: _qtyCtrl,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
                         style: const TextStyle(fontSize: 15),
-                        decoration: _fieldDecoration(l.data('1件')),
+                        decoration: _fieldDecoration('1'),
                       ),
                     ],
                   ),
@@ -471,6 +475,8 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
             _label(l.quantityFieldLabel),
             TextField(
               controller: _qtyCtrl,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               style: const TextStyle(fontSize: 15),
               decoration: _fieldDecoration('1'),
             ),
