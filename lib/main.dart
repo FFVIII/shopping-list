@@ -9,6 +9,8 @@ import 'l10n/app_language.dart';
 import 'l10n/app_strings.dart';
 import 'l10n/l10n.dart';
 import 'l10n/language_store.dart';
+import 'services/tutorial_controller.dart';
+import 'widgets/tutorial_overlay.dart';
 import 'screens/list_screen.dart';
 import 'screens/inventory_screen.dart';
 import 'screens/reminder_screen.dart';
@@ -101,6 +103,7 @@ class _ShoppingListAppState extends State<ShoppingListApp> {
           scaffoldBackgroundColor: AppColors.scaffoldBg,
           dialogTheme: const DialogThemeData(backgroundColor: Colors.white),
         ),
+        builder: (context, child) => TutorialOverlay(child: child!),
         home: AppShell(
           language: _language,
           onLanguageChanged: _setLanguage,
@@ -166,6 +169,7 @@ class _AppShellState extends State<AppShell> {
   @override
   void initState() {
     super.initState();
+    TutorialController.instance.onSkipRequested = _skipTutorial;
     _loadData();
   }
 
@@ -194,6 +198,11 @@ class _AppShellState extends State<AppShell> {
       _loading = false;
       if (loadFailed) _storageUnavailable = true;
     });
+    await TutorialController.instance.resolveInitialStep(
+      dataIsEmpty: data.shoppingSmart.isEmpty &&
+          data.inventory.isEmpty &&
+          data.budget.isEmpty,
+    );
     // Top up the 14-day pre-scheduled window in case the app hasn't been
     // opened for a while (spec §4.3).
     _rescheduleNotifications();
@@ -254,6 +263,21 @@ class _AppShellState extends State<AppShell> {
   void _persistShelfCodeOrder() => unawaited(_repo
       .saveShelfCodeOrder(_shelfCodeOrder)
       .catchError((e) => debugPrint('save shelfCodeOrder failed: $e')));
+
+  // ── 教程：跳过时清理示例数据 ────────────────────────────────────────────────
+
+  void _skipTutorial() {
+    setState(() {
+      _shopping = _shopping
+          .where((i) => !TutorialController.instance.isExampleItemName(i.name))
+          .toList();
+      _inventory = _inventory
+          .where((i) => !TutorialController.instance.isExampleItemName(i.name))
+          .toList();
+    });
+    _persistShoppingSmart();
+    _persistInventory();
+  }
 
   // ── 分类：增 / 改 / 删 / 重排 ─────────────────────────────────────────────────
 
@@ -467,6 +491,7 @@ class _AppShellState extends State<AppShell> {
       ));
     });
     _persistShoppingSmart();
+    TutorialController.instance.onItemAdded(name);
   }
 
   // ── 清单：简单模式勾选（只标记，不入库存）──────────────────────────────────
@@ -575,8 +600,11 @@ class _AppShellState extends State<AppShell> {
   }
 
   void _deleteSmartItem(String id) {
+    final idx = _shopping.indexWhere((i) => i.id == id);
+    final name = idx == -1 ? null : _shopping[idx].name;
     setState(() => _shopping.removeWhere((i) => i.id == id));
     _persistShoppingSmart();
+    if (name != null) TutorialController.instance.onItemDeleted(name);
   }
 
   void _batchDeleteSmart(List<String> ids) {
@@ -664,6 +692,10 @@ class _AppShellState extends State<AppShell> {
 
   void _completeTripSmart(List<String> selectedIds) {
     final selectedSet = selectedIds.toSet();
+    final purchasedNames = _shopping
+        .where((item) => selectedSet.contains(item.id))
+        .map((item) => item.name)
+        .toList();
     setState(() {
       // Work on a mutable copy so new entries are visible to subsequent lookups
       var inv = List<InventoryItem>.from(_inventory);
@@ -682,6 +714,7 @@ class _AppShellState extends State<AppShell> {
     });
     _persistInventory();
     _persistShoppingSmart();
+    TutorialController.instance.onTripCompleted(purchasedNames);
   }
 
   // ── 提醒：加入清单 ────────────────────────────────────────────────────────
@@ -737,8 +770,11 @@ class _AppShellState extends State<AppShell> {
   }
 
   void _deleteInventoryItem(String id) {
+    final idx = _inventory.indexWhere((i) => i.id == id);
+    final name = idx == -1 ? null : _inventory[idx].name;
     setState(() => _inventory = _inventory.where((i) => i.id != id).toList());
     _persistInventory();
+    if (name != null) TutorialController.instance.onItemDeleted(name);
   }
 
   void _batchDeleteInventory(List<String> ids) {
@@ -975,7 +1011,10 @@ class _AppShellState extends State<AppShell> {
       ),
       bottomNavigationBar: _BottomNav(
         currentIndex: _tab,
-        onTap: (i) => setState(() => _tab = i),
+        onTap: (i) {
+          setState(() => _tab = i);
+          TutorialController.instance.onTabChanged(i);
+        },
         reminderBadge: reminderCount,
       ),
     );
