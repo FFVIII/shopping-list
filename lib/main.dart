@@ -9,7 +9,6 @@ import 'l10n/app_language.dart';
 import 'l10n/app_strings.dart';
 import 'l10n/l10n.dart';
 import 'l10n/language_store.dart';
-import 'services/hint_store.dart';
 import 'screens/list_screen.dart';
 import 'screens/inventory_screen.dart';
 import 'screens/reminder_screen.dart';
@@ -146,7 +145,6 @@ class _AppShellState extends State<AppShell> {
   List<String> _shelfCodeOrder = [];
   late List<Category> _categories;
   late bool _storageUnavailable = widget.storageInitFailed;
-  Set<String> _dismissedHints = {};
 
   AppRepository get _repo => widget.repository;
 
@@ -183,7 +181,6 @@ class _AppShellState extends State<AppShell> {
       data = _buildFallbackData(lang);
       loadFailed = true;
     }
-    final dismissedHints = await HintStore.load();
     if (!mounted) return;
     setState(() {
       _shoppingSimple = data.shoppingSimple;
@@ -194,7 +191,6 @@ class _AppShellState extends State<AppShell> {
       _settings = data.settings;
       _shelfZones = data.shelfZones;
       _shelfCodeOrder = data.shelfCodeOrder;
-      _dismissedHints = dismissedHints;
       _loading = false;
       if (loadFailed) _storageUnavailable = true;
     });
@@ -258,15 +254,6 @@ class _AppShellState extends State<AppShell> {
   void _persistShelfCodeOrder() => unawaited(_repo
       .saveShelfCodeOrder(_shelfCodeOrder)
       .catchError((e) => debugPrint('save shelfCodeOrder failed: $e')));
-
-  // ── 提示条：永久关闭 ──────────────────────────────────────────────────────
-
-  void _dismissHint(String id) {
-    final updated = {..._dismissedHints, id};
-    setState(() => _dismissedHints = updated);
-    unawaited(HintStore.save(updated)
-        .catchError((e) => debugPrint('save dismissedHints failed: $e')));
-  }
 
   // ── 分类：增 / 改 / 删 / 重排 ─────────────────────────────────────────────────
 
@@ -930,8 +917,6 @@ class _AppShellState extends State<AppShell> {
                     onBatchDeleteBudget: _batchDeleteBudget,
                     smartModeRequest: _smartModeRequest,
                     shelfCodeOrder: shelfCodeOrder,
-                    dismissedHints: _dismissedHints,
-                    onDismissHint: _dismissHint,
                   ),
                   InventoryScreen(
                     items: _inventory,
@@ -945,8 +930,6 @@ class _AppShellState extends State<AppShell> {
                     onEdit: _editInventoryItem,
                     onBatchDelete: _batchDeleteInventory,
                     onBatchAddToRestock: _batchAddToRestock,
-                    dismissedHints: _dismissedHints,
-                    onDismissHint: _dismissHint,
                   ),
                   ReminderScreen(
                     inventoryItems: _inventory,
@@ -958,8 +941,6 @@ class _AppShellState extends State<AppShell> {
                         .where((s) => !s.checked)
                         .map((s) => s.name)
                         .toSet(),
-                    dismissedHints: _dismissedHints,
-                    onDismissHint: _dismissHint,
                   ),
                   SettingsScreen(
                     settings: _settings,

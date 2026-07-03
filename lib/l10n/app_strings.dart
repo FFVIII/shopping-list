@@ -99,7 +99,6 @@ abstract class AppStrings {
   String get estimatedUseDays; // "预计使用天数"
   String estimatedDaysSelected(int n); // "预计能用 N 天"
   String get addToInventoryBtn; // "加入库存"
-  String get inventoryHint; // inventory-tab explanation banner
 
   // ── Reminder screen ──
   String get reminderTitle;
@@ -109,7 +108,6 @@ abstract class AppStrings {
   String get sectionExpiringSoon; // "即将用完"
   String get reminderEmptyTitle; // "库存都很充足"
   String get reminderEmptySubtitle; // "没有需要补货的商品"
-  String get reminderHint; // reminder-tab explanation banner
   String get usedUpNeedRestock; // "已用完，需要补货"
   String daysLeftApprox(int n); // "还剩约N天" / "~N days left"
   String get add; // "加入" / "Add"
@@ -285,8 +283,6 @@ class ZhStrings extends AppStrings {
   @override String get categoryLabel => '分类';
   @override String get estimatedUseDays => '预计使用天数';
   @override String get addToInventoryBtn => '加入库存';
-  @override String get inventoryHint =>
-      '购买后的商品会自动出现在这里；快用完时会在「提醒」里提示补货。';
   @override String estimatedDaysSelected(int n) => '预计能用 $n 天';
 
   @override String get reminderTitle => '提醒';
@@ -296,8 +292,6 @@ class ZhStrings extends AppStrings {
   @override String get sectionExpiringSoon => '即将用完';
   @override String get reminderEmptyTitle => '库存都很充足';
   @override String get reminderEmptySubtitle => '没有需要补货的商品';
-  @override String get reminderHint =>
-      '库存快用完或已到期的商品会出现在这里，点「加入」放进购物清单。';
   @override String get usedUpNeedRestock => '已用完，需要补货';
   @override String daysLeftApprox(int n) => '还剩约$n天';
   @override String get add => '加入';
@@ -487,8 +481,6 @@ class EnStrings extends AppStrings {
   @override String get categoryLabel => 'Category';
   @override String get estimatedUseDays => 'Estimated days of use';
   @override String get addToInventoryBtn => 'Add to inventory';
-  @override String get inventoryHint =>
-      'Purchased items land here automatically; low stock shows up under Alerts.';
   @override String estimatedDaysSelected(int n) => 'Will last $n days';
 
   @override String get reminderTitle => 'Alerts';
@@ -498,8 +490,6 @@ class EnStrings extends AppStrings {
   @override String get sectionExpiringSoon => 'Running low';
   @override String get reminderEmptyTitle => 'Everything is well stocked';
   @override String get reminderEmptySubtitle => 'Nothing needs restocking';
-  @override String get reminderHint =>
-      'Items running low or out show up here — tap Add to put them back on your list.';
   @override String get usedUpNeedRestock => 'Used up, needs restocking';
   @override String daysLeftApprox(int n) => '~$n days left';
   @override String get add => 'Add';

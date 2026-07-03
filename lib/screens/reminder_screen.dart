@@ -4,7 +4,6 @@ import '../models/item.dart';
 import '../l10n/l10n.dart';
 import '../l10n/app_strings.dart';
 import '../widgets/toast.dart';
-import '../widgets/hint_banner.dart';
 
 class ReminderScreen extends StatelessWidget {
   final List<InventoryItem> inventoryItems;
@@ -17,9 +16,6 @@ class ReminderScreen extends StatelessWidget {
   /// the "already in list" state and to avoid silent no-op taps.
   final Set<String> activeListNames;
 
-  final Set<String> dismissedHints;
-  final void Function(String id) onDismissHint;
-
   const ReminderScreen({
     super.key,
     required this.inventoryItems,
@@ -28,8 +24,6 @@ class ReminderScreen extends StatelessWidget {
     required this.onRemoveFromList,
     required this.onAddAll,
     required this.activeListNames,
-    required this.dismissedHints,
-    required this.onDismissHint,
   });
 
   // Items with 0 days → "该补货"
@@ -83,11 +77,6 @@ class ReminderScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHeader(context),
-            if (!dismissedHints.contains('reminder_hint'))
-              HintBanner(
-                text: L10n.of(context).reminderHint,
-                onDismiss: () => onDismissHint('reminder_hint'),
-              ),
             Expanded(
               child: _hasAny ? _buildList(context) : _emptyState(context),
             ),

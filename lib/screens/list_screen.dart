@@ -9,7 +9,6 @@ import '../widgets/drag_handle.dart';
 import '../widgets/sort_toggle_button.dart';
 import '../widgets/batch_bar.dart';
 import '../widgets/toast.dart';
-import '../widgets/hint_banner.dart';
 
 part 'list_screen.widgets.dart';
 part 'list_screen.simple.dart';
@@ -71,8 +70,6 @@ class ListScreen extends StatefulWidget {
   // Incremented each time an item is added from the reminder screen;
   // causes this screen to switch to smart mode so the new item is visible.
   final int smartModeRequest;
-  final Set<String> dismissedHints;
-  final void Function(String id) onDismissHint;
 
   const ListScreen({
     super.key,
@@ -101,8 +98,6 @@ class ListScreen extends StatefulWidget {
     required this.onBatchDeleteBudget,
     required this.smartModeRequest,
     required this.shelfCodeOrder,
-    required this.dismissedHints,
-    required this.onDismissHint,
   });
 
   @override
@@ -288,11 +283,6 @@ class _ListScreenState extends State<ListScreen> {
             if (!_isSmart && !_isBudget) _buildSimpleSortToggle(),
             if (_isBudget && !_budgetBatchMode) _buildBudgetSortToggle(),
             if (_isBudget && _budgetBatchMode) _buildBudgetBatchSubBar(),
-            if (_isSmart && !widget.dismissedHints.contains('smart_hint'))
-              HintBanner(
-                text: L10n.of(context).smartHint,
-                onDismiss: () => widget.onDismissHint('smart_hint'),
-              ),
             const SizedBox(height: 4),
             Expanded(
               child: _isBudget

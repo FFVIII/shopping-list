@@ -7,7 +7,6 @@ import '../widgets/days_selector.dart';
 import '../widgets/drag_handle.dart';
 import '../widgets/sort_toggle_button.dart';
 import '../widgets/batch_bar.dart';
-import '../widgets/hint_banner.dart';
 
 part 'inventory_screen.widgets.dart';
 
@@ -41,8 +40,6 @@ class InventoryScreen extends StatefulWidget {
   ) onEdit;
   final void Function(List<String> ids) onBatchDelete;
   final void Function(List<InventoryItem> items) onBatchAddToRestock;
-  final Set<String> dismissedHints;
-  final void Function(String id) onDismissHint;
 
   const InventoryScreen({
     super.key,
@@ -57,8 +54,6 @@ class InventoryScreen extends StatefulWidget {
     required this.onEdit,
     required this.onBatchDelete,
     required this.onBatchAddToRestock,
-    required this.dismissedHints,
-    required this.onDismissHint,
   });
 
   @override
@@ -230,11 +225,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
             _buildHeader(),
             _buildSearchBar(),
             if (!_batchMode) _buildSortToggle(),
-            if (!widget.dismissedHints.contains('inventory_hint'))
-              HintBanner(
-                text: L10n.of(context).inventoryHint,
-                onDismiss: () => widget.onDismissHint('inventory_hint'),
-              ),
             const SizedBox(height: 4),
             Expanded(
               child: _filtered.isEmpty
