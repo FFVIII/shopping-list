@@ -170,6 +170,10 @@ class _ListScreenState extends State<ListScreen> {
     if (!_tutorialPrefilled &&
         TutorialController.instance.step == TutorialStep.addItem &&
         _nameCtrl.text.isEmpty) {
+      // The tutorial's flow (add -> complete trip -> inventory) only exists
+      // in smart/plan mode — force it so tapping "+" opens the smart add
+      // sheet instead of silently adding to the simple list.
+      _mode = ListMode.smart;
       _nameCtrl.text = L10n.of(context).tutorialExampleItemName;
       _tutorialPrefilled = true;
     }
