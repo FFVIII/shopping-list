@@ -31,13 +31,28 @@ ShoppingItem _simple(String id, String name, {bool checked = false}) =>
       checked: checked,
     );
 
+ShoppingItem _smart(String id, String name) => ShoppingItem(
+      id: id,
+      name: name,
+      category: _category('other'),
+      quantityLabel: '1',
+      shelfZone: '其他',
+      estimatedDays: 7,
+    );
+
+BudgetItem _budget(String id, String name) =>
+    BudgetItem(id: id, name: name, quantity: 1, unitPrice: 10);
+
 /// Pumps [ListScreen] wrapped in the minimum ancestors it needs (L10n +
 /// MaterialApp) at an iPhone-sized surface. Every callback defaults to a
 /// no-op; tests override only the ones they assert on.
 Future<void> _pumpList(
   WidgetTester tester, {
   List<ShoppingItem> simpleItems = const [],
+  List<ShoppingItem> smartItems = const [],
+  List<BudgetItem> budgetItems = const [],
   void Function(String id)? onToggleSimple,
+  void Function(String id)? onToggleSmart,
   void Function(String name)? onAddSimple,
 }) async {
   tester.view.physicalSize = const Size(1290, 2796);
@@ -52,10 +67,10 @@ Future<void> _pumpList(
       child: MaterialApp(
         home: ListScreen(
           simpleItems: simpleItems,
-          smartItems: const [],
+          smartItems: smartItems,
           categories: [_category('other')],
           onToggleSimple: onToggleSimple ?? (_) {},
-          onToggleSmart: (_) {},
+          onToggleSmart: onToggleSmart ?? (_) {},
           onAddSimple: onAddSimple ?? (_) {},
           onAddSmart: (_, _, _, _, _, _) {},
           onDeleteSimple: (_) {},
@@ -66,7 +81,7 @@ Future<void> _pumpList(
           onReorderSmart: (_, _, _, _, _) {},
           onRenameSimple: (_, _) {},
           onEditSmart: (_, _, _, _, _, _) {},
-          budgetItems: const [],
+          budgetItems: budgetItems,
           onAddBudget: (_, _, _) {},
           onEditBudget: (_, _, _, _) {},
           onDeleteBudget: (_) {},
@@ -133,5 +148,53 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
 
     expect(added, isEmpty);
+  });
+
+  // ── Smart mode (reached via the mode toggle; '计划' = modeSmart in zh) ────────
+
+  testWidgets('switching to smart mode renders smart item names',
+      (tester) async {
+    await _pumpList(tester, smartItems: [
+      _smart('a', '牛奶'),
+      _smart('b', '鸡蛋'),
+    ]);
+
+    await tester.tap(find.text('计划'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('牛奶'), findsOneWidget);
+    expect(find.text('鸡蛋'), findsOneWidget);
+  });
+
+  testWidgets('tapping a smart item calls onToggleSmart with its id',
+      (tester) async {
+    String? toggled;
+    await _pumpList(
+      tester,
+      smartItems: [_smart('a', '牛奶')],
+      onToggleSmart: (id) => toggled = id,
+    );
+
+    await tester.tap(find.text('计划'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('牛奶'));
+
+    expect(toggled, 'a');
+  });
+
+  // ── Budget mode ('记账' = budgetMode in zh) ──────────────────────────────────
+
+  testWidgets('switching to budget mode renders budget item names',
+      (tester) async {
+    await _pumpList(tester, budgetItems: [
+      _budget('a', '牛奶'),
+      _budget('b', '鸡蛋'),
+    ]);
+
+    await tester.tap(find.text('记账'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('牛奶'), findsOneWidget);
+    expect(find.text('鸡蛋'), findsOneWidget);
   });
 }
