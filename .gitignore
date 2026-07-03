@@ -43,3 +43,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Flutter DevTools generated options
+devtools_options.yaml
+
+# Local git worktrees
+.worktrees/
