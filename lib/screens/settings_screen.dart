@@ -1,7 +1,8 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/cupertino.dart' show CupertinoDatePicker, CupertinoDatePickerMode;
+import 'package:flutter/cupertino.dart'
+    show CupertinoDatePicker, CupertinoDatePickerMode, CupertinoPicker;
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -41,7 +42,7 @@ class SettingsScreen extends StatefulWidget {
   ) onEditCategory;
   final void Function(String id) onDeleteCategory;
   final void Function(int oldIndex, int newIndex) onReorderCategories;
-  final String Function() buildBackupJson;
+  final List<int> Function() buildBackupBytes;
   final Future<void> Function(AppData data) onImportBackup;
   final Future<bool> Function() requestNotificationPermission;
 
@@ -63,7 +64,7 @@ class SettingsScreen extends StatefulWidget {
     required this.onEditCategory,
     required this.onDeleteCategory,
     required this.onReorderCategories,
-    required this.buildBackupJson,
+    required this.buildBackupBytes,
     required this.onImportBackup,
     required this.requestNotificationPermission,
   });
@@ -153,7 +154,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     _settings.reminderHour, _settings.reminderMinute),
                 onTap: _pickReminderTime,
               ),
-              _thresholdRow(),
+              _navRow(
+                l.advanceDays,
+                trailing: l.days(_settings.reminderThresholdDays),
+                onTap: _pickLeadDays,
+              ),
             ]),
             const SizedBox(height: 16),
             _buildSection(l.sectionData, [
@@ -351,80 +356,69 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _thresholdRow() {
+  Future<void> _pickLeadDays() async {
     final l = L10n.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding:
-              const EdgeInsets.fromLTRB(16, 12, 16, 4),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  l.advanceDays,
-                  style: const TextStyle(
-                      fontSize: 15, color: AppColors.textPrimary),
-                ),
+    var selected = _settings.reminderThresholdDays;
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: Text(l.cancel,
+                        style: const TextStyle(color: AppColors.textMuted)),
+                  ),
+                  Text(l.advanceDays,
+                      style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary)),
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: Text(l.save,
+                        style: const TextStyle(
+                            color: AppColors.brand,
+                            fontWeight: FontWeight.w600)),
+                  ),
+                ],
               ),
-              Text(
-                l.days(_settings.reminderThresholdDays),
-                style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.brand,
-                    fontWeight: FontWeight.w600),
+            ),
+            SizedBox(
+              height: 216,
+              child: CupertinoPicker(
+                itemExtent: 36,
+                scrollController: FixedExtentScrollController(
+                    initialItem: _settings.reminderThresholdDays - 1),
+                onSelectedItemChanged: (i) => selected = i + 1,
+                children: [
+                  for (var d = 1; d <= 14; d++)
+                    Center(child: Text(l.days(d))),
+                ],
               ),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
-          child: SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: AppColors.brand,
-              inactiveTrackColor: AppColors.divider,
-              thumbColor: AppColors.brand,
-              overlayColor:
-                  AppColors.brand.withValues(alpha: 0.15),
-              trackHeight: 3,
-              thumbShape:
-                  const RoundSliderThumbShape(enabledThumbRadius: 10),
             ),
-            child: Slider(
-              value: _settings.reminderThresholdDays.toDouble(),
-              min: 1,
-              max: 14,
-              divisions: 13,
-              onChanged: (v) => _update(AppSettings(
-                reminderThresholdDays: v.round(),
-                restockReminderEnabled:
-                    _settings.restockReminderEnabled,
-                reminderHour: _settings.reminderHour,
-                reminderMinute: _settings.reminderMinute,
-              )),
-            ),
-          ),
+            const SizedBox(height: 8),
+          ],
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(l.scale1Day,
-                  style: TextStyle(
-                      fontSize: 11, color: Colors.grey[400])),
-              Text(l.scale1Week,
-                  style: TextStyle(
-                      fontSize: 11, color: Colors.grey[400])),
-              Text(l.scale2Week,
-                  style: TextStyle(
-                      fontSize: 11, color: Colors.grey[400])),
-            ],
-          ),
-        ),
-      ],
+      ),
     );
+    if (saved != true) return;
+    _update(AppSettings(
+      reminderThresholdDays: selected,
+      restockReminderEnabled: _settings.restockReminderEnabled,
+      reminderHour: _settings.reminderHour,
+      reminderMinute: _settings.reminderMinute,
+    ));
   }
 
   void _openCategoryManage() {
@@ -474,15 +468,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _exportBackup() async {
     final l = L10n.of(context);
     try {
-      final json = widget.buildBackupJson();
+      final bytes = widget.buildBackupBytes();
       final now = DateTime.now();
       String two(int n) => n.toString().padLeft(2, '0');
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/shopping_list_backup_'
-          '${now.year}-${two(now.month)}-${two(now.day)}.json');
-      await file.writeAsString(json);
+          '${now.year}-${two(now.month)}-${two(now.day)}.xlsx');
+      await file.writeAsBytes(bytes);
       await SharePlus.instance.share(
-        ShareParams(files: [XFile(file.path, mimeType: 'application/json')]),
+        ShareParams(files: [
+          XFile(file.path,
+              mimeType:
+                  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+        ]),
       );
     } catch (e) {
       debugPrint('backup export failed: $e');
@@ -494,13 +492,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final l = L10n.of(context);
     final picked = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['json'],
+      allowedExtensions: ['xlsx'],
     );
     final path = picked?.files.single.path;
     if (path == null || !mounted) return; // user cancelled
     AppData data;
     try {
-      data = decodeBackup(await File(path).readAsString());
+      data = decodeBackupExcel(await File(path).readAsBytes());
     } catch (e) {
       debugPrint('backup decode failed: $e');
       if (mounted) showAppToast(context, l.importInvalidFile);

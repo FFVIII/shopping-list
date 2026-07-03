@@ -144,7 +144,7 @@ class _DaysSheetState extends State<_DaysSheet> {
                       TextField(
                         controller: _qtyCtrl,
                         style: const TextStyle(fontSize: 15),
-                        decoration: _dec('1件'),
+                        decoration: _dec(l.data('1件')),
                       ),
                     ],
                   ),

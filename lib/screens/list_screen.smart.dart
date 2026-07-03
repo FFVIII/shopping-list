@@ -3,10 +3,15 @@ part of 'list_screen.dart';
 // ── Smart mode state extension ────────────────────────────────────────────────
 
 extension _SmartModeState on _ListScreenState {
+  // Hides items mid-swipe-delete (undo toast still up) from every grouping.
+  List<ShoppingItem> get _visibleSmartItems => widget.smartItems
+      .where((i) => !_pendingDeleteIds.contains(i.id))
+      .toList();
+
   Map<String, List<ShoppingItem>> _groupByShelf() {
     final map = <String, List<ShoppingItem>>{};
     final untagged = <ShoppingItem>[];
-    for (final item in widget.smartItems) {
+    for (final item in _visibleSmartItems) {
       final code = item.shelfCode?.trim();
       if (code != null && code.isNotEmpty) {
         map.putIfAbsent(code, () => []).add(item);
@@ -46,7 +51,7 @@ extension _SmartModeState on _ListScreenState {
 
   Map<String, List<ShoppingItem>> _groupByCategory() {
     final map = <String, List<ShoppingItem>>{};
-    for (final item in widget.smartItems) {
+    for (final item in _visibleSmartItems) {
       map.putIfAbsent(item.category.name, () => []).add(item);
     }
     return Map.fromEntries(
@@ -121,7 +126,7 @@ extension _SmartModeState on _ListScreenState {
     final groupColors = <String, Color>{};
     final List<_FlatEntry> flat;
     if (_smartGroup == SmartGroupMode.manual) {
-      flat = widget.smartItems
+      flat = _visibleSmartItems
           .map((item) => _FlatEntry.forItem(item, ''))
           .toList();
     } else {
@@ -154,7 +159,10 @@ extension _SmartModeState on _ListScreenState {
           item: item,
           zoneColor: zoneColor,
           onToggle: () => widget.onToggleSmart(item.id),
-          onDelete: () => widget.onDeleteSmart(item.id),
+          onDelete: () => _handleSwipeDelete(
+              id: item.id,
+              label: L10n.of(context).data(item.name),
+              realDelete: () => widget.onDeleteSmart(item.id)),
           onLongPress: _smartBatchMode ? null : () => _enterSmartBatchWithItem(item.id),
           reorderIndex: i,
           batchMode: _smartBatchMode,
@@ -662,7 +670,7 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
                       TextField(
                         controller: _qtyCtrl,
                         style: const TextStyle(fontSize: 15),
-                        decoration: _fieldDecoration('1件'),
+                        decoration: _fieldDecoration(l.data('1件')),
                       ),
                     ],
                   ),
@@ -687,7 +695,7 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
                       TextField(
                         controller: _shelfCtrl,
                         style: const TextStyle(fontSize: 15),
-                        decoration: _fieldDecoration('货架B1'),
+                        decoration: _fieldDecoration(l.shelfCodeFieldHint),
                       ),
                     ],
                   ),

@@ -26,14 +26,17 @@ extension _BudgetModeState on _ListScreenState {
   }
 
   Widget _buildBudgetList() {
+    final visible = widget.budgetItems
+        .where((i) => !_pendingDeleteIds.contains(i.id))
+        .toList();
     final sorted = _budgetSort != BudgetSortMode.manual
-        ? ([...widget.budgetItems]..sort((a, b) {
+        ? ([...visible]..sort((a, b) {
             final cmp = _budgetSort == BudgetSortMode.name
                 ? a.name.compareTo(b.name)
                 : a.lineTotal.compareTo(b.lineTotal);
             return _budgetDir == SortDir.asc ? cmp : -cmp;
           }))
-        : widget.budgetItems;
+        : visible;
     return ReorderableListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       buildDefaultDragHandles: false,
@@ -43,6 +46,10 @@ extension _BudgetModeState on _ListScreenState {
         newSorted.insert(newIdx, moved);
         widget.onReorderBudget(newSorted.map((i) => i.id).toList());
         if (_budgetSort != BudgetSortMode.manual) {
+          // False positive: this extension method runs on the real
+          // _ListScreenState instance, but the analyzer doesn't treat
+          // extension bodies as members of the extended class.
+          // ignore: invalid_use_of_protected_member
           setState(() => _budgetSort = BudgetSortMode.manual);
         }
       },
@@ -64,7 +71,10 @@ extension _BudgetModeState on _ListScreenState {
           onTap: () => _budgetBatchMode
               ? _toggleBudgetSelection(item.id)
               : _showBudgetSheet(item: item),
-          onDelete: () => widget.onDeleteBudget(item.id),
+          onDelete: () => _handleSwipeDelete(
+              id: item.id,
+              label: L10n.of(context).data(item.name),
+              realDelete: () => widget.onDeleteBudget(item.id)),
           onHandleTap: () => _budgetBatchMode
               ? _toggleBudgetSelection(item.id)
               : _enterBudgetBatchWithItem(item.id),

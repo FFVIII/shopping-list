@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'theme/app_colors.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -16,6 +17,10 @@ import 'screens/inventory_screen.dart';
 import 'screens/reminder_screen.dart';
 import 'screens/settings_screen.dart';
 import 'services/notification_service.dart';
+import 'state/categories_notifier.dart';
+import 'state/inventory_notifier.dart';
+import 'state/settings_notifier.dart';
+import 'state/shopping_list_notifier.dart';
 import 'storage/app_repository.dart';
 import 'storage/backup.dart';
 import 'widgets/days_selector.dart';
@@ -25,6 +30,10 @@ part 'main.widgets.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   final repository = AppRepository();
   bool storageAvailable = true;
   try {
@@ -140,15 +149,14 @@ class _AppShellState extends State<AppShell> {
   int _tab = 0;
   int _smartModeRequest = 0;
   bool _loading = true;
-  late List<ShoppingItem> _shoppingSimple;
-  late List<ShoppingItem> _shopping;
-  late List<InventoryItem> _inventory;
-  late List<BudgetItem> _budget;
-  late AppSettings _settings;
-  late List<ShelfZone> _shelfZones;
-  List<String> _shelfCodeOrder = [];
-  late List<Category> _categories;
   late bool _storageUnavailable = widget.storageInitFailed;
+
+  late final ShoppingListNotifier _shoppingNotifier =
+      ShoppingListNotifier(_repo);
+  late final InventoryNotifier _inventoryNotifier = InventoryNotifier(_repo);
+  late final CategoriesNotifier _categoriesNotifier =
+      CategoriesNotifier(_repo);
+  late final SettingsNotifier _settingsNotifier = SettingsNotifier(_repo);
 
   AppRepository get _repo => widget.repository;
 
@@ -161,17 +169,45 @@ class _AppShellState extends State<AppShell> {
 
   void _rescheduleNotifications() => unawaited(widget.notifications
       .reschedule(
-        inventory: _inventory,
-        settings: _settings,
+        inventory: _inventoryNotifier.items,
+        settings: _settingsNotifier.settings,
         strings: _currentStrings,
       )
       .catchError((e) => debugPrint('notification reschedule failed: $e')));
 
+  void _onDomainChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void initState() {
     super.initState();
+    _inventoryNotifier.afterPersist = _rescheduleNotifications;
+    _settingsNotifier.afterPersist = _rescheduleNotifications;
+    for (final n in [
+      _shoppingNotifier,
+      _inventoryNotifier,
+      _categoriesNotifier,
+      _settingsNotifier,
+    ]) {
+      n.addListener(_onDomainChanged);
+    }
     TutorialController.instance.onSkipRequested = _skipTutorial;
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    for (final n in [
+      _shoppingNotifier,
+      _inventoryNotifier,
+      _categoriesNotifier,
+      _settingsNotifier,
+    ]) {
+      n.removeListener(_onDomainChanged);
+      n.dispose();
+    }
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -187,15 +223,11 @@ class _AppShellState extends State<AppShell> {
       loadFailed = true;
     }
     if (!mounted) return;
+    _shoppingNotifier.load(data);
+    _inventoryNotifier.load(data);
+    _categoriesNotifier.load(data);
+    _settingsNotifier.load(data);
     setState(() {
-      _shoppingSimple = data.shoppingSimple;
-      _shopping = data.shoppingSmart;
-      _inventory = data.inventory;
-      _budget = data.budget;
-      _categories = data.categories;
-      _settings = data.settings;
-      _shelfZones = data.shelfZones;
-      _shelfCodeOrder = data.shelfCodeOrder;
       _loading = false;
       if (loadFailed) _storageUnavailable = true;
     });
@@ -231,287 +263,120 @@ class _AppShellState extends State<AppShell> {
     );
   }
 
-  // ── Persistence: one helper per persisted collection, called after the ──
-  // matching field is mutated. Fire-and-forget: write failures are logged,
-  // not surfaced to the user (see design spec §5).
-  void _persistShoppingSimple() => unawaited(_repo
-      .saveShoppingSimple(_shoppingSimple)
-      .catchError((e) => debugPrint('save shoppingSimple failed: $e')));
-  void _persistShoppingSmart() => unawaited(_repo
-      .saveShoppingSmart(_shopping)
-      .catchError((e) => debugPrint('save shoppingSmart failed: $e')));
-  void _persistInventory() {
-    unawaited(_repo
-        .saveInventory(_inventory)
-        .catchError((e) => debugPrint('save inventory failed: $e')));
-    _rescheduleNotifications();
-  }
-  void _persistBudget() => unawaited(_repo
-      .saveBudget(_budget)
-      .catchError((e) => debugPrint('save budget failed: $e')));
-  void _persistCategories() => unawaited(_repo
-      .saveCategories(_categories)
-      .catchError((e) => debugPrint('save categories failed: $e')));
-  void _persistSettings() {
-    unawaited(_repo
-        .saveSettings(_settings)
-        .catchError((e) => debugPrint('save settings failed: $e')));
-    _rescheduleNotifications();
-  }
-  void _persistShelfZones() => unawaited(_repo
-      .saveShelfZones(_shelfZones)
-      .catchError((e) => debugPrint('save shelfZones failed: $e')));
-  void _persistShelfCodeOrder() => unawaited(_repo
-      .saveShelfCodeOrder(_shelfCodeOrder)
-      .catchError((e) => debugPrint('save shelfCodeOrder failed: $e')));
-
-  // ── 教程：跳过时清理示例数据 ────────────────────────────────────────────────
+  // ── 教程：跳过时清理示例数据（跨域：清单 + 库存）──────────────────────────
 
   void _skipTutorial() {
-    setState(() {
-      _shopping = _shopping
-          .where((i) => !TutorialController.instance.isExampleItemName(i.name))
-          .toList();
-      _inventory = _inventory
-          .where((i) => !TutorialController.instance.isExampleItemName(i.name))
-          .toList();
-    });
-    _persistShoppingSmart();
-    _persistInventory();
+    _shoppingNotifier.smart = _shoppingNotifier.smart
+        .where((i) => !TutorialController.instance.isExampleItemName(i.name))
+        .toList();
+    _inventoryNotifier.items = _inventoryNotifier.items
+        .where((i) => !TutorialController.instance.isExampleItemName(i.name))
+        .toList();
+    _shoppingNotifier.persistSmart();
+    _inventoryNotifier.persistItems();
   }
 
-  // ── 分类：增 / 改 / 删 / 重排 ─────────────────────────────────────────────────
-
-  Category _addCategory(String name, Color color, String shelfZone, int defaultDays) {
-    final cat = Category(
-      id: generateId('cat'),
-      name: name,
-      color: color,
-      bgColor: Category.tintOf(color),
-      shelfZone: shelfZone,
-      defaultDays: defaultDays,
-    );
-    setState(() {
-      _categories = [..._categories, cat];
-    });
-    _persistCategories();
-    return cat;
-  }
-
-  void _editCategory(
-    String id,
-    String name,
-    Color color,
-    String shelfZone,
-    int defaultDays,
-  ) {
-    setState(() {
-      final cat = _categories.findById(id);
-      if (cat == null) return;
-      cat
-        ..name = name
-        ..color = color
-        ..bgColor = Category.tintOf(color)
-        ..shelfZone = shelfZone
-        ..defaultDays = defaultDays;
-      _categories = List<Category>.from(_categories);
-    });
-    _persistCategories();
-  }
+  // ── 分类：删除 / 重排（跨域级联：清单 + 库存排序）─────────────────────────
 
   void _deleteCategory(String id) {
     if (id == kFallbackCategoryId) return; // never delete fallback
-    setState(() {
-      reassignCategoryToFallback(
-        categoryId: id,
-        fallback: _categories.fallback,
-        shopping: _shopping,
-        shoppingSimple: _shoppingSimple,
-        inventory: _inventory,
-      );
-      _categories = _categories.where((c) => c.id != id).toList();
-      _shopping = List<ShoppingItem>.from(_shopping);
-      _shoppingSimple = List<ShoppingItem>.from(_shoppingSimple);
-      _inventory = List<InventoryItem>.from(_inventory);
-    });
-    _persistCategories();
-    _persistShoppingSmart();
-    _persistShoppingSimple();
-    _persistInventory();
+    reassignCategoryToFallback(
+      categoryId: id,
+      fallback: _categoriesNotifier.fallback,
+      shopping: _shoppingNotifier.smart,
+      shoppingSimple: _shoppingNotifier.simple,
+      inventory: _inventoryNotifier.items,
+    );
+    _categoriesNotifier.removeCategory(id);
+    _categoriesNotifier.persistCategories();
+    _shoppingNotifier.persistSmart();
+    _shoppingNotifier.persistSimple();
+    _inventoryNotifier.persistItems();
   }
 
   void _reorderCategories(int oldIndex, int newIndex) {
-    setState(() {
-      final cat = _categories.removeAt(oldIndex);
-      _categories.insert(newIndex, cat);
-      _categories = List<Category>.from(_categories);
-      // Keep "group by category" rendering consistent with the new order.
-      int idx(Category c) => _categories.indexWhere((x) => x.id == c.id);
-      _shopping.sort((a, b) => idx(a.category).compareTo(idx(b.category)));
-      _inventory.sort((a, b) => idx(a.category).compareTo(idx(b.category)));
-      _shopping = List<ShoppingItem>.from(_shopping);
-      _inventory = List<InventoryItem>.from(_inventory);
-    });
-    _persistCategories();
-    _persistShoppingSmart();
-    _persistInventory();
+    _categoriesNotifier.reorderCategoriesOnly(oldIndex, newIndex);
+    // Keep "group by category" rendering consistent with the new order.
+    int idx(Category c) =>
+        _categoriesNotifier.categories.indexWhere((x) => x.id == c.id);
+    _shoppingNotifier.smart
+        .sort((a, b) => idx(a.category).compareTo(idx(b.category)));
+    _inventoryNotifier.items
+        .sort((a, b) => idx(a.category).compareTo(idx(b.category)));
+    _categoriesNotifier.persistCategories();
+    _shoppingNotifier.persistSmart();
+    _inventoryNotifier.persistItems();
   }
 
-  // ── 货架：重排顺序 → 同步重排清单/库存 ────────────────────────────────────────
+  // ── 货架：重排顺序 → 同步重排清单/库存（跨域）───────────────────────────────
 
   // Ordered shelf codes: user-defined order first, then any unseen codes from
-  // current smart items appended alphabetically.
+  // current smart items or inventory items appended alphabetically.
   List<String> get _orderedShelfCodes {
-    final all = _shopping
-        .where((i) => i.shelfCode != null && i.shelfCode!.trim().isNotEmpty)
-        .map((i) => i.shelfCode!.trim())
-        .toSet();
-    final known = _shelfCodeOrder.where(all.contains).toList();
+    final all = {
+      ..._shoppingNotifier.smart
+          .where((i) => i.shelfCode != null && i.shelfCode!.trim().isNotEmpty)
+          .map((i) => i.shelfCode!.trim()),
+      ..._inventoryNotifier.items
+          .where((i) => i.shelfCode != null && i.shelfCode!.trim().isNotEmpty)
+          .map((i) => i.shelfCode!.trim()),
+    };
+    final known = _categoriesNotifier.shelfCodeOrder.where(all.contains).toList();
     final unseen = (all.difference(known.toSet()).toList()..sort());
     return [...known, ...unseen];
   }
 
   void _reorderShelfCodes(int oldIndex, int newIndex) {
-    setState(() {
-      final codes = _orderedShelfCodes;
-      final code = codes.removeAt(oldIndex);
-      codes.insert(newIndex, code);
-      _shelfCodeOrder = codes;
-    });
-    _persistShelfCodeOrder();
+    final codes = _orderedShelfCodes;
+    final code = codes.removeAt(oldIndex);
+    codes.insert(newIndex, code);
+    _categoriesNotifier.shelfCodeOrder = codes;
+    _categoriesNotifier.persistShelfCodeOrder();
   }
 
   void _addShelfCode(String code) {
-    if (code.isEmpty || _shelfCodeOrder.contains(code)) return;
-    setState(() => _shelfCodeOrder = [..._orderedShelfCodes, code]);
-    _persistShelfCodeOrder();
+    if (code.isEmpty || _categoriesNotifier.shelfCodeOrder.contains(code)) return;
+    _categoriesNotifier.shelfCodeOrder = [..._orderedShelfCodes, code];
+    _categoriesNotifier.persistShelfCodeOrder();
   }
 
   void _deleteShelfCode(String code) {
-    setState(() => _shelfCodeOrder = _orderedShelfCodes.where((c) => c != code).toList());
-    _persistShelfCodeOrder();
+    _categoriesNotifier.shelfCodeOrder =
+        _orderedShelfCodes.where((c) => c != code).toList();
+    _categoriesNotifier.persistShelfCodeOrder();
   }
 
   void _renameShelfCode(String oldCode, String newCode) {
     if (newCode.isEmpty || newCode == oldCode) return;
-    setState(() {
-      _shelfCodeOrder = _orderedShelfCodes
-          .map((c) => c == oldCode ? newCode : c)
-          .toList();
-      for (final item in _shopping) {
-        if (item.shelfCode == oldCode) item.shelfCode = newCode;
-      }
-    });
-    _persistShelfCodeOrder();
-    _persistShoppingSmart();
+    _categoriesNotifier.shelfCodeOrder = _orderedShelfCodes
+        .map((c) => c == oldCode ? newCode : c)
+        .toList();
+    _shoppingNotifier.renameShelfCodeInItems(oldCode, newCode);
+    _categoriesNotifier.persistShelfCodeOrder();
+    _shoppingNotifier.persistSmart();
   }
 
   void _reorderShelfZones(int oldIndex, int newIndex) {
-    setState(() {
-      // onReorderItem already adjusts newIndex; no manual correction needed.
-      final zone = _shelfZones.removeAt(oldIndex);
-      _shelfZones.insert(newIndex, zone);
-      // Sort.List is stable: items within the same zone keep their order.
-      _shopping.sort((a, b) => _shelfZones
-          .orderIndexOf(a.shelfZone)
-          .compareTo(_shelfZones.orderIndexOf(b.shelfZone)));
-      _inventory.sort((a, b) => _shelfZones
-          .orderIndexOf(a.shelfZone)
-          .compareTo(_shelfZones.orderIndexOf(b.shelfZone)));
-      _shopping = List<ShoppingItem>.from(_shopping);
-      _inventory = List<InventoryItem>.from(_inventory);
-    });
-    _persistShelfZones();
-    _persistShoppingSmart();
-    _persistInventory();
+    // onReorderItem already adjusts newIndex; no manual correction needed.
+    _categoriesNotifier.reorderShelfZonesOnly(oldIndex, newIndex);
+    // Sort.List is stable: items within the same zone keep their order.
+    _shoppingNotifier.smart.sort((a, b) => _categoriesNotifier.shelfZones
+        .orderIndexOf(a.shelfZone)
+        .compareTo(_categoriesNotifier.shelfZones.orderIndexOf(b.shelfZone)));
+    _inventoryNotifier.items.sort((a, b) => _categoriesNotifier.shelfZones
+        .orderIndexOf(a.shelfZone)
+        .compareTo(_categoriesNotifier.shelfZones.orderIndexOf(b.shelfZone)));
+    _categoriesNotifier.persistShelfZones();
+    _shoppingNotifier.persistSmart();
+    _inventoryNotifier.persistItems();
   }
 
-  // ── 清单：记账模式增 / 改 / 删 ───────────────────────────────────────────────
-
-  void _addBudgetItem(String name, int quantity, double unitPrice) {
-    setState(() {
-      _budget = [
-        ..._budget,
-        BudgetItem(
-          id: generateId('bud'),
-          name: name,
-          quantity: quantity,
-          unitPrice: unitPrice,
-        ),
-      ];
-    });
-    _persistBudget();
-  }
-
-  void _editBudgetItem(
-      String id, String name, int quantity, double unitPrice) {
-    setState(() {
-      final idx = _budget.indexWhere((i) => i.id == id);
-      if (idx == -1) return;
-      _budget[idx]
-        ..name = name
-        ..quantity = quantity
-        ..unitPrice = unitPrice;
-      _budget = List<BudgetItem>.from(_budget);
-    });
-    _persistBudget();
-  }
-
-  void _deleteBudgetItem(String id) {
-    setState(() => _budget = _budget.where((i) => i.id != id).toList());
-    _persistBudget();
-  }
-
-  // ── 清单：简单模式添加（无分类）────────────────────────────────────────────
-
-  void _addSimple(String name) {
-    setState(() {
-      _shoppingSimple.add(ShoppingItem(
-        id: generateId('s'),
-        name: name,
-        category: _categories.fallback,
-        quantityLabel: '',
-        shelfZone: '其他',
-      ));
-    });
-    _persistShoppingSimple();
-  }
-
-  // ── 清单：智能模式添加（带分类）────────────────────────────────────────────
-
-  void _addSmart(String name, String quantityLabel, String? shelfCode, int estimatedDays, Category category, String shelfZone) {
-    setState(() {
-      _shopping.add(ShoppingItem(
-        id: generateId('u'),
-        name: name,
-        category: category,
-        quantityLabel: quantityLabel.isEmpty ? '1件' : quantityLabel,
-        shelfZone: shelfZone,
-        shelfCode: shelfCode,
-        estimatedDays: estimatedDays,
-      ));
-    });
-    _persistShoppingSmart();
-    TutorialController.instance.onItemAdded(name);
-  }
-
-  // ── 清单：简单模式勾选（只标记，不入库存）──────────────────────────────────
-
-  void _toggleSimple(String id) {
-    setState(() {
-      final idx = _shoppingSimple.indexWhere((i) => i.id == id);
-      if (idx == -1) return;
-      _shoppingSimple[idx].checked = !_shoppingSimple[idx].checked;
-    });
-    _persistShoppingSimple();
-  }
-
-  // ── 清单：智能模式勾选 → 弹出天数 → 入库存 ──────────────────────────────
+  // ── 清单：智能模式勾选 → 弹出天数 → 更新清单条目（需要 BuildContext）──────
 
   void _toggleShoppingItem(BuildContext context, String id) {
-    final idx = _shopping.indexWhere((i) => i.id == id);
+    final idx = _shoppingNotifier.smart.indexWhere((i) => i.id == id);
     if (idx == -1) return;
-    _showDaysSheet(context, _shopping[idx]);
+    _showDaysSheet(context, _shoppingNotifier.smart[idx]);
   }
 
   void _showDaysSheet(BuildContext context, ShoppingItem item) {
@@ -525,361 +390,85 @@ class _AppShellState extends State<AppShell> {
       builder: (ctx) => _DaysSheet(
         item: item,
         initialDays: item.estimatedDays ?? item.category.defaultDays,
-        categories: _categories,
+        categories: _categoriesNotifier.categories,
         onConfirm: (days, name, quantity, shelfCode, category, zone) =>
-            _confirmPurchase(item, days, name, quantity, shelfCode, category, zone),
+            _shoppingNotifier.updateSmartItemFields(
+          item.id,
+          estimatedDays: days,
+          name: name,
+          quantity: quantity,
+          shelfCode: shelfCode,
+          category: category,
+          zone: zone,
+        ),
       ),
     );
   }
 
-  void _confirmPurchase(
-    ShoppingItem shoppingItem,
-    int estimatedDays,
-    String name,
-    String quantity,
-    String? shelfCode,
-    Category category,
-    String zone,
-  ) {
-    setState(() {
-      final idx = _shopping.indexWhere((i) => i.id == shoppingItem.id);
-      if (idx != -1) {
-        _shopping[idx]
-          ..estimatedDays = estimatedDays
-          ..name = name
-          ..quantityLabel = quantity
-          ..shelfCode = shelfCode
-          ..category = category
-          ..shelfZone = zone;
-      }
-    });
-    _persistShoppingSmart();
-  }
-
-  // ── 清单：拖动排序（简单模式）────────────────────────────────────────────
-
-  void _reorderSimple(List<String> orderedIds) {
-    setState(() {
-      _shoppingSimple = orderedIds
-          .map((id) => _shoppingSimple.firstWhere((i) => i.id == id))
-          .toList();
-    });
-    _persistShoppingSimple();
-  }
-
-  // ── 清单：拖动排序（智能模式，支持跨组）─────────────────────────────────
-
-  void _reorderSmart(
-    String movedId,
-    String? newShelfZone,
-    Category? newCategory,
-    List<String> orderedIds,
-    String? newShelfCode,
-  ) {
-    setState(() {
-      final idx = _shopping.indexWhere((i) => i.id == movedId);
-      if (idx != -1) {
-        if (newShelfZone != null) _shopping[idx].shelfZone = newShelfZone;
-        if (newCategory != null) _shopping[idx].category = newCategory;
-        // newShelfCode non-null means shelf-mode drag: "" = clear code, else set
-        if (newShelfCode != null) {
-          _shopping[idx].shelfCode = newShelfCode.isEmpty ? null : newShelfCode;
-        }
-      }
-      _shopping = orderedIds
-          .map((id) => _shopping.firstWhere((i) => i.id == id))
-          .toList();
-    });
-    _persistShoppingSmart();
-  }
-
-  // ── 清单：删除 ────────────────────────────────────────────────────────────
-
-  void _deleteSimpleItem(String id) {
-    setState(() => _shoppingSimple.removeWhere((i) => i.id == id));
-    _persistShoppingSimple();
-  }
-
-  void _deleteSmartItem(String id) {
-    final idx = _shopping.indexWhere((i) => i.id == id);
-    final name = idx == -1 ? null : _shopping[idx].name;
-    setState(() => _shopping.removeWhere((i) => i.id == id));
-    _persistShoppingSmart();
-    if (name != null) TutorialController.instance.onItemDeleted(name);
-  }
-
-  void _batchDeleteSmart(List<String> ids) {
-    final idSet = ids.toSet();
-    setState(() => _shopping = _shopping.where((i) => !idSet.contains(i.id)).toList());
-    _persistShoppingSmart();
-  }
-
-  void _batchDeleteBudget(List<String> ids) {
-    final idSet = ids.toSet();
-    setState(() => _budget = _budget.where((i) => !idSet.contains(i.id)).toList());
-    _persistBudget();
-  }
-
-  void _reorderBudget(List<String> orderedIds) {
-    setState(() {
-      _budget = orderedIds
-          .map((id) => _budget.firstWhere((i) => i.id == id))
-          .toList();
-    });
-    _persistBudget();
-  }
+  // ── 清单 → 库存：批量标记买到 / 完成购物（跨域）─────────────────────────────
 
   void _batchMarkBought(List<String> ids) {
-    setState(() {
-      for (final id in ids) {
-        final idx = _shopping.indexWhere((i) => i.id == id);
-        if (idx == -1) continue;
-        final item = _shopping[idx];
-        if (item.checked) continue;
-        _shopping[idx].checked = true;
-        _shopping[idx].addedToInventory = true;
-        // Update or create inventory entry using category default days
-        _inventory = applyPurchase(
-          inventory: _inventory,
-          item: item,
-          estimatedDays: item.category.defaultDays,
-          newId: generateId('inv'),
-          now: DateTime.now(),
-        );
-      }
-    });
-    _persistShoppingSmart();
-    _persistInventory();
-  }
-
-  // ── 清单：重命名 ──────────────────────────────────────────────────────────
-
-  void _renameSimpleItem(String id, String newName) {
-    setState(() {
-      final idx = _shoppingSimple.indexWhere((i) => i.id == id);
-      if (idx != -1) _shoppingSimple[idx].name = newName;
-    });
-    _persistShoppingSimple();
-  }
-
-  void _editSmartItem(
-    String id,
-    String name,
-    String quantityLabel,
-    String? shelfCode,
-    Category category,
-    String shelfZone,
-  ) {
-    setState(() {
-      final idx = _shopping.indexWhere((i) => i.id == id);
-      if (idx == -1) return;
-      _shopping[idx]
-        ..name = name
-        ..quantityLabel = quantityLabel
-        ..shelfCode = shelfCode
-        ..category = category
-        ..shelfZone = shelfZone;
-      _shopping = List<ShoppingItem>.from(_shopping);
-    });
-    _persistShoppingSmart();
-  }
-
-  // ── 清单：完成购物（清掉已勾，留下未买到的）──────────────────────────────
-
-  void _completeTripSimple() {
-    setState(() => _shoppingSimple.removeWhere((i) => i.checked));
-    _persistShoppingSimple();
+    for (final id in ids) {
+      final idx = _shoppingNotifier.smart.indexWhere((i) => i.id == id);
+      if (idx == -1) continue;
+      final item = _shoppingNotifier.smart[idx];
+      if (item.checked) continue;
+      item.checked = true;
+      item.addedToInventory = true;
+      // Update or create inventory entry using category default days
+      _inventoryNotifier.applyPurchaseFor(item, item.category.defaultDays);
+    }
+    _shoppingNotifier.persistSmart();
+    _inventoryNotifier.persistItems();
   }
 
   void _completeTripSmart(List<String> selectedIds) {
     final selectedSet = selectedIds.toSet();
-    final purchasedNames = _shopping
+    final purchasedNames = _shoppingNotifier.smart
         .where((item) => selectedSet.contains(item.id))
         .map((item) => item.name)
         .toList();
-    setState(() {
-      // Work on a mutable copy so new entries are visible to subsequent lookups
-      var inv = List<InventoryItem>.from(_inventory);
-      for (final item in _shopping) {
-        if (!selectedSet.contains(item.id)) continue;
-        inv = applyPurchase(
-          inventory: inv,
-          item: item,
-          estimatedDays: item.estimatedDays ?? item.category.defaultDays,
-          newId: generateId('inv'),
-          now: DateTime.now(),
-        );
-      }
-      _inventory = inv;
-      _shopping.clear();
-    });
-    _persistInventory();
-    _persistShoppingSmart();
+    for (final item in _shoppingNotifier.smart) {
+      if (!selectedSet.contains(item.id)) continue;
+      _inventoryNotifier.applyPurchaseFor(
+          item, item.estimatedDays ?? item.category.defaultDays);
+    }
+    _shoppingNotifier.smart.clear();
+    _inventoryNotifier.persistItems();
+    _shoppingNotifier.persistSmart();
     TutorialController.instance.onTripCompleted(purchasedNames);
   }
 
-  // ── 提醒：加入清单 ────────────────────────────────────────────────────────
+  // ── 提醒：加入 / 移出清单（跨域：读库存，写清单 + smartModeRequest）───────
 
   void _addToListFromReminder(InventoryItem inv) {
-    if (_shopping.any((s) => !s.checked && sameProduct(s, inv))) return;
-    setState(() {
-      _shopping = [
-        ..._shopping,
-        ShoppingItem(
-          id: generateId('r'),
-          name: inv.name,
-          category: inv.category,
-          quantityLabel: '1件',
-          shelfZone: inv.shelfZone,
-          shelfCode: inv.shelfCode,
-          sourceInventoryId: inv.id,
-        ),
-      ];
-      _smartModeRequest++;
-    });
-    _persistShoppingSmart();
-  }
-
-  // ── 提醒：从清单移除（取消加入）──────────────────────────────────────────────
-
-  void _removeFromListByReminder(InventoryItem inv) {
-    setState(() {
-      _shopping = _shopping
-          .where((s) => !(!s.checked && sameProduct(s, inv)))
-          .toList();
-    });
-    _persistShoppingSmart();
-  }
-
-  // ── 库存 CRUD ──────────────────────────────────────────────────────────────
-
-  void _addInventoryItem(InventoryItem item) {
-    setState(() => _inventory = [..._inventory, item]);
-    _persistInventory();
-  }
-
-  void _restockInventoryItem(String id, int days) {
-    setState(() {
-      final idx = _inventory.indexWhere((i) => i.id == id);
-      if (idx != -1) {
-        _inventory[idx].purchasedAt = DateTime.now();
-        _inventory[idx].estimatedDays = days;
-        _inventory = List<InventoryItem>.from(_inventory);
-      }
-    });
-    _persistInventory();
-  }
-
-  void _deleteInventoryItem(String id) {
-    final idx = _inventory.indexWhere((i) => i.id == id);
-    final name = idx == -1 ? null : _inventory[idx].name;
-    setState(() => _inventory = _inventory.where((i) => i.id != id).toList());
-    _persistInventory();
-    if (name != null) TutorialController.instance.onItemDeleted(name);
-  }
-
-  void _batchDeleteInventory(List<String> ids) {
-    final idSet = ids.toSet();
-    setState(() => _inventory = _inventory.where((i) => !idSet.contains(i.id)).toList());
-    _persistInventory();
-  }
-
-  void _batchAddToRestock(List<InventoryItem> items) {
-    setState(() {
-      for (final inv in items) {
-        if (_shopping.any((s) => !s.checked && sameProduct(s, inv))) continue;
-        _shopping = [
-          ..._shopping,
-          ShoppingItem(
-            id: generateId('shop'),
-            name: inv.name,
-            category: inv.category,
-            shelfZone: inv.shelfZone,
-            shelfCode: inv.shelfCode,
-            quantityLabel: inv.quantityLabel,
-            sourceInventoryId: inv.id,
-          ),
-        ];
-      }
-    });
-    _persistShoppingSmart();
-  }
-
-  void _editInventoryItem(
-    String id,
-    String name,
-    String quantityLabel,
-    String? shelfCode,
-    Category category,
-    String shelfZone,
-  ) {
-    setState(() {
-      final idx = _inventory.indexWhere((i) => i.id == id);
-      if (idx == -1) return;
-      _inventory[idx]
-        ..name = name
-        ..quantityLabel = quantityLabel
-        ..shelfCode = shelfCode
-        ..category = category
-        ..shelfZone = shelfZone;
-      _inventory = List<InventoryItem>.from(_inventory);
-    });
-    _persistInventory();
-  }
-
-  void _reorderInventory(String movedId, String? newZone,
-      Category? newCategory, List<String> orderedIds) {
-    setState(() {
-      final idx = _inventory.indexWhere((i) => i.id == movedId);
-      if (idx != -1) {
-        if (newZone != null) _inventory[idx].shelfZone = newZone;
-        if (newCategory != null) _inventory[idx].category = newCategory;
-      }
-      _inventory = orderedIds
-          .map((id) => _inventory.firstWhere((i) => i.id == id))
-          .toList();
-    });
-    _persistInventory();
+    if (_shoppingNotifier.addFromReminder(inv)) {
+      setState(() => _smartModeRequest++);
+    }
   }
 
   void _addAllToList() {
-    final threshold = _settings.reminderThresholdDays;
-    final toAdd = _inventory
+    final threshold = _settingsNotifier.settings.reminderThresholdDays;
+    final toAdd = _inventoryNotifier.items
         .where((i) => i.statusFor(threshold) != StockStatus.sufficient)
-        .where((i) => !_shopping.any((s) => !s.checked && sameProduct(s, i)))
+        .where((i) => !_shoppingNotifier.smart
+            .any((s) => !s.checked && sameProduct(s, i)))
         .toList();
-    if (toAdd.isEmpty) return;
-    setState(() {
-      final newItems = <ShoppingItem>[];
-      for (var idx = 0; idx < toAdd.length; idx++) {
-        final inv = toAdd[idx];
-        newItems.add(ShoppingItem(
-          id: generateId('r'),
-          name: inv.name,
-          category: inv.category,
-          quantityLabel: '1件',
-          shelfZone: inv.shelfZone,
-          shelfCode: inv.shelfCode,
-          sourceInventoryId: inv.id,
-        ));
-      }
-      _shopping = [..._shopping, ...newItems];
-      _smartModeRequest++;
-    });
-    _persistShoppingSmart();
+    final added = _shoppingNotifier.addAllFromInventory(toAdd);
+    if (added > 0) setState(() => _smartModeRequest++);
   }
 
-  // ── 备份：导出快照 / 导入应用 ────────────────────────────────────────────────
+  // ── 备份：导出快照 / 导入应用（跨域：全部数据）───────────────────────────────
 
-  String _buildBackupJson() => encodeBackup(AppData(
-        shoppingSimple: _shoppingSimple,
-        shoppingSmart: _shopping,
-        inventory: _inventory,
-        budget: _budget,
-        categories: _categories,
-        settings: _settings,
-        shelfZones: _shelfZones,
-        shelfCodeOrder: _shelfCodeOrder,
+  List<int> _buildBackupBytes() => encodeBackupExcel(AppData(
+        shoppingSimple: _shoppingNotifier.simple,
+        shoppingSmart: _shoppingNotifier.smart,
+        inventory: _inventoryNotifier.items,
+        budget: _shoppingNotifier.budget,
+        categories: _categoriesNotifier.categories,
+        settings: _settingsNotifier.settings,
+        shelfZones: _categoriesNotifier.shelfZones,
+        shelfCodeOrder: _categoriesNotifier.shelfCodeOrder,
       ));
 
   Future<void> _applyBackup(AppData data) async {
@@ -891,16 +480,10 @@ class _AppShellState extends State<AppShell> {
       debugPrint('backup import write failed: $e');
     }
     if (!mounted) return;
-    setState(() {
-      _shoppingSimple = data.shoppingSimple;
-      _shopping = data.shoppingSmart;
-      _inventory = data.inventory;
-      _budget = data.budget;
-      _categories = data.categories;
-      _settings = data.settings;
-      _shelfZones = data.shelfZones;
-      _shelfCodeOrder = data.shelfCodeOrder;
-    });
+    _shoppingNotifier.load(data);
+    _inventoryNotifier.load(data);
+    _categoriesNotifier.load(data);
+    _settingsNotifier.load(data);
     _rescheduleNotifications();
   }
 
@@ -913,8 +496,8 @@ class _AppShellState extends State<AppShell> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
-    final threshold = _settings.reminderThresholdDays;
-    final reminderCount = _inventory
+    final threshold = _settingsNotifier.settings.reminderThresholdDays;
+    final reminderCount = _inventoryNotifier.items
         .where((i) => i.statusFor(threshold) != StockStatus.sufficient)
         .length;
     final shelfCodeOrder = _orderedShelfCodes;
@@ -929,77 +512,77 @@ class _AppShellState extends State<AppShell> {
                 index: _tab,
                 children: [
                   ListScreen(
-                    simpleItems: _shoppingSimple,
-                    smartItems: _shopping,
-                    categories: _categories,
-                    onToggleSimple: _toggleSimple,
+                    simpleItems: _shoppingNotifier.simple,
+                    smartItems: _shoppingNotifier.smart,
+                    categories: _categoriesNotifier.categories,
+                    onToggleSimple: _shoppingNotifier.toggleSimple,
                     onToggleSmart: (id) => _toggleShoppingItem(ctx, id),
-                    onAddSimple: _addSimple,
-                    onAddSmart: _addSmart,
-                    onDeleteSimple: _deleteSimpleItem,
-                    onDeleteSmart: _deleteSmartItem,
-                    onCompleteSimple: _completeTripSimple,
+                    onAddSimple: (name) => _shoppingNotifier.addSimple(
+                        name, _categoriesNotifier.fallback),
+                    onAddSmart: _shoppingNotifier.addSmart,
+                    onDeleteSimple: _shoppingNotifier.deleteSimpleItem,
+                    onDeleteSmart: _shoppingNotifier.deleteSmartItem,
+                    onCompleteSimple: _shoppingNotifier.completeTripSimple,
                     onCompleteSmart: _completeTripSmart,
-                    onReorderSimple: _reorderSimple,
-                    onReorderSmart: _reorderSmart,
-                    onRenameSimple: _renameSimpleItem,
-                    onEditSmart: _editSmartItem,
-                    budgetItems: _budget,
-                    onAddBudget: _addBudgetItem,
-                    onEditBudget: _editBudgetItem,
-                    onDeleteBudget: _deleteBudgetItem,
-                    onReorderBudget: _reorderBudget,
-                    onBatchDeleteSmart: _batchDeleteSmart,
+                    onReorderSimple: _shoppingNotifier.reorderSimple,
+                    onReorderSmart: _shoppingNotifier.reorderSmart,
+                    onRenameSimple: _shoppingNotifier.renameSimpleItem,
+                    onEditSmart: _shoppingNotifier.editSmartItem,
+                    budgetItems: _shoppingNotifier.budget,
+                    onAddBudget: _shoppingNotifier.addBudgetItem,
+                    onEditBudget: _shoppingNotifier.editBudgetItem,
+                    onDeleteBudget: _shoppingNotifier.deleteBudgetItem,
+                    onReorderBudget: _shoppingNotifier.reorderBudget,
+                    onBatchDeleteSmart: _shoppingNotifier.batchDeleteSmart,
                     onBatchMarkBought: _batchMarkBought,
-                    onBatchDeleteBudget: _batchDeleteBudget,
+                    onBatchDeleteBudget: _shoppingNotifier.batchDeleteBudget,
                     smartModeRequest: _smartModeRequest,
                     shelfCodeOrder: shelfCodeOrder,
                   ),
                   InventoryScreen(
-                    items: _inventory,
-                    categories: _categories,
+                    items: _inventoryNotifier.items,
+                    categories: _categoriesNotifier.categories,
                     thresholdDays: threshold,
-                    onAdd: _addInventoryItem,
-                    onRestock: _restockInventoryItem,
-                    onDelete: _deleteInventoryItem,
+                    onAdd: _inventoryNotifier.addItem,
+                    onRestock: _inventoryNotifier.restock,
+                    onDelete: _inventoryNotifier.deleteItem,
                     onAddToShoppingList: _addToListFromReminder,
-                    onReorder: _reorderInventory,
-                    onEdit: _editInventoryItem,
-                    onBatchDelete: _batchDeleteInventory,
-                    onBatchAddToRestock: _batchAddToRestock,
+                    onReorder: _inventoryNotifier.reorder,
+                    onEdit: _inventoryNotifier.editItem,
+                    onBatchDelete: _inventoryNotifier.batchDelete,
+                    onBatchAddToRestock: _shoppingNotifier.batchAddToRestock,
+                    shelfCodeOrder: shelfCodeOrder,
                   ),
                   ReminderScreen(
-                    inventoryItems: _inventory,
+                    inventoryItems: _inventoryNotifier.items,
                     thresholdDays: threshold,
                     onAddToList: _addToListFromReminder,
-                    onRemoveFromList: _removeFromListByReminder,
+                    onRemoveFromList:
+                        _shoppingNotifier.removeFromListByReminder,
                     onAddAll: _addAllToList,
-                    activeListNames: _shopping
+                    activeListNames: _shoppingNotifier.smart
                         .where((s) => !s.checked)
                         .map((s) => s.name)
                         .toSet(),
                   ),
                   SettingsScreen(
-                    settings: _settings,
-                    onChanged: (s) {
-                      setState(() => _settings = s);
-                      _persistSettings();
-                    },
+                    settings: _settingsNotifier.settings,
+                    onChanged: _settingsNotifier.update,
                     language: widget.language,
                     onLanguageChanged: widget.onLanguageChanged,
-                    shelfZones: _shelfZones,
+                    shelfZones: _categoriesNotifier.shelfZones,
                     onReorderShelfZones: _reorderShelfZones,
                     shelfCodeOrder: shelfCodeOrder,
                     onReorderShelfCodes: _reorderShelfCodes,
                     onAddShelfCode: _addShelfCode,
                     onDeleteShelfCode: _deleteShelfCode,
                     onRenameShelfCode: _renameShelfCode,
-                    categories: _categories,
-                    onAddCategory: _addCategory,
-                    onEditCategory: _editCategory,
+                    categories: _categoriesNotifier.categories,
+                    onAddCategory: _categoriesNotifier.addCategory,
+                    onEditCategory: _categoriesNotifier.editCategory,
                     onDeleteCategory: _deleteCategory,
                     onReorderCategories: _reorderCategories,
-                    buildBackupJson: _buildBackupJson,
+                    buildBackupBytes: _buildBackupBytes,
                     onImportBackup: _applyBackup,
                     requestNotificationPermission:
                         widget.notifications.requestPermission,

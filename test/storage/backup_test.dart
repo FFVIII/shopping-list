@@ -1,3 +1,4 @@
+import 'package:excel/excel.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shopping_list/models/item.dart';
 import 'package:shopping_list/storage/app_repository.dart';
@@ -30,10 +31,23 @@ AppData _sampleData() {
   );
 }
 
+// Builds a minimal valid .xlsx with just a Meta sheet holding the given
+// format/version, for testing the validation checks in decodeBackupExcel.
+List<int> _metaOnlyXlsx({required String format, required int version}) {
+  final excel = Excel.createExcel();
+  final defaultSheet = excel.getDefaultSheet();
+  final meta = excel['Meta'];
+  meta.appendRow([TextCellValue('key'), TextCellValue('value')]);
+  meta.appendRow([TextCellValue('format'), TextCellValue(format)]);
+  meta.appendRow([TextCellValue('version'), IntCellValue(version)]);
+  if (defaultSheet != null) excel.delete(defaultSheet);
+  return excel.encode()!;
+}
+
 void main() {
   test('encode → decode round-trips all collections', () {
     final data = _sampleData();
-    final decoded = decodeBackup(encodeBackup(data));
+    final decoded = decodeBackupExcel(encodeBackupExcel(data));
 
     expect(decoded.shoppingSimple.map((i) => i.name),
         data.shoppingSimple.map((i) => i.name));
@@ -57,27 +71,28 @@ void main() {
     expect(decoded.shelfCodeOrder, ['货架B1', '货架B2']);
   });
 
-  test('rejects non-JSON input', () {
-    expect(() => decodeBackup('not json at all'), throwsFormatException);
-  });
-
-  test('rejects JSON that is not an object', () {
-    expect(() => decodeBackup('[1, 2, 3]'), throwsFormatException);
+  test('rejects non-xlsx input', () {
+    expect(() => decodeBackupExcel([1, 2, 3]), throwsFormatException);
   });
 
   test('rejects wrong format field', () {
-    expect(() => decodeBackup('{"format":"something_else","version":1}'),
+    expect(
+        () => decodeBackupExcel(
+            _metaOnlyXlsx(format: 'something_else', version: 1)),
         throwsFormatException);
   });
 
   test('rejects version above current', () {
     expect(
-        () => decodeBackup('{"format":"shopping_list_backup","version":99}'),
+        () => decodeBackupExcel(
+            _metaOnlyXlsx(format: kBackupFormat, version: 99)),
         throwsFormatException);
   });
 
   test('rejects missing data segments', () {
-    expect(() => decodeBackup('{"format":"shopping_list_backup","version":1}'),
+    expect(
+        () => decodeBackupExcel(
+            _metaOnlyXlsx(format: kBackupFormat, version: 1)),
         throwsFormatException);
   });
 }

@@ -29,6 +29,7 @@ class InventoryScreen extends StatefulWidget {
     String? newZone,
     Category? newCategory,
     List<String> orderedIds,
+    String? newShelfCode,
   ) onReorder;
   final void Function(
     String id,
@@ -40,6 +41,9 @@ class InventoryScreen extends StatefulWidget {
   ) onEdit;
   final void Function(List<String> ids) onBatchDelete;
   final void Function(List<InventoryItem> items) onBatchAddToRestock;
+  // Custom shelf-code ordering from the Shelf Order screen. Used to sort
+  // "by aisle" groups; empty = fall back to alphabetical.
+  final List<String> shelfCodeOrder;
 
   const InventoryScreen({
     super.key,
@@ -54,6 +58,7 @@ class InventoryScreen extends StatefulWidget {
     required this.onEdit,
     required this.onBatchDelete,
     required this.onBatchAddToRestock,
+    required this.shelfCodeOrder,
   });
 
   @override
@@ -75,16 +80,38 @@ class _InventoryScreenState extends State<InventoryScreen> {
   SortDir _invGroupDir = SortDir.asc;
   bool get _byCategory => _invGroup == InvGroupMode.category;
 
+  // Items mid-swipe-delete: hidden from view while their undo toast is up.
+  final Set<String> _pendingDeleteIds = {};
+
   @override
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();
   }
 
+  void _handleSwipeDelete(InventoryItem item) {
+    final l = L10n.of(context);
+    setState(() => _pendingDeleteIds.add(item.id));
+    showUndoToast(
+      context,
+      message: l.itemDeletedToast(l.data(item.name)),
+      actionLabel: l.undo,
+      onAction: () {
+        if (mounted) setState(() => _pendingDeleteIds.remove(item.id));
+      },
+      onTimeout: () {
+        widget.onDelete(item.id);
+        if (mounted) setState(() => _pendingDeleteIds.remove(item.id));
+      },
+    );
+  }
+
   List<InventoryItem> get _filtered {
-    if (_query.isEmpty) return widget.items;
+    final visible =
+        widget.items.where((i) => !_pendingDeleteIds.contains(i.id));
+    if (_query.isEmpty) return visible.toList();
     final q = _query.toLowerCase();
-    return widget.items
+    return visible
         .where((i) =>
             i.name.contains(q) ||
             i.shelfZone.contains(q) ||
@@ -93,16 +120,57 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   Map<String, List<InventoryItem>> get _grouped {
-    final map = <String, List<InventoryItem>>{};
-    for (final item in _filtered) {
-      final key = _byCategory ? item.category.name : item.shelfZone;
-      map.putIfAbsent(key, () => []).add(item);
+    if (_byCategory) {
+      final map = <String, List<InventoryItem>>{};
+      for (final item in _filtered) {
+        map.putIfAbsent(item.category.name, () => []).add(item);
+      }
+      final entries = map.entries.toList()
+        ..sort((a, b) => _invGroupDir == SortDir.asc
+            ? a.key.compareTo(b.key)
+            : b.key.compareTo(a.key));
+      return Map.fromEntries(entries);
     }
+
+    // "By aisle": group by the item's custom shelf code (same as the Plan
+    // list's shelf grouping), not by the broader category shelf zone.
+    final map = <String, List<InventoryItem>>{};
+    final untagged = <InventoryItem>[];
+    for (final item in _filtered) {
+      final code = item.shelfCode?.trim();
+      if (code != null && code.isNotEmpty) {
+        map.putIfAbsent(code, () => []).add(item);
+      } else {
+        untagged.add(item);
+      }
+    }
+    final order = widget.shelfCodeOrder;
     final entries = map.entries.toList()
-      ..sort((a, b) => _invGroupDir == SortDir.asc
-          ? a.key.compareTo(b.key)
-          : b.key.compareTo(a.key));
-    return Map.fromEntries(entries);
+      ..sort((a, b) {
+        int cmp;
+        if (order.isNotEmpty) {
+          final ai = order.indexOf(a.key);
+          final bi = order.indexOf(b.key);
+          if (ai >= 0 && bi >= 0) {
+            cmp = ai.compareTo(bi);
+          } else if (ai >= 0) {
+            cmp = -1;
+          } else if (bi >= 0) {
+            cmp = 1;
+          } else {
+            cmp = a.key.compareTo(b.key);
+          }
+        } else {
+          cmp = a.key.compareTo(b.key);
+        }
+        return _invGroupDir == SortDir.asc ? cmp : -cmp;
+      });
+    final sorted = Map.fromEntries(entries);
+    // Untagged items always appear at the end regardless of direction.
+    if (untagged.isNotEmpty) {
+      sorted[L10n.of(context).untaggedShelf] = untagged;
+    }
+    return sorted;
   }
 
   // Flat list sorted by the active value sort (expiry / last purchase time).
@@ -465,7 +533,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     }
                   })
               : () => _showDetailSheet(item),
-          onDelete: () => widget.onDelete(item.id),
+          onDelete: () => _handleSwipeDelete(item),
           batchMode: _batchMode,
           selected: _selected.contains(item.id),
           onHandleTap: () => setState(() {
@@ -491,7 +559,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
       children: [
         for (final entry in groups.entries) ...[
-          _buildSectionHeader(entry.key, entry.value.length),
+          _buildSectionHeader(entry.key, entry.value.length,
+              color: _byCategory ? null : entry.value.first.category.color),
           ...entry.value.map((item) => _InventoryCard(
                 item: item,
                 thresholdDays: widget.thresholdDays,
@@ -504,7 +573,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           }
                         })
                     : () => _showDetailSheet(item),
-                onDelete: () => widget.onDelete(item.id),
+                onDelete: () => _handleSwipeDelete(item),
                 batchMode: _batchMode,
                 selected: _selected.contains(item.id),
                 onHandleTap: () => setState(() {
@@ -527,7 +596,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   // Drag-to-reorder list (used when not searching). Items can be dragged
-  // within a zone or into another zone (which updates their shelf zone).
+  // within a group or into another group — updating category (by type) or
+  // shelf code (by aisle) accordingly.
   Widget _buildReorderableGroupedList() {
     final groups = _grouped;
     final flat = <_InvEntry>[];
@@ -540,6 +610,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
     final groupCounts = {
       for (final e in groups.entries) e.key: e.value.length
     };
+    final groupColors = {
+      for (final e in groups.entries)
+        if (!_byCategory) e.key: e.value.first.category.color
+    };
 
     return ReorderableListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
@@ -551,6 +625,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
           return _buildSectionHeader(
             entry.groupKey,
             groupCounts[entry.groupKey] ?? 0,
+            color: groupColors[entry.groupKey],
             key: Key('invh_${entry.groupKey}'),
           );
         }
@@ -568,7 +643,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     }
                   })
               : () => _showDetailSheet(item),
-          onDelete: () => widget.onDelete(item.id),
+          onDelete: () => _handleSwipeDelete(item),
           reorderIndex: i,
           batchMode: _batchMode,
           selected: _selected.contains(item.id),
@@ -637,7 +712,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 context: context,
                 builder: (ctx) => AlertDialog(
                   title: Text(l.selectedCount(_selected.length)),
-                  content: const Text('确定要删除吗？此操作无法撤销。'),
+                  content: Text(l.deleteConfirmMessage),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(ctx, false),
@@ -670,46 +745,51 @@ class _InventoryScreenState extends State<InventoryScreen> {
     final moved = mutable.removeAt(oldIndex);
     mutable.insert(newIndex, moved);
 
-    // Nearest preceding header determines the new zone.
-    String newZone = '';
+    // Nearest preceding header determines the new group.
+    String newGroup = '';
     for (int i = newIndex; i >= 0; i--) {
       if (mutable[i].isHeader) {
-        newZone = mutable[i].groupKey;
+        newGroup = mutable[i].groupKey;
         break;
       }
     }
-    if (newZone.isEmpty) {
+    if (newGroup.isEmpty) {
       for (final e in mutable) {
         if (e.isHeader) {
-          newZone = e.groupKey;
+          newGroup = e.groupKey;
           break;
         }
       }
     }
-    if (newZone.isEmpty) return;
+    if (newGroup.isEmpty) return;
 
     final orderedIds =
         mutable.where((e) => !e.isHeader).map((e) => e.item!.id).toList();
     if (_byCategory) {
       // Cross-group drag in category mode updates the item's category.
       final newCat = widget.categories.firstWhere(
-        (c) => c.name == newZone,
+        (c) => c.name == newGroup,
         orElse: () => movedItem.category,
       );
-      widget.onReorder(movedItem.id, null, newCat, orderedIds);
+      widget.onReorder(movedItem.id, null, newCat, orderedIds, null);
     } else {
-      widget.onReorder(movedItem.id, newZone, null, orderedIds);
+      // Cross-group drag in aisle mode updates the item's shelf code.
+      final l = L10n.of(context);
+      final newCode = newGroup == l.untaggedShelf ? '' : newGroup;
+      widget.onReorder(movedItem.id, null, null, orderedIds, newCode);
     }
   }
 
-  Widget _buildSectionHeader(String zone, int count, {Key? key}) {
+  Widget _buildSectionHeader(String zone, int count,
+      {Key? key, Color? color}) {
     final l = L10n.of(context);
-    final color = _byCategory
-        ? (widget.categories
+    final resolvedColor = color ??
+        (_byCategory
+            ? widget.categories
                 .firstWhere((c) => c.name == zone,
                     orElse: () => widget.categories.fallback)
-                .color)
-        : (defaultShelfZones.findByName(zone)?.dotColor ?? AppColors.textMuted);
+                .color
+            : AppColors.textMuted);
     return Padding(
       key: key,
       padding: const EdgeInsets.fromLTRB(4, 14, 0, 6),
@@ -719,7 +799,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
             width: 10,
             height: 10,
             decoration:
-                BoxDecoration(color: color, shape: BoxShape.circle),
+                BoxDecoration(color: resolvedColor, shape: BoxShape.circle),
           ),
           const SizedBox(width: 8),
           Text(
@@ -736,7 +816,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
             padding:
                 const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
+              color: resolvedColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
@@ -744,7 +824,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: color,
+                color: resolvedColor,
               ),
             ),
           ),

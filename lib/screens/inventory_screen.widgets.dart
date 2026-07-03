@@ -32,7 +32,7 @@ class _InventoryCard extends StatelessWidget {
     final dn = l.data(item.name);
     final q = l.data(item.quantityLabel);
     final endDate = item.purchasedAt.add(Duration(days: item.estimatedDays));
-    final endDateStr = '到期: ${endDate.month}/${endDate.day}';
+    final endDateStr = l.expiryLabel('${endDate.month}/${endDate.day}');
 
     return Dismissible(
       key: Key('inv_${item.id}'),
@@ -151,7 +151,8 @@ class _InventoryCard extends StatelessWidget {
                             ),
                             const SizedBox(height: 3),
                             Text(
-                              '上次: ${item.purchasedAt.month}/${item.purchasedAt.day}',
+                              l.lastBoughtLabel(
+                                  '${item.purchasedAt.month}/${item.purchasedAt.day}'),
                               style: const TextStyle(
                                 fontSize: 11,
                                 color: AppColors.textDisabled,
@@ -499,7 +500,7 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 5, top: 10),
+                    padding: const EdgeInsets.only(left: 5),
                     child: TextField(
                       controller: _shelfCtrl,
                       maxLength: 10,
@@ -576,7 +577,27 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
               height: 44,
               child: TextButton(
                 style: TextButton.styleFrom(foregroundColor: AppColors.danger),
-                onPressed: () {
+                onPressed: () async {
+                  final ok = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: Text(l.deleteFromInventory),
+                      content: Text(l.deleteConfirmMessage),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: Text(l.cancel),
+                        ),
+                        TextButton(
+                          style: TextButton.styleFrom(
+                              foregroundColor: AppColors.danger),
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: Text(l.delete),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (ok != true || !context.mounted) return;
                   // Discard pending edits — the item is being removed.
                   _draft.dirty = false;
                   Navigator.pop(context);

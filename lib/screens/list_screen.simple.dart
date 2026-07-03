@@ -5,13 +5,15 @@ part of 'list_screen.dart';
 extension _SimpleModeState on _ListScreenState {
   Widget _buildSimpleList() {
     final l = L10n.of(context);
-    final pendingRaw = widget.simpleItems.where((i) => !i.checked).toList();
+    final visible =
+        widget.simpleItems.where((i) => !_pendingDeleteIds.contains(i.id));
+    final pendingRaw = visible.where((i) => !i.checked).toList();
     final pending = _simpleDir != null
         ? ([...pendingRaw]..sort((a, b) => _simpleDir == SortDir.asc
             ? a.name.compareTo(b.name)
             : b.name.compareTo(a.name)))
         : pendingRaw;
-    final done = widget.simpleItems.where((i) => i.checked).toList();
+    final done = visible.where((i) => i.checked).toList();
 
     return CustomScrollView(
       slivers: [
@@ -39,7 +41,7 @@ extension _SimpleModeState on _ListScreenState {
                 item: item,
                 reorderIndex: i,
                 onToggle: () => widget.onToggleSimple(item.id),
-                onDelete: () => widget.onDeleteSimple(item.id),
+                onDelete: () => _handleSwipeDelete(id: item.id, label: l.data(item.name), realDelete: () => widget.onDeleteSimple(item.id)),
                 onLongPress: () => _showRenameSheet(item, false),
                 showDragHandle: true,
               );
@@ -52,6 +54,10 @@ extension _SimpleModeState on _ListScreenState {
                 ...newPending.map((i) => i.id),
                 ...done.map((i) => i.id),
               ]);
+              // False positive: this extension method runs on the real
+              // _ListScreenState instance, but the analyzer doesn't treat
+              // extension bodies as members of the extended class.
+              // ignore: invalid_use_of_protected_member
               if (_simpleDir != null) setState(() => _simpleDir = null);
             },
             proxyDecorator: (child, index, animation) => Material(
@@ -78,7 +84,7 @@ extension _SimpleModeState on _ListScreenState {
                 ...done.map((item) => _SimpleRow(
                       item: item,
                       onToggle: () => widget.onToggleSimple(item.id),
-                      onDelete: () => widget.onDeleteSimple(item.id),
+                      onDelete: () => _handleSwipeDelete(id: item.id, label: l.data(item.name), realDelete: () => widget.onDeleteSimple(item.id)),
                       onLongPress: () => _showRenameSheet(item, false),
                     )),
               ]),

@@ -46,6 +46,8 @@ abstract class AppStrings {
   String get sortByCategory; // "按品类" / "By type"
   String get sortByExpiry;   // "按到期" / "By expiry"
   String get sortByLastTime; // "按上次" / "By last"
+  String expiryLabel(String date);   // "到期: 7/10" / "Expires: 7/10"
+  String lastBoughtLabel(String date); // "上次: 7/3" / "Last: 7/3"
   String get untaggedShelf; // "未标记" / "Untagged"
   String get pendingSection; // "待购" / "To buy"
   String get purchasedSection;
@@ -54,6 +56,8 @@ abstract class AppStrings {
   String get listEmptySubtitle;
   String get listeningHint;
   String get micPermissionDenied; // toast shown when mic tapped w/o permission
+  String get addItemNameRequired; // toast shown when "+" tapped with empty name
+  String get deleteConfirmMessage; // batch-delete confirmation dialog body
   String get smartAddHint;
   String get simpleAddHint;
   String addItemTitle(String name);
@@ -66,6 +70,7 @@ abstract class AppStrings {
   String editItemTitle(String name); // "编辑「鸡蛋」" / 'Edit "Eggs"'
   String get quantityFieldLabel; // "数量" / "Quantity"
   String get shelfCodeFieldLabel; // "货架码" / "Shelf code"
+  String get shelfCodeFieldHint; // example placeholder, e.g. "货架B1" / "Shelf B1"
   String get recordedBadge; // "已记" / "Logged"
   String itemMeta(String quantity, String? shelfCode); // "1串 · 货架B3"
 
@@ -131,6 +136,8 @@ abstract class AppStrings {
   String get shelfZoneLabel;
   String get defaultDaysLabel;
   String get delete;
+  String get undo;
+  String itemDeletedToast(String name); // e.g. "已删除 "牛奶"" / 'Deleted "Milk"'
   String deleteCategoryTitle(String name);
   String get deleteCategoryMessage;
   String categoriesCount(int n); // "12类"
@@ -168,7 +175,7 @@ abstract class AppStrings {
   String get importSuccessToast;    // "已恢复备份"
   String get exportFailedToast;     // "导出失败"
   String get storageUnavailableBanner; // shown when local storage failed to initialize
-  String get appFooter; // "购物清单 v1.0 · 本地优先"
+  String get appFooter; // "购物清单 v1.0.0"
   String get language; // "语言" / "Language"
   String get languageSystem; // "跟随系统"
   String get languageZh; // "中文"
@@ -186,9 +193,6 @@ abstract class AppStrings {
   // ── Enum + data lookups ──
   String stockStatus(StockStatus s);
   String data(String canonical);
-  String get scale1Day; // "1天" / "1d"
-  String get scale1Week; // "1周" / "1wk"
-  String get scale2Week; // "2周" / "2wk"
 
   // ── Onboarding tutorial ──
   String get tutorialExampleItemName; // 固定示例商品名
@@ -242,6 +246,8 @@ class ZhStrings extends AppStrings {
   @override String get sortByCategory => '按品类';
   @override String get sortByExpiry => '按到期';
   @override String get sortByLastTime => '按上次';
+  @override String expiryLabel(String date) => '到期: $date';
+  @override String lastBoughtLabel(String date) => '上次: $date';
   @override String get untaggedShelf => '未标记';
   @override String get pendingSection => '待购';
   @override String get purchasedSection => '已购';
@@ -250,6 +256,8 @@ class ZhStrings extends AppStrings {
   @override String get listEmptySubtitle => '在下方输入要买的商品';
   @override String get listeningHint => '正在听，请说商品名称...';
   @override String get micPermissionDenied => '没有麦克风/语音识别权限，请在系统设置中开启';
+  @override String get addItemNameRequired => '请先输入商品名称';
+  @override String get deleteConfirmMessage => '确定要删除吗？此操作无法撤销。';
   @override String get smartAddHint => '添加商品，选分类后入库...';
   @override String get simpleAddHint => '随手记，添加到清单...';
   @override String addItemTitle(String name) => '添加「$name」';
@@ -262,6 +270,7 @@ class ZhStrings extends AppStrings {
   @override String editItemTitle(String name) => '编辑「$name」';
   @override String get quantityFieldLabel => '数量';
   @override String get shelfCodeFieldLabel => '货架码';
+  @override String get shelfCodeFieldHint => '货架B1';
   @override String get recordedBadge => '已记';
   @override String itemMeta(String q, String? code) => code != null ? '$q · $code' : q;
 
@@ -323,6 +332,8 @@ class ZhStrings extends AppStrings {
   @override String get shelfZoneLabel => '所属货架';
   @override String get defaultDaysLabel => '默认使用天数';
   @override String get delete => '删除';
+  @override String get undo => '撤销';
+  @override String itemDeletedToast(String name) => '已删除"$name"';
   @override String deleteCategoryTitle(String name) => '删除「$name」？';
   @override String get deleteCategoryMessage => '使用此分类的商品会改派到「其他」。';
   @override String categoriesCount(int n) => '$n类';
@@ -365,16 +376,13 @@ class ZhStrings extends AppStrings {
   @override String get importSuccessToast => '已恢复备份';
   @override String get exportFailedToast => '导出失败';
   @override String get storageUnavailableBanner => '存储初始化失败，当前的修改不会被保存';
-  @override String get appFooter => '购物清单 v1.0 · 本地优先';
+  @override String get appFooter => '购物清单 v1.0.0';
   @override String get language => '语言';
   @override String get languageSystem => '跟随系统';
   @override String get languageZh => '中文';
   @override String get languageEn => 'English';
   @override String labelForLanguage(Object lang) =>
       lang == AppLanguage.zh ? '中文' : lang == AppLanguage.en ? 'English' : '跟随系统';
-  @override String get scale1Day => '1天';
-  @override String get scale1Week => '1周';
-  @override String get scale2Week => '2周';
 
   @override String get batchEdit => '编辑';
   @override String get batchDone => '完成';
@@ -448,6 +456,8 @@ class EnStrings extends AppStrings {
   @override String get sortByCategory => 'By type';
   @override String get sortByExpiry => 'By expiry';
   @override String get sortByLastTime => 'By last';
+  @override String expiryLabel(String date) => 'Expires: $date';
+  @override String lastBoughtLabel(String date) => 'Last: $date';
   @override String get untaggedShelf => 'Untagged';
   @override String get pendingSection => 'To buy';
   @override String get purchasedSection => 'Bought';
@@ -457,6 +467,9 @@ class EnStrings extends AppStrings {
   @override String get listeningHint => 'Listening, say the item name...';
   @override String get micPermissionDenied =>
       'No microphone/speech recognition permission. Please enable it in Settings.';
+  @override String get addItemNameRequired => 'Please enter an item name first';
+  @override String get deleteConfirmMessage =>
+      'Are you sure you want to delete? This cannot be undone.';
   @override String get smartAddHint => 'Add item, pick a category...';
   @override String get simpleAddHint => 'Jot it down, add to list...';
   @override String addItemTitle(String name) => 'Add "$name"';
@@ -469,6 +482,7 @@ class EnStrings extends AppStrings {
   @override String editItemTitle(String name) => 'Edit "$name"';
   @override String get quantityFieldLabel => 'Quantity';
   @override String get shelfCodeFieldLabel => 'Shelf code';
+  @override String get shelfCodeFieldHint => 'Shelf B1';
   @override String get recordedBadge => 'Logged';
   @override String itemMeta(String q, String? code) => code != null ? '$q · $code' : q;
 
@@ -530,6 +544,8 @@ class EnStrings extends AppStrings {
   @override String get shelfZoneLabel => 'Aisle';
   @override String get defaultDaysLabel => 'Default days';
   @override String get delete => 'Delete';
+  @override String get undo => 'Undo';
+  @override String itemDeletedToast(String name) => 'Deleted "$name"';
   @override String deleteCategoryTitle(String name) => 'Delete "$name"?';
   @override String get deleteCategoryMessage =>
       'Items in this category will be reassigned to "Other".';
@@ -549,7 +565,7 @@ class EnStrings extends AppStrings {
       'Daily ${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
   @override String get advanceDays => 'Lead days';
   @override String get customDaysLabel => 'Custom';
-  @override String get dayUnit => 'd';
+  @override String get dayUnit => 'days';
   @override String get saveChangesTitle => 'Save changes?';
   @override String get discardChanges => 'Discard';
   @override String get savedToast => 'Saved';
@@ -577,16 +593,13 @@ class EnStrings extends AppStrings {
   @override String get exportFailedToast => 'Export failed';
   @override String get storageUnavailableBanner =>
       'Storage failed to start — your changes won\'t be saved';
-  @override String get appFooter => 'Shopping List v1.0 · Local-first';
+  @override String get appFooter => 'Shopping List v1.0.0';
   @override String get language => 'Language';
   @override String get languageSystem => 'Follow system';
   @override String get languageZh => '中文';
   @override String get languageEn => 'English';
   @override String labelForLanguage(Object lang) =>
       lang == AppLanguage.zh ? '中文' : lang == AppLanguage.en ? 'English' : 'Follow system';
-  @override String get scale1Day => '1d';
-  @override String get scale1Week => '1wk';
-  @override String get scale2Week => '2wk';
 
   @override String get batchEdit => 'Edit';
   @override String get batchDone => 'Done';

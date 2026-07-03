@@ -131,6 +131,10 @@ class _ListScreenState extends State<ListScreen> {
 
   bool get _isSmart => _mode == ListMode.smart;
   bool get _isBudget => _mode == ListMode.budget;
+
+  // Items mid-swipe-delete: hidden from view while their undo toast is up.
+  final Set<String> _pendingDeleteIds = {};
+
   final _nameCtrl = TextEditingController();
   final _nameFocus = FocusNode();
   bool _tutorialPrefilled = false;
@@ -794,7 +798,7 @@ class _ListScreenState extends State<ListScreen> {
                 context: context,
                 builder: (ctx) => AlertDialog(
                   title: Text(l.selectedCount(_budgetSelected.length)),
-                  content: const Text('确定要删除吗？此操作无法撤销。'),
+                  content: Text(l.deleteConfirmMessage),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(ctx, false),
@@ -847,7 +851,7 @@ class _ListScreenState extends State<ListScreen> {
                 context: context,
                 builder: (ctx) => AlertDialog(
                   title: Text(l.selectedCount(_smartSelected.length)),
-                  content: const Text('确定要删除吗？此操作无法撤销。'),
+                  content: Text(l.deleteConfirmMessage),
                   actions: [
                     TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l.cancel)),
                     TextButton(
@@ -903,7 +907,10 @@ class _ListScreenState extends State<ListScreen> {
       return;
     }
 
-    if (name.isEmpty) return;
+    if (name.isEmpty) {
+      showAppToast(context, L10n.of(context).addItemNameRequired);
+      return;
+    }
 
     if (_isSmart) {
       // Smart: show category picker sheet
@@ -937,4 +944,26 @@ class _ListScreenState extends State<ListScreen> {
     );
   }
 
+  // ── 滑动删除：先隐藏 + 显示"撤销"提示，超时后才真正删除 ──────────────────────
+
+  void _handleSwipeDelete({
+    required String id,
+    required String label,
+    required VoidCallback realDelete,
+  }) {
+    final l = L10n.of(context);
+    setState(() => _pendingDeleteIds.add(id));
+    showUndoToast(
+      context,
+      message: l.itemDeletedToast(label),
+      actionLabel: l.undo,
+      onAction: () {
+        if (mounted) setState(() => _pendingDeleteIds.remove(id));
+      },
+      onTimeout: () {
+        realDelete();
+        if (mounted) setState(() => _pendingDeleteIds.remove(id));
+      },
+    );
+  }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme/app_colors.dart';
 import '../l10n/l10n.dart';
 
@@ -103,11 +104,12 @@ class _DaysSelectorState extends State<DaysSelector> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     SizedBox(
-                      width: 44,
+                      width: 64,
                       height: 36,
                       child: TextField(
                         controller: _customCtrl,
                         keyboardType: TextInputType.number,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 13,
@@ -161,6 +163,7 @@ class _DaysSelectorState extends State<DaysSelector> {
                         },
                       ),
                     ),
+                    const SizedBox(width: 2),
                     Text(
                       l.dayUnit,
                       style: TextStyle(
