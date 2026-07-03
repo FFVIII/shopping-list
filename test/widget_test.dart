@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shopping_list/l10n/app_language.dart';
 import 'package:shopping_list/main.dart';
 import 'package:shopping_list/services/notification_service.dart';
@@ -13,6 +14,10 @@ void main() {
   late AppRepository repository;
 
   setUp(() async {
+    // _loadData() now also calls HintStore.load(), which is backed by
+    // shared_preferences — mock it so the platform channel call doesn't
+    // throw MissingPluginException during the test.
+    SharedPreferences.setMockInitialValues({});
     tempDir = await Directory.systemTemp.createTemp('hive_widget_test_');
     Hive.init(tempDir.path);
     repository = AppRepository();
