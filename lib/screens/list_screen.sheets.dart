@@ -224,7 +224,7 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      cat.name,
+                      l.data(cat.name),
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -499,7 +499,7 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      cat.name,
+                      l.data(cat.name),
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,

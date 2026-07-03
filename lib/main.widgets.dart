@@ -187,7 +187,7 @@ class _DaysSheetState extends State<_DaysSheet> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      cat.name,
+                      l.data(cat.name),
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,

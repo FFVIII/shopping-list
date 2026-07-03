@@ -537,7 +537,7 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      cat.name,
+                      l.data(cat.name),
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -767,7 +767,7 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    cat.name,
+                    l.data(cat.name),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,

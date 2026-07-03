@@ -269,7 +269,7 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    cat.name,
+                                    l.data(cat.name),
                                     style: const TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w600,
