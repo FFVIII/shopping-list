@@ -498,25 +498,28 @@ class _CompleteTripSheetState extends State<_CompleteTripSheet> {
               );
             }),
             const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.brand,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                  elevation: 0,
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                  widget.onConfirm(_selected.toList());
-                },
-                child: Text(
-                  l.completeTrip,
-                  style: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w600),
+            TutorialTarget(
+              id: 'confirm_trip_button',
+              child: SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.brand,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                    elevation: 0,
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    widget.onConfirm(_selected.toList());
+                  },
+                  child: Text(
+                    l.completeTrip,
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
                 ),
               ),
             ),
@@ -717,32 +720,35 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
               onChanged: (d) => setState(() => _days = d),
             ),
             const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.brand,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                  elevation: 0,
-                ),
-                onPressed: () {
-                  final shelf = _shelfCtrl.text.trim();
-                  Navigator.pop(context);
-                  widget.onConfirm(
-                    _selectedCategory,
-                    _selectedZone,
-                    _qtyCtrl.text.trim(),
-                    shelf.isEmpty ? null : shelf,
-                    _days,
-                  );
-                },
-                child: Text(
-                  l.addToList,
-                  style: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w600),
+            TutorialTarget(
+              id: 'confirm_add_button',
+              child: SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.brand,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                    elevation: 0,
+                  ),
+                  onPressed: () {
+                    final shelf = _shelfCtrl.text.trim();
+                    Navigator.pop(context);
+                    widget.onConfirm(
+                      _selectedCategory,
+                      _selectedZone,
+                      _qtyCtrl.text.trim(),
+                      shelf.isEmpty ? null : shelf,
+                      _days,
+                    );
+                  },
+                  child: Text(
+                    l.addToList,
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
                 ),
               ),
             ),

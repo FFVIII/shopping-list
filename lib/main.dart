@@ -19,6 +19,7 @@ import 'services/notification_service.dart';
 import 'storage/app_repository.dart';
 import 'storage/backup.dart';
 import 'widgets/days_selector.dart';
+import 'widgets/tutorial_target.dart';
 
 part 'main.widgets.dart';
 

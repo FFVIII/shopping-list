@@ -9,6 +9,7 @@ import '../widgets/drag_handle.dart';
 import '../widgets/sort_toggle_button.dart';
 import '../widgets/batch_bar.dart';
 import '../widgets/toast.dart';
+import '../widgets/tutorial_target.dart';
 
 part 'list_screen.widgets.dart';
 part 'list_screen.simple.dart';
@@ -349,21 +350,24 @@ class _ListScreenState extends State<ListScreen> {
           ),
           if ((_isSmart && widget.smartItems.isNotEmpty) ||
               (!_isSmart && !_isBudget && widget.simpleItems.isNotEmpty))
-            GestureDetector(
-              onTap: _confirmCompleteTrip,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 7),
-                decoration: BoxDecoration(
-                  color: AppColors.brand,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  l.completeTrip,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+            TutorialTarget(
+              id: 'complete_trip_button',
+              child: GestureDetector(
+                onTap: _confirmCompleteTrip,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: AppColors.brand,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    l.completeTrip,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
@@ -644,17 +648,20 @@ class _ListScreenState extends State<ListScreen> {
             ),
           ),
           const SizedBox(width: 10),
-          GestureDetector(
-            onTap: () => _submitAdd(context),
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: AppColors.brand,
-                borderRadius: BorderRadius.circular(12),
+          TutorialTarget(
+            id: 'add_button',
+            child: GestureDetector(
+              onTap: () => _submitAdd(context),
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.brand,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.add_rounded,
+                    color: Colors.white, size: 24),
               ),
-              child: const Icon(Icons.add_rounded,
-                  color: Colors.white, size: 24),
             ),
           ),
         ],
