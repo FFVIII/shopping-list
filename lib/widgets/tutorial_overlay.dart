@@ -25,6 +25,7 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
   };
 
   Rect? _targetRect;
+  bool _polling = false;
 
   @override
   void initState() {
@@ -46,8 +47,12 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
   }
 
   void _scheduleFrameCheck() {
-    if (TutorialController.instance.step == TutorialStep.done) return;
+    if (_polling || TutorialController.instance.step == TutorialStep.done) {
+      return;
+    }
+    _polling = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _polling = false;
       if (!mounted) return;
       final rect = _findTargetRect();
       if (rect != _targetRect) {

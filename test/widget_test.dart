@@ -14,9 +14,9 @@ void main() {
   late AppRepository repository;
 
   setUp(() async {
-    // _loadData() now also calls HintStore.load(), which is backed by
-    // shared_preferences — mock it so the platform channel call doesn't
-    // throw MissingPluginException during the test.
+    // _loadData() now also calls TutorialController.resolveInitialStep(),
+    // which reads TutorialStore (backed by shared_preferences) — mock it so
+    // the platform channel call doesn't throw MissingPluginException.
     SharedPreferences.setMockInitialValues({});
     tempDir = await Directory.systemTemp.createTemp('hive_widget_test_');
     Hive.init(tempDir.path);
