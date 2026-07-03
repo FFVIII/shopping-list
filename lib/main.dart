@@ -956,6 +956,8 @@ class _AppShellState extends State<AppShell> {
                         .where((s) => !s.checked)
                         .map((s) => s.name)
                         .toSet(),
+                    dismissedHints: _dismissedHints,
+                    onDismissHint: _dismissHint,
                   ),
                   SettingsScreen(
                     settings: _settings,
