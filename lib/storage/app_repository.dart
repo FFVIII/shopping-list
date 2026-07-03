@@ -116,12 +116,11 @@ class AppRepository {
     }
     await _categoriesBox.put(
         'items', categories.map((c) => c.toMap()).toList());
-    await _shoppingSmartBox.put('items',
-        buildSampleShopping(categories).map((i) => i.toMap()).toList());
-    await _inventoryBox.put('items',
-        buildSampleInventory(categories).map((i) => i.toMap()).toList());
-    await _budgetBox.put(
-        'items', buildSampleBudget().map((i) => i.toMap()).toList());
+    // Shopping/inventory/budget start empty — only the category structure
+    // is seeded. See design spec 2026-07-02 §3.
+    await _shoppingSmartBox.put('items', <Map>[]);
+    await _inventoryBox.put('items', <Map>[]);
+    await _budgetBox.put('items', <Map>[]);
   }
 
   Future<void> saveShoppingSimple(List<ShoppingItem> items) =>

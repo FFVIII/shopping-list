@@ -19,16 +19,16 @@ void main() {
     if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
   });
 
-  test('first load seeds sample data and reports it back', () async {
+  test('first load seeds default categories but leaves items empty', () async {
     final repo = AppRepository();
     await repo.init();
 
     final data = await repo.load(lang: Lang.zh);
 
     expect(data.categories, isNotEmpty);
-    expect(data.shoppingSmart, isNotEmpty);
-    expect(data.inventory, isNotEmpty);
-    expect(data.budget, isNotEmpty);
+    expect(data.shoppingSmart, isEmpty);
+    expect(data.inventory, isEmpty);
+    expect(data.budget, isEmpty);
     expect(data.shoppingSimple, isEmpty);
     expect(data.shelfCodeOrder, isEmpty);
     expect(data.settings.reminderThresholdDays, 5);
