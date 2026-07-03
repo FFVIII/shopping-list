@@ -156,6 +156,10 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
         }
       }),
       onDelete: hasSelection ? _batchDelete : null,
+      onCancel: () => setState(() {
+        _batchMode = false;
+        _selected.clear();
+      }),
     );
   }
 
@@ -174,15 +178,10 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
         ),
         actions: [
-          if (_batchMode)
-            IconButton(
-              onPressed: () => setState(() {
-                _batchMode = false;
-                _selected.clear();
-              }),
-              icon: const Icon(Icons.close_rounded),
-            )
-          else
+          // Cancel now lives in the bottom BatchBar (left of Delete), matching
+          // the other list screens; the app bar only offers Add when not
+          // selecting.
+          if (!_batchMode)
             IconButton(
               onPressed: _openAdd,
               icon: const Icon(Icons.add_rounded),
