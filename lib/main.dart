@@ -928,6 +928,8 @@ class _AppShellState extends State<AppShell> {
                     onBatchDeleteBudget: _batchDeleteBudget,
                     smartModeRequest: _smartModeRequest,
                     shelfCodeOrder: shelfCodeOrder,
+                    dismissedHints: _dismissedHints,
+                    onDismissHint: _dismissHint,
                   ),
                   InventoryScreen(
                     items: _inventory,

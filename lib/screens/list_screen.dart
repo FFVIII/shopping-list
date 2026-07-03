@@ -9,6 +9,7 @@ import '../widgets/drag_handle.dart';
 import '../widgets/sort_toggle_button.dart';
 import '../widgets/batch_bar.dart';
 import '../widgets/toast.dart';
+import '../widgets/hint_banner.dart';
 
 part 'list_screen.widgets.dart';
 part 'list_screen.simple.dart';
@@ -70,6 +71,8 @@ class ListScreen extends StatefulWidget {
   // Incremented each time an item is added from the reminder screen;
   // causes this screen to switch to smart mode so the new item is visible.
   final int smartModeRequest;
+  final Set<String> dismissedHints;
+  final void Function(String id) onDismissHint;
 
   const ListScreen({
     super.key,
@@ -98,6 +101,8 @@ class ListScreen extends StatefulWidget {
     required this.onBatchDeleteBudget,
     required this.smartModeRequest,
     required this.shelfCodeOrder,
+    required this.dismissedHints,
+    required this.onDismissHint,
   });
 
   @override
@@ -109,7 +114,6 @@ class _ListScreenState extends State<ListScreen> {
   SmartGroupMode _smartGroup = SmartGroupMode.shelf;
   SortDir _smartGroupDir = SortDir.asc;
   bool get _byShelf => _smartGroup == SmartGroupMode.shelf;
-  bool _smartHintDismissed = false;
 
   // Batch selection state (smart mode)
   bool _smartBatchMode = false;
@@ -284,7 +288,11 @@ class _ListScreenState extends State<ListScreen> {
             if (!_isSmart && !_isBudget) _buildSimpleSortToggle(),
             if (_isBudget && !_budgetBatchMode) _buildBudgetSortToggle(),
             if (_isBudget && _budgetBatchMode) _buildBudgetBatchSubBar(),
-            if (_isSmart && !_smartHintDismissed) _buildSmartHint(),
+            if (_isSmart && !widget.dismissedHints.contains('smart_hint'))
+              HintBanner(
+                text: L10n.of(context).smartHint,
+                onDismiss: () => widget.onDismissHint('smart_hint'),
+              ),
             const SizedBox(height: 4),
             Expanded(
               child: _isBudget
@@ -555,42 +563,6 @@ class _ListScreenState extends State<ListScreen> {
             selected: _budgetSort == BudgetSortMode.price,
             direction: _budgetSort == BudgetSortMode.price ? _budgetDir : null,
             onTap: () => setState(() => _cycleBudgetSort(BudgetSortMode.price)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSmartHint() {
-    final l = L10n.of(context);
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      padding: const EdgeInsets.fromLTRB(12, 10, 6, 10),
-      decoration: BoxDecoration(
-        color: AppColors.brand.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.lightbulb_outline_rounded,
-              size: 16, color: AppColors.brand),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              l.smartHint,
-              style: const TextStyle(
-                  fontSize: 12, height: 1.4, color: Color(0xFF4B6B4D)),
-            ),
-          ),
-          GestureDetector(
-            onTap: () => setState(() => _smartHintDismissed = true),
-            behavior: HitTestBehavior.opaque,
-            child: const Padding(
-              padding: EdgeInsets.all(4),
-              child: Icon(Icons.close_rounded,
-                  size: 16, color: AppColors.textMuted),
-            ),
           ),
         ],
       ),
