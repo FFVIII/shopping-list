@@ -230,6 +230,10 @@ extension _InvListBuilders on _InventoryScreenState {
               });
             }
           : null,
+      onCancel: () => setState(() {
+        _batchMode = false;
+        _selected.clear();
+      }),
     );
   }
 

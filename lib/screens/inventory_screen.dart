@@ -339,25 +339,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
               ],
             ),
           ),
-          if (_batchMode)
-            GestureDetector(
-              onTap: () => setState(() {
-                _batchMode = false;
-                _selected.clear();
-              }),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                child: Text(
-                  l.batchDone,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.brand,
-                  ),
-                ),
-              ),
-            )
-          else
+          // Cancel now lives in the bottom BatchBar (left of Delete), matching
+          // the list and category screens; the header only offers Add when not
+          // selecting.
+          if (!_batchMode)
             GestureDetector(
               onTap: _showAddSheet,
               child: Container(
