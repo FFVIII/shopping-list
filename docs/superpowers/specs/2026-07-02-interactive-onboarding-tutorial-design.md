@@ -36,22 +36,28 @@
 
 ## 4. 架构
 
-### 4.1 `TutorialStep`（新枚举，位置待定，如 `lib/services/tutorial_store.dart` 同文件）
+### 4.0 架构调整说明（相对早期草案的修正）
+
+写实施计划前逐行核对真实代码后，发现两个早期草案没考虑到的约束，做了如下调整：
+
+1. **遮罩必须挂在 `MaterialApp.builder` 上，而不是 `_AppShellState.build()` 内部**——`showModalBottomSheet` 弹出的表单是作为新路由插入到 `Navigator` 的 `Overlay` 里的，会盖在 `_AppShellState` 返回的整个 `Scaffold` 之上。只有包在 `MaterialApp(builder: ...)` 这一层（在 `_ShoppingListAppState` 里，`Navigator` 外面）的内容，才能保证在弹出的表单之上还能看到遮罩。但教程状态目前设计是在 `_AppShellState` 里维护，`_ShoppingListAppState` 拿不到——为避免把状态硬提到另一个 State 或做大量参数穿透，改成一个**单例 `ChangeNotifier`**（`TutorialController.instance`），`_ShoppingListAppState`（渲染遮罩）和 `_AppShellState`（真实数据变化时推进步骤）各自直接引用同一个单例，不需要互相持有对方的引用。
+2. **合并冗余步骤**——原来的"高亮某按钮"和"高亮同一个操作在弹出表单里的确认按钮"其实是同一个逻辑步骤的两个不同"当前应该高亮谁"的候选目标，不需要单独的步骤枚举值区分。改为每个步骤对应一个**候选目标 id 列表**（按优先级排列），遮罩渲染时依次尝试，用第一个已经挂载在树上的目标——这样"表单还没弹出"和"表单已经弹出"这两种情况自然地用同一个步骤覆盖，不需要额外的步骤转换。
+
+### 4.1 `TutorialStep`（新枚举，`lib/services/tutorial_store.dart`）
 
 ```dart
 enum TutorialStep {
-  addItem,          // 高亮 "+" 按钮
-  confirmAddSheet,  // 高亮添加表单里的"加入清单"
-  completeTrip,     // 高亮"完成购物"胶囊按钮
-  confirmTripSheet, // 高亮完成购物表单里的确认按钮
-  viewInventory,    // 高亮底部导航"库存"标签
-  done,             // 教程结束/已跳过，不再显示任何东西
+  addItem,       // 高亮 add_button，若 confirm_add_button 已挂载则优先高亮它
+  completeTrip,  // 高亮 complete_trip_button，若 confirm_trip_button 已挂载则优先高亮它
+  viewInventory, // 高亮 inventory_tab
+  finalMessage,  // 无高亮目标，居中显示收尾文案 + "知道了"
+  done,          // 教程结束/已跳过，不渲染任何东西
 }
 ```
 
 ### 4.2 `TutorialStore`（新文件 `lib/services/tutorial_store.dart`）
 
-持久化当前步骤，写法完全比照已有的 `LanguageStore`/（已删除的）`HintStore` 模式，但 `load()` 返回值是**可空**的，用 `null` 表示"从未存过任何值"（区分"全新安装、教程还没开始判定"和"已经判定过、当前就停在 `addItem` 这一步"这两种不同情况，调用方 `_AppShellState._loadData()` 需要这个区分来做 §4.5 的一次性判定）：
+持久化当前步骤，写法比照已有的 `LanguageStore` 模式，但 `load()` 返回值是**可空**的，用 `null` 表示"从未存过任何值"（用来区分"全新安装、还没做过一次性判定"和"已经判定过、当前就停在 `addItem` 这一步"）：
 
 ```dart
 class TutorialStore {
@@ -64,9 +70,83 @@ class TutorialStore {
 }
 ```
 
-注意：这里的语义和已删除的 `HintStore` 不同——`HintStore` 存的是"哪些提示已关闭"的集合，这里存的是"当前该显示哪一步"的单一值，`done` 即代表教程已完成或已跳过。已经完整完成过一次首次安装引导流程的老用户（即那些在本次改动之前就已经装过 app、有真实数据的）不需要看到这个教程——见 §4.5 的"何时启动教程"逻辑。
+### 4.3 `TutorialController`（新文件 `lib/services/tutorial_controller.dart`，单例 `ChangeNotifier`）
 
-### 4.3 `TutorialTarget`（新文件 `lib/widgets/tutorial_target.dart`）
+```dart
+class TutorialController extends ChangeNotifier {
+  TutorialController._();
+  static final TutorialController instance = TutorialController._();
+
+  TutorialStep step = TutorialStep.done; // 数据加载完成前的安全默认值：不显示
+
+  /// 由 _AppShellState 在 initState 里赋值，供 overlay 的"跳过"按钮调用，
+  /// 用来清理真实数据（overlay 本身不持有 _shopping/_inventory）。
+  VoidCallback? onSkipRequested;
+
+  static const exampleItemNameZh = '鸡蛋（示例）';
+  static const exampleItemNameEn = 'Egg (example)';
+
+  bool isExampleItemName(String name) =>
+      name == exampleItemNameZh || name == exampleItemNameEn;
+
+  /// _AppShellState._loadData() 加载完数据后调用一次。
+  Future<void> resolveInitialStep({required bool dataIsEmpty}) async {
+    final stored = await TutorialStore.load();
+    if (stored != null) {
+      step = stored;
+    } else {
+      step = dataIsEmpty ? TutorialStep.addItem : TutorialStep.done;
+      unawaited(TutorialStore.save(step));
+    }
+    notifyListeners();
+  }
+
+  void _setStep(TutorialStep s) {
+    if (step == s) return;
+    step = s;
+    notifyListeners();
+    unawaited(TutorialStore.save(s)
+        .catchError((e) => debugPrint('tutorial save failed: $e')));
+  }
+
+  void onItemAdded(String name) {
+    if (step == TutorialStep.addItem && isExampleItemName(name)) {
+      _setStep(TutorialStep.completeTrip);
+    }
+  }
+
+  void onTripCompleted(Iterable<String> purchasedNames) {
+    if (step == TutorialStep.completeTrip &&
+        purchasedNames.any(isExampleItemName)) {
+      _setStep(TutorialStep.viewInventory);
+    }
+  }
+
+  void onTabChanged(int tabIndex) {
+    if (step == TutorialStep.viewInventory && tabIndex == 1 /* Inventory */) {
+      _setStep(TutorialStep.finalMessage);
+    }
+  }
+
+  /// 用户手动删掉了示例商品（教程未结束时）：悄悄结束，不提示。
+  void onItemDeleted(String name) {
+    if (step != TutorialStep.done && isExampleItemName(name)) {
+      _setStep(TutorialStep.done);
+    }
+  }
+
+  /// "知道了"按钮：正常结束，不清理数据。
+  void finish() => _setStep(TutorialStep.done);
+
+  /// "跳过"按钮：先清理数据，再结束。
+  void skip() {
+    onSkipRequested?.call();
+    _setStep(TutorialStep.done);
+  }
+}
+```
+
+### 4.4 `TutorialTarget`（新文件 `lib/widgets/tutorial_target.dart`）
 
 ```dart
 class TutorialTarget extends StatelessWidget {
@@ -81,8 +161,7 @@ class TutorialTarget extends StatelessWidget {
   }
 }
 
-/// 全局单例：字符串 id → GlobalKey，供 TutorialOverlay 在渲染时查找目标的
-/// 屏幕坐标（通过 key.currentContext.findRenderObject()）。
+/// 全局注册表：字符串 id → GlobalKey，供 TutorialOverlay 查找目标的屏幕坐标。
 class TutorialRegistry {
   static final Map<String, GlobalKey> _keys = {};
   static GlobalKey keyFor(String id) => _keys.putIfAbsent(id, () => GlobalKey());
@@ -96,29 +175,34 @@ class TutorialRegistry {
 - `list_screen.smart.dart` `_CompleteTripSheet` 里的"完成购物"确认按钮（id: `confirm_trip_button`）
 - `main.dart` 底部导航栏"库存"图标（id: `inventory_tab`）
 
-### 4.4 `TutorialOverlay`（新文件 `lib/widgets/tutorial_overlay.dart`）
+### 4.5 `TutorialOverlay`（新文件 `lib/widgets/tutorial_overlay.dart`）
 
-- 通过 `MaterialApp.builder` 包裹整个 `Navigator`，保证弹出的底部表单（`showModalBottomSheet`）之上依然能显示遮罩（表单本身也是通过根 `Navigator`/`Overlay` 弹出的，`builder` 包裹的位置在其之上）。
-- 读取 `_AppShellState` 传下来的当前 `TutorialStep`；`step == done` 时整个 overlay 返回 `child` 本身（无任何遮罩）。
-- 非 `done` 时：
-  1. 用 `TutorialRegistry.keyFor(idForStep(step))` 拿到目标 `GlobalKey`。
-  2. 每帧（`WidgetsBinding.addPostFrameCallback`）用 `key.currentContext?.findRenderObject() as RenderBox?` 计算目标在屏幕上的矩形（`localToGlobal` + `size`）。若目标当前不在树上（比如表单还没弹出），本步骤先不渲染遮罩，等下一帧目标出现后再渲染（轮询式，每帧检查，不需要额外定时器）。
-  3. 渲染 4 个不透明矩形色块把目标矩形之外的区域全部盖住（上/下/左/右四条），中间的洞不放任何 widget，用户的点击自然穿透到洞下面的真实按钮。
-  4. 在目标附近（视空间在上方还是下方决定气泡朝向）渲染一个提示气泡：文字 + 右上角小号"跳过"文字按钮。
+- 在 `_ShoppingListAppState.build()` 里通过 `MaterialApp(builder: (context, child) => TutorialOverlay(child: child!))` 包裹（`child` 是 `Navigator` 渲染出的内容，包含所有弹出的表单），确保遮罩始终盖在最上层。
+- 内部用 `AnimatedBuilder`/手动 `addListener` 监听 `TutorialController.instance`，读取 `.step`。`step == done` 时直接返回 `child`，不做任何多余渲染。
+- 每个非 `done`/`finalMessage` 步骤对应一个**候选目标 id 列表**（按优先级）：
+  - `addItem` → `['confirm_add_button', 'add_button']`
+  - `completeTrip` → `['confirm_trip_button', 'complete_trip_button']`
+  - `viewInventory` → `['inventory_tab']`
+- 每帧（`SchedulerBinding.instance.addPostFrameCallback`，只要 overlay 处于非 `done` 状态就持续重新调度下一帧）依次用 `TutorialRegistry.keyFor(id).currentContext?.findRenderObject() as RenderBox?` 检查候选列表里第一个已挂载的目标，用 `localToGlobal` + `size` 算出它的屏幕矩形。一个都没挂载（比如表单还没弹出）则本帧不渲染任何高亮内容，只显示原本的 `child`，静默等下一帧。
+- 找到矩形后：渲染 4 个不透明矩形色块把目标矩形之外的区域盖住（上/下/左/右四条），中间的洞不放任何 widget，用户的点击自然穿透到洞下面的真实按钮；在目标附近渲染一个提示气泡（文字 + 右上角"跳过"按钮，调用 `TutorialController.instance.skip()`）。
+- `finalMessage` 步骤：不找目标，直接在屏幕中央渲染一个卡片：收尾文案 + "知道了"按钮（调用 `TutorialController.instance.finish()`），背景用同样的不透明色块整体盖住（此时没有"洞"，因为不需要用户操作底层任何真实控件）。
 
-### 4.5 状态管理：`_AppShellState`
+### 4.6 状态管理：`_AppShellState`
 
-- 新增字段 `TutorialStep _tutorialStep = TutorialStep.addItem;`，`_loadData()` 里和 `HintStore.load()`（已删除）同样的位置改为 `await TutorialStore.load()`。
-- 新增 `_advanceTutorialIfNeeded()`：在 `_addSmart`、`_completeTripSmart` 这两个已有回调内部，操作完成后检查："本次是否是教程要等的那一步" → 是则 `setState` 推进 `_tutorialStep` 并 `TutorialStore.save()`。
-  - `_addSmart`：新商品名是否等于教程商品名 `'鸡蛋（示例）'`（or `en.data` 后的 `'Egg (example)'`）且当前步骤是 `addItem`/`confirmAddSheet` → 推进到 `completeTrip`。
-  - `_completeTripSmart`：本次完成购物的商品列表里是否包含该商品名，且当前步骤是 `completeTrip`/`confirmTripSheet` → 推进到 `viewInventory`。
-- 新增 `_skipTutorial()`：删除 `_shopping`/`_inventory` 里名字匹配教程商品的所有条目（`setState` 更新 + 对应持久化方法），`_tutorialStep = TutorialStep.done`，`TutorialStore.save(TutorialStep.done)`。
-- 新增 `_finishTutorial()`（库存页"知道了"按钮触发）：仅 `_tutorialStep = TutorialStep.done` + 持久化，不删除任何数据（真实数据保留）。
-- 检测"用户手动删除了教程商品"：`_deleteSmartItem`/`_deleteInventoryItem` 里追加一个判断——如果删除的商品名等于教程商品名且教程未结束，直接 `_tutorialStep = TutorialStep.done`（悄悄结束，不提示）。
-- 何时真正启动教程（避免"清空后重装的老用户"被误判成新手来强行弹教程）：这个判断只在 `TutorialStore` **从未存过值**（即 `SharedPreferences` 里完全没有 `tutorial_step` 这个 key，`load()` 内部能区分"没存过"和"存的就是 addItem"）的那一次 `_loadData()` 里做一次性判定：
-  - 若此时 `_shopping`/`_inventory`/`_budget` 三者不是全空 → 说明这是一个在本功能上线前就已经有真实数据的老用户，直接把 `_tutorialStep` 设为 `done` 并立即持久化，教程永不显示。
-  - 若三者全空 → 真正的全新安装，`_tutorialStep` 保持 `addItem`，正常持久化，开始显示教程。
-  - 这个判定只发生这一次；此后不管 `_shopping`/`_inventory` 里有没有教程商品（教程进行中本来就会让 `_shopping` 非空），一律直接使用持久化的 `_tutorialStep` 继续渲染 overlay，不再重复检查"是否全空"。
+`_AppShellState` 不需要新增任何 field 来存教程步骤（步骤存在 `TutorialController.instance` 单例里，overlay 直接监听它）。只需要在既有回调里补一行调用：
+
+- `initState()`：`TutorialController.instance.onSkipRequested = _skipTutorial;`
+- `_loadData()`：数据 setState 完成后，`await TutorialController.instance.resolveInitialStep(dataIsEmpty: data.shoppingSmart.isEmpty && data.inventory.isEmpty && data.budget.isEmpty);`（用刚加载出来的 `data`，而不是重新读 `_shopping` 等 state 字段，二者此时应一致，但直接用局部变量更直接）。
+- `_addSmart(...)`：在已有逻辑跑完之后，追加 `TutorialController.instance.onItemAdded(name);`。
+- `_completeTripSmart(selectedIds)`：需要知道本次完成购物、真正被写入库存的商品名单——在函数体内收集 `for` 循环里 `item.name`（`selectedSet.contains(item.id)` 为真的那些），循环结束后调用 `TutorialController.instance.onTripCompleted(purchasedNames);`。
+- `_deleteSmartItem(id)`/`_deleteInventoryItem(id)`：删除前找到该 id 对应的 `name`，删除后调用 `TutorialController.instance.onItemDeleted(name);`（找不到该 id 就不调用）。
+- 底部导航 `onTap: (i) => setState(() => _tab = i)` 追加 `TutorialController.instance.onTabChanged(i);`。
+- 新增 `_skipTutorial()`：从 `_shopping`/`_inventory` 里删除商品名匹配 `TutorialController.instance.isExampleItemName` 的条目（`setState` + 对应持久化方法），不需要再手动设置步骤——`TutorialController.skip()` 自己会调 `onSkipRequested` 后再置 `done`。
+
+### 4.7 教程内容页面的两处配合改动
+
+- `list_screen.dart` 的 `_ListScreenState`：add-bar 的 `TextField`（`_nameCtrl`）需要在 `didChangeDependencies()` 里，若 `TutorialController.instance.step == TutorialStep.addItem` 且文本框当前为空且尚未预填过（一个 `bool _tutorialPrefilled` 标记，防止用户清空后被重新填回去），把文本设为 `L10n.of(context).tutorialExampleItemName`。
+- `_SmartAddSheetState`（`list_screen.smart.dart`）：不需要特殊改动——分类默认已经是 `widget.categories.first`，用户不需要额外选择就能点"加入清单"。
 
 ### 4.6 l10n
 
@@ -146,12 +230,17 @@ class TutorialRegistry {
 
 ## 6. 测试
 
-- `test/services/tutorial_store_test.dart`（新增）：`TutorialStore.load()`/`save()` 往返测试，仿照已删除的 `hint_store_test.dart` 结构（mock `shared_preferences`）。
-- 步骤推进的纯逻辑测试：给定 `_shopping`/`_inventory` 的前后状态和商品名，验证下一步计算是否正确（可以把推进逻辑抽成一个不依赖 `BuildContext` 的纯函数，例如 `nextTutorialStep(TutorialStep current, {required bool addedExampleItem, required bool completedExampleTrip})`，`_AppShellState` 调用它，测试直接测这个纯函数）。
+- `test/services/tutorial_store_test.dart`（新增）：`TutorialStore.load()`/`save()` 往返测试，仿照已删除的 `hint_store_test.dart` 结构（mock `shared_preferences`），另外验证"从未存过值"时返回 `null`（区别于存了 `TutorialStep.addItem` 时返回该值本身）。
+- `test/services/tutorial_controller_test.dart`（新增）：`TutorialController` 不依赖 `BuildContext`，可以直接实例化/操作单例测试：
+  - `resolveInitialStep(dataIsEmpty: true)` 在从未存过值时 → `step == addItem`。
+  - `resolveInitialStep(dataIsEmpty: false)` 在从未存过值时 → `step == done`（老用户不显示教程）。
+  - 依次调用 `onItemAdded`/`onTripCompleted`/`onTabChanged`/`finish()`，验证 `step` 按 `addItem → completeTrip → viewInventory → finalMessage → done` 正确推进，且传入不匹配教程商品名的调用不会误推进。
+  - `skip()` 调用 `onSkipRequested` 且最终 `step == done`。
+  - 每个测试开始前需重置单例状态（`TutorialController.instance.step = TutorialStep.done;` 或提供一个仅测试用的 reset，视实现方便而定）。
 - Widget 测试：pump 全空数据的 app，确认首帧后"+"按钮附近出现教程气泡；不强求覆盖完整 5 步点击（模拟底部表单弹出+定位遮罩在 widget test 里较脆弱），完整流程验证放到手动模拟器验证。
 - 手动模拟器验证：全新安装 → 依次完成 5 次点击 → 确认气泡文案、遮罩位置、最终"知道了"收尾文案都正确；跳过按钮在不同步骤点击都能正确清理数据；教程进行到一半直接杀掉 App 进程，重新打开确认从同一步骤继续，且气泡指向的还是正确的目标（如果杀在一个 sheet 打开的中间，sheet 会话本身不会保留，重新打开后应停留在"打开该 sheet 之前"的步骤，重新引导用户点击那个入口按钮）。
 
 ## 7. 错误处理
 
-- 与现有持久化策略一致：`TutorialStore.save()` 失败仅 `debugPrint` 记录，不重试、不打扰用户（教程 overlay 在内存里的 `_tutorialStep` 仍然正确前进，只是下次冷启动可能会重新从头开始——可接受的降级）。
+- 与现有持久化策略一致：`TutorialStore.save()` 失败仅 `debugPrint` 记录，不重试、不打扰用户（`TutorialController.instance.step` 在内存里仍然正确前进，只是下次冷启动可能会重新从头开始——可接受的降级）。
 - 找不到目标 `GlobalKey`（比如目标还没渲染出来，或者用户已经跳到了别的 tab 导致目标临时不在树上）：`TutorialOverlay` 本帧不渲染任何遮罩内容，静默跳过，等目标出现再渲染，不抛异常、不崩溃。
