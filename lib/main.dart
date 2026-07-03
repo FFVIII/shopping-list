@@ -943,6 +943,8 @@ class _AppShellState extends State<AppShell> {
                     onEdit: _editInventoryItem,
                     onBatchDelete: _batchDeleteInventory,
                     onBatchAddToRestock: _batchAddToRestock,
+                    dismissedHints: _dismissedHints,
+                    onDismissHint: _dismissHint,
                   ),
                   ReminderScreen(
                     inventoryItems: _inventory,
