@@ -25,6 +25,23 @@ void migrateDefaultCategoryNamesToCanonical(List<Category> categories) {
   }
 }
 
+/// Strips non-digit characters from persisted quantity labels. Older builds
+/// stored them as free text with a unit (e.g. "2件", "500g"); quantities are
+/// now plain numbers entered via a digits-only field. Idempotent — labels that
+/// are already numeric (or empty) are unchanged.
+void migrateQuantityLabelsToDigits(
+  List<ShoppingItem> shopping,
+  List<InventoryItem> inventory,
+) {
+  String digitsOnly(String s) => s.replaceAll(RegExp(r'\D'), '');
+  for (final i in shopping) {
+    i.quantityLabel = digitsOnly(i.quantityLabel);
+  }
+  for (final i in inventory) {
+    i.quantityLabel = digitsOnly(i.quantityLabel);
+  }
+}
+
 class AppData {
   final List<ShoppingItem> shoppingSimple;
   final List<ShoppingItem> shoppingSmart;
@@ -102,6 +119,13 @@ class AppRepository {
         .cast<Map>()
         .map((m) => inventoryItemFromMap(m, categories))
         .toList();
+    // Older builds stored quantity labels as free text with units (e.g. "2件");
+    // quantities are now plain numbers. Strip any non-digits so existing data
+    // matches the new digits-only input. Idempotent.
+    migrateQuantityLabelsToDigits(
+      [...shoppingSimple, ...shoppingSmart],
+      inventory,
+    );
 
     final budget = ((_budgetBox.get('items') as List?) ?? const [])
         .cast<Map>()
