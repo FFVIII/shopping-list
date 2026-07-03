@@ -213,9 +213,11 @@ class _AppShellState extends State<AppShell> {
     }
     return AppData(
       shoppingSimple: [],
-      shoppingSmart: buildSampleShopping(categories),
-      inventory: buildSampleInventory(categories),
-      budget: buildSampleBudget(),
+      // Same as AppRepository._seedInitialData(): only the category
+      // structure is real; items start empty. See design spec 2026-07-02 §3.
+      shoppingSmart: [],
+      inventory: [],
+      budget: [],
       categories: categories,
       settings: AppSettings(),
       shelfZones: defaultShelfZones.toList(),
