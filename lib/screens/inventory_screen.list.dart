@@ -51,12 +51,16 @@ extension _InvListBuilders on _InventoryScreenState {
 
   Widget _buildGroupedList() {
     final groups = _grouped;
+    final firstKey = groups.keys.firstOrNull;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
       children: [
         for (final entry in groups.entries) ...[
           _buildSectionHeader(entry.key, entry.value.length,
-              color: _byCategory ? null : entry.value.first.category.color),
+              color: _byCategory ? null : entry.value.first.category.color,
+              trailing: entry.key == firstKey
+                  ? _buildInventorySummaryTrailing()
+                  : null),
           ...entry.value.map((item) => _InventoryCard(
                 item: item,
                 thresholdDays: widget.thresholdDays,
@@ -111,6 +115,8 @@ extension _InvListBuilders on _InventoryScreenState {
         if (!_byCategory) e.key: e.value.first.category.color
     };
 
+    final firstHeaderIndex = flat.indexWhere((e) => e.isHeader);
+
     return ReorderableListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
       buildDefaultDragHandles: false,
@@ -123,6 +129,8 @@ extension _InvListBuilders on _InventoryScreenState {
             groupCounts[entry.groupKey] ?? 0,
             color: groupColors[entry.groupKey],
             key: Key('invh_${entry.groupKey}'),
+            trailing:
+                i == firstHeaderIndex ? _buildInventorySummaryTrailing() : null,
           );
         }
         final item = entry.item!;
@@ -174,7 +182,6 @@ extension _InvListBuilders on _InventoryScreenState {
     final allIds = widget.items.map((i) => i.id).toSet();
     final allSelected = allIds.isNotEmpty && _selected.containsAll(allIds);
     final hasSelection = _selected.isNotEmpty;
-    final selectedItems = widget.items.where((i) => _selected.contains(i.id)).toList();
 
     return BatchBar(
       selectedCount: _selected.length,
@@ -187,21 +194,6 @@ extension _InvListBuilders on _InventoryScreenState {
           _selected.addAll(allIds);
         }
       }),
-      extraActions: [
-        BatchBarAction(
-          label: l.batchAddToRestock,
-          color: AppColors.brand,
-          onTap: hasSelection
-              ? () {
-                  widget.onBatchAddToRestock(selectedItems);
-                  setState(() {
-                    _selected.clear();
-                    _batchMode = false;
-                  });
-                }
-              : null,
-        ),
-      ],
       onDelete: hasSelection
           ? () async {
               final ok = await showDialog<bool>(
@@ -281,7 +273,7 @@ extension _InvListBuilders on _InventoryScreenState {
   }
 
   Widget _buildSectionHeader(String zone, int count,
-      {Key? key, Color? color}) {
+      {Key? key, Color? color, Widget? trailing}) {
     final l = L10n.of(context);
     final resolvedColor = color ??
         (_byCategory
@@ -328,6 +320,10 @@ extension _InvListBuilders on _InventoryScreenState {
               ),
             ),
           ),
+          if (trailing != null) ...[
+            const Spacer(),
+            trailing,
+          ],
         ],
       ),
     );

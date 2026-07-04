@@ -241,6 +241,45 @@ class _ListScreenState extends State<ListScreen> {
       _isSmart ? widget.smartItems : widget.simpleItems;
   int get _pendingCount => _activeItems.where((i) => !i.checked).length;
 
+  // Trailing summary text ("1 left · Jul 3"), tucked onto the first section
+  // header of the Simple/Plan lists rather than the page header, so it only
+  // appears once there's at least one item to anchor it to.
+  Widget _buildSummaryTrailing() {
+    final l = L10n.of(context);
+    final today = DateTime.now();
+    return Text(
+      _pendingCount > 0
+          ? l.listSubtitlePending(_pendingCount, today)
+          : l.listSubtitleDone(today),
+      style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+    );
+  }
+
+  Future<void> _confirmCompleteSimple() async {
+    final l = L10n.of(context);
+    final bought = widget.simpleItems.where((i) => i.checked).length;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.completeTripTitle),
+        content: Text(l.completeTripMessage(bought)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.cancel),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.delete),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    widget.onCompleteSimple();
+  }
+
   void _confirmCompleteTrip() {
     if (_isSmart) {
       // Ensure every current item is in _tripSelected before opening the sheet
@@ -266,7 +305,7 @@ class _ListScreenState extends State<ListScreen> {
         ),
       );
     } else {
-      widget.onCompleteSimple();
+      _confirmCompleteSimple();
     }
   }
 
@@ -297,19 +336,16 @@ class _ListScreenState extends State<ListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final today = DateTime.now();
-
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(today),
+            _buildHeader(),
             _buildModeToggle(),
             if (_isSmart) _buildSmartSubToggle(),
             if (!_isSmart && !_isBudget) _buildSimpleSortToggle(),
             if (_isBudget && !_budgetBatchMode) _buildBudgetSortToggle(),
-            if (_isBudget && _budgetBatchMode) _buildBudgetBatchSubBar(),
             const SizedBox(height: 4),
             Expanded(
               child: _isBudget
@@ -342,7 +378,7 @@ class _ListScreenState extends State<ListScreen> {
 
   // ── Header ──────────────────────────────────────────────────────────────────
 
-  Widget _buildHeader(DateTime today) {
+  Widget _buildHeader() {
     final l = L10n.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 16, 4),
@@ -360,16 +396,6 @@ class _ListScreenState extends State<ListScreen> {
                     color: AppColors.textPrimary,
                     height: 1.1,
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _isBudget
-                      ? l.budgetCount(widget.budgetItems.length)
-                      : _pendingCount > 0
-                          ? l.listSubtitlePending(_pendingCount, today)
-                          : l.listSubtitleDone(today),
-                  style: const TextStyle(
-                      fontSize: 13, color: AppColors.textMuted),
                 ),
               ],
             ),
@@ -563,15 +589,15 @@ class _ListScreenState extends State<ListScreen> {
   void _submitAdd(BuildContext context) {
     final name = _nameCtrl.text.trim();
 
+    if (name.isEmpty) {
+      showAppToast(context, L10n.of(context).addItemNameRequired);
+      return;
+    }
+
     if (_isBudget) {
       // Budget: open the expense sheet (name prefilled from the bar).
       _showBudgetSheet(initialName: name);
       _nameCtrl.clear();
-      return;
-    }
-
-    if (name.isEmpty) {
-      showAppToast(context, L10n.of(context).addItemNameRequired);
       return;
     }
 

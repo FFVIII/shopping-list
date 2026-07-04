@@ -196,6 +196,19 @@ class _InventoryScreenState extends State<InventoryScreen> {
           i.statusFor(widget.thresholdDays) != StockStatus.sufficient)
       .length;
 
+  // Trailing summary text ("2 stocked · 1 to restock"), tucked onto the
+  // first group's section header rather than the page header, so it only
+  // appears once there's at least one item to anchor it to.
+  Widget _buildInventorySummaryTrailing() {
+    final l = L10n.of(context);
+    return Text(
+      l.inventorySummary(widget.items.length, _needRestockCount),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+    );
+  }
+
   // ── Add new inventory item ───────────────────────────────────────────────────
 
   void _showAddSheet() {
@@ -331,19 +344,48 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     height: 1.1,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  l.inventorySummary(widget.items.length, _needRestockCount),
-                  style: const TextStyle(
-                      fontSize: 13, color: AppColors.textMuted),
-                ),
               ],
             ),
           ),
-          // Cancel now lives in the bottom BatchBar (left of Delete), matching
-          // the list and category screens; the header only offers Add when not
-          // selecting.
-          if (!_batchMode)
+          // Cancel lives in the bottom BatchBar (left of Delete), matching the
+          // list and category screens; the header offers Add when not
+          // selecting, or Add-to-restock when a batch selection is active.
+          if (_batchMode)
+            GestureDetector(
+              onTap: _selected.isNotEmpty
+                  ? () {
+                      final selectedItems = widget.items
+                          .where((i) => _selected.contains(i.id))
+                          .toList();
+                      widget.onBatchAddToRestock(selectedItems);
+                      setState(() {
+                        _selected.clear();
+                        _batchMode = false;
+                      });
+                    }
+                  : null,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                decoration: BoxDecoration(
+                  color: _selected.isNotEmpty
+                      ? AppColors.brand
+                      : AppColors.fieldBg,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  l.batchAddToRestock,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: _selected.isNotEmpty
+                        ? Colors.white
+                        : AppColors.textDisabled,
+                  ),
+                ),
+              ),
+            )
+          else
             GestureDetector(
               onTap: _showAddSheet,
               child: Container(

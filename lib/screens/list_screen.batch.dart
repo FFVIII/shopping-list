@@ -53,40 +53,6 @@ extension _ListBatch on _ListScreenState {
     });
   }
 
-  Widget _buildBudgetBatchSubBar() {
-    final l = L10n.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
-      child: Row(
-        children: [
-          Text(
-            l.selectedCount(_budgetSelected.length),
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const Spacer(),
-          GestureDetector(
-            onTap: () => setState(() {
-              _budgetBatchMode = false;
-              _budgetSelected.clear();
-            }),
-            child: Text(
-              l.batchDone,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.brand,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildBudgetBatchBar() {
     final l = L10n.of(context);
     final allIds = widget.budgetItems.map((i) => i.id).toSet();
@@ -97,6 +63,7 @@ extension _ListBatch on _ListScreenState {
     return BatchBar(
       allSelected: allSelected,
       selectedCount: _budgetSelected.length,
+      showCountLabel: true,
       onCancel: () => setState(() {
         _budgetBatchMode = false;
         _budgetSelected.clear();

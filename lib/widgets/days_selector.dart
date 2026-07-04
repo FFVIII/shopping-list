@@ -40,6 +40,17 @@ class _DaysSelectorState extends State<DaysSelector> {
   }
 
   @override
+  void didUpdateWidget(covariant DaysSelector oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialDays != widget.initialDays) {
+      _selectedDays = widget.initialDays;
+      _usingCustom = !_presets.contains(_selectedDays);
+      _customCtrl.text = _usingCustom ? '$_selectedDays' : '';
+      _overflow = false;
+    }
+  }
+
+  @override
   void dispose() {
     _customCtrl.dispose();
     super.dispose();

@@ -106,6 +106,14 @@ extension _BudgetModeState on _ListScreenState {
           ),
           const Spacer(),
           Text(
+            l.budgetCount(widget.budgetItems.length),
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.textMuted,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
             l.money(total),
             style: const TextStyle(
               fontSize: 18,
@@ -321,7 +329,10 @@ class _BudgetSheetState extends State<_BudgetSheet> {
 
   void _confirm() {
     final name = _nameCtrl.text.trim();
-    if (name.isEmpty) return;
+    if (name.isEmpty) {
+      showAppToast(context, L10n.of(context).addItemNameRequired);
+      return;
+    }
     Navigator.pop(context);
     widget.onConfirm(name, _qty, _price);
   }

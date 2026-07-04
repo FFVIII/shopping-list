@@ -27,6 +27,7 @@ extension _SimpleModeState on _ListScreenState {
                 color: AppColors.textSecondary,
                 chipBg: AppColors.fieldBg,
                 topPad: 4,
+                trailing: _buildSummaryTrailing(),
               ),
             ),
           ),
@@ -80,6 +81,7 @@ extension _SimpleModeState on _ListScreenState {
                   color: const Color(0xFFAAAAAA),
                   chipBg: const Color(0xFFF0F0EA),
                   topPad: 18,
+                  trailing: pending.isEmpty ? _buildSummaryTrailing() : null,
                 ),
                 ...done.map((item) => _SimpleRow(
                       item: item,
@@ -101,6 +103,7 @@ extension _SimpleModeState on _ListScreenState {
     required Color color,
     required Color chipBg,
     required double topPad,
+    Widget? trailing,
   }) {
     final l = L10n.of(context);
     return Padding(
@@ -136,6 +139,10 @@ extension _SimpleModeState on _ListScreenState {
               ),
             ),
           ),
+          if (trailing != null) ...[
+            const Spacer(),
+            trailing,
+          ],
         ],
       ),
     );

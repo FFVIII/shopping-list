@@ -61,7 +61,6 @@ abstract class AppStrings {
   String get smartAddHint;
   String get simpleAddHint;
   String addItemTitle(String name);
-  String get chooseCategoryHint;
   String shelfZoneInline(String zoneDisplay); // "货架区：果蔬区" / "Aisle: Produce"
   String get addToList;
   String get rename;
@@ -184,7 +183,6 @@ abstract class AppStrings {
 
   // ── Batch operations ──
   String get batchEdit;         // "编辑" / "Edit"
-  String get batchDone;         // "完成" / "Done"
   String get selectAll;         // "全选" / "Select all"
   String get batchMarkBought;   // "勾选已购" / "Mark bought"
   String get batchAddToRestock; // "加入补货" / "Add to restock"
@@ -261,7 +259,6 @@ class ZhStrings extends AppStrings {
   @override String get smartAddHint => '添加商品，选分类后入库...';
   @override String get simpleAddHint => '随手记，添加到清单...';
   @override String addItemTitle(String name) => '添加「$name」';
-  @override String get chooseCategoryHint => '选择分类，方便按货架分组';
   @override String shelfZoneInline(String z) => '货架区：$z';
   @override String get addToList => '加入清单';
   @override String get rename => '重命名';
@@ -385,7 +382,6 @@ class ZhStrings extends AppStrings {
       lang == AppLanguage.zh ? '中文' : lang == AppLanguage.en ? 'English' : '跟随系统';
 
   @override String get batchEdit => '编辑';
-  @override String get batchDone => '完成';
   @override String get selectAll => '全选';
   @override String get batchMarkBought => '勾选已购';
   @override String get batchAddToRestock => '加入补货';
@@ -473,7 +469,6 @@ class EnStrings extends AppStrings {
   @override String get smartAddHint => 'Add item, pick a category...';
   @override String get simpleAddHint => 'Jot it down, add to list...';
   @override String addItemTitle(String name) => 'Add "$name"';
-  @override String get chooseCategoryHint => 'Pick a category to group by aisle';
   @override String shelfZoneInline(String z) => 'Aisle: $z';
   @override String get addToList => 'Add to list';
   @override String get rename => 'Rename';
@@ -602,7 +597,6 @@ class EnStrings extends AppStrings {
       lang == AppLanguage.zh ? '中文' : lang == AppLanguage.en ? 'English' : 'Follow system';
 
   @override String get batchEdit => 'Edit';
-  @override String get batchDone => 'Done';
   @override String get selectAll => 'Select all';
   @override String get batchMarkBought => 'Mark bought';
   @override String get batchAddToRestock => 'Add to restock';
