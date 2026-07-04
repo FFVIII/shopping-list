@@ -383,6 +383,15 @@ class _SmartRow extends StatelessWidget {
                                 ],
                               ],
                             ),
+                            const SizedBox(height: 3),
+                            Text(
+                              l.days(
+                                  item.estimatedDays ?? item.category.defaultDays),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textDisabled,
+                              ),
+                            ),
                             if (code != null) ...[
                               const SizedBox(height: 5),
                               Container(

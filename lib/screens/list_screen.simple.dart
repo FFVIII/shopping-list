@@ -45,6 +45,12 @@ extension _SimpleModeState on _ListScreenState {
                 onDelete: () => _handleSwipeDelete(id: item.id, label: l.data(item.name), realDelete: () => widget.onDeleteSimple(item.id)),
                 onLongPress: () => _showRenameSheet(item, false),
                 showDragHandle: true,
+                batchMode: _simpleBatchMode,
+                selected: _simpleSelected.contains(item.id),
+                onSelect: () => _toggleSimpleSelection(item.id),
+                onHandleTap: _simpleBatchMode
+                    ? () => _toggleSimpleSelection(item.id)
+                    : () => _enterSimpleBatchWithItem(item.id),
               );
             },
             onReorderItem: (oldIdx, newIdx) {
@@ -84,10 +90,17 @@ extension _SimpleModeState on _ListScreenState {
                   trailing: pending.isEmpty ? _buildSummaryTrailing() : null,
                 ),
                 ...done.map((item) => _SimpleRow(
+                      key: Key('d_${item.id}'),
                       item: item,
                       onToggle: () => widget.onToggleSimple(item.id),
                       onDelete: () => _handleSwipeDelete(id: item.id, label: l.data(item.name), realDelete: () => widget.onDeleteSimple(item.id)),
                       onLongPress: () => _showRenameSheet(item, false),
+                      batchMode: _simpleBatchMode,
+                      selected: _simpleSelected.contains(item.id),
+                      onSelect: () => _toggleSimpleSelection(item.id),
+                      onHandleTap: _simpleBatchMode
+                          ? () => _toggleSimpleSelection(item.id)
+                          : () => _enterSimpleBatchWithItem(item.id),
                     )),
               ]),
             ),
@@ -158,6 +171,10 @@ class _SimpleRow extends StatelessWidget {
   final VoidCallback? onLongPress;
   final bool showDragHandle;
   final int? reorderIndex;
+  final bool batchMode;
+  final bool selected;
+  final VoidCallback? onSelect;
+  final VoidCallback? onHandleTap;
 
   const _SimpleRow({
     super.key,
@@ -167,13 +184,17 @@ class _SimpleRow extends StatelessWidget {
     this.onLongPress,
     this.showDragHandle = false,
     this.reorderIndex,
+    this.batchMode = false,
+    this.selected = false,
+    this.onSelect,
+    this.onHandleTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Dismissible(
       key: Key('simple_${item.id}'),
-      direction: DismissDirection.endToStart,
+      direction: batchMode ? DismissDirection.none : DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 18),
@@ -206,12 +227,17 @@ class _SimpleRow extends StatelessWidget {
               Expanded(
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTap: onToggle,
-                  onLongPress: onLongPress,
+                  onTap: batchMode ? onSelect : onToggle,
+                  onLongPress: batchMode ? null : onLongPress,
                   child: Row(
                     children: [
-                      _Checkbox(checked: item.checked),
-                      const SizedBox(width: 14),
+                      if (batchMode) ...[
+                        _SelectCircle(selected: selected),
+                        const SizedBox(width: 14),
+                      ] else ...[
+                        _Checkbox(checked: item.checked),
+                        const SizedBox(width: 14),
+                      ],
                       Expanded(
                         child: Text(
                           item.name,
@@ -236,8 +262,9 @@ class _SimpleRow extends StatelessWidget {
                   index: reorderIndex!,
                   child: const SizedBox(width: 12, height: 44),
                 ),
-                DragHandle(index: reorderIndex!),
-              ],
+                DragHandle(index: reorderIndex, onTap: onHandleTap),
+              ] else if (onHandleTap != null)
+                DragHandle(onTap: onHandleTap),
             ],
           ),
         ),

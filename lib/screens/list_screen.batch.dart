@@ -7,6 +7,76 @@ part of 'list_screen.dart';
 // ── Batch selection + batch action bars (smart / budget) ─────────────────────
 
 extension _ListBatch on _ListScreenState {
+  void _enterSimpleBatchWithItem(String id) {
+    setState(() {
+      _simpleBatchMode = true;
+      _simpleSelected.add(id);
+    });
+  }
+
+  void _toggleSimpleSelection(String id) {
+    setState(() {
+      if (_simpleSelected.contains(id)) {
+        _simpleSelected.remove(id);
+      } else {
+        _simpleSelected.add(id);
+      }
+    });
+  }
+
+  Widget _buildSimpleBatchBar() {
+    final l = L10n.of(context);
+    final allIds = widget.simpleItems.map((i) => i.id).toSet();
+    final allSelected =
+        allIds.isNotEmpty && _simpleSelected.containsAll(allIds);
+    final hasSelection = _simpleSelected.isNotEmpty;
+
+    return BatchBar(
+      allSelected: allSelected,
+      selectedCount: _simpleSelected.length,
+      showCountLabel: true,
+      onCancel: () => setState(() {
+        _simpleBatchMode = false;
+        _simpleSelected.clear();
+      }),
+      onToggleAll: () => setState(() {
+        if (allSelected) {
+          _simpleSelected.clear();
+        } else {
+          _simpleSelected.addAll(allIds);
+        }
+      }),
+      onDelete: hasSelection
+          ? () async {
+              final ok = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: Text(l.selectedCount(_simpleSelected.length)),
+                  content: Text(l.deleteConfirmMessage),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: Text(l.cancel),
+                    ),
+                    TextButton(
+                      style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: Text(l.delete),
+                    ),
+                  ],
+                ),
+              );
+              if (ok != true) return;
+              widget.onBatchDeleteSimple(_simpleSelected.toList());
+              setState(() {
+                _simpleSelected.clear();
+                _simpleBatchMode = false;
+              });
+            }
+          : null,
+    );
+  }
+
   void _enterSmartBatchWithItem(String id) {
     setState(() {
       _smartBatchMode = true;

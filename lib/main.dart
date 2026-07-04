@@ -528,6 +528,7 @@ class _AppShellState extends State<AppShell> {
                     onEditBudget: _shoppingNotifier.editBudgetItem,
                     onDeleteBudget: _shoppingNotifier.deleteBudgetItem,
                     onReorderBudget: _shoppingNotifier.reorderBudget,
+                    onBatchDeleteSimple: _shoppingNotifier.batchDeleteSimple,
                     onBatchDeleteSmart: _shoppingNotifier.batchDeleteSmart,
                     onBatchMarkBought: _batchMarkBought,
                     onBatchDeleteBudget: _shoppingNotifier.batchDeleteBudget,

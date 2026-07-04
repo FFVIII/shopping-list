@@ -68,6 +68,7 @@ class ListScreen extends StatefulWidget {
   final void Function(String id) onDeleteBudget;
   final void Function(List<String> orderedIds) onReorderBudget;
   // Batch operations
+  final void Function(List<String> ids) onBatchDeleteSimple;
   final void Function(List<String> ids) onBatchDeleteSmart;
   final void Function(List<String> ids) onBatchMarkBought;
   final void Function(List<String> ids) onBatchDeleteBudget;
@@ -100,6 +101,7 @@ class ListScreen extends StatefulWidget {
     required this.onEditBudget,
     required this.onDeleteBudget,
     required this.onReorderBudget,
+    required this.onBatchDeleteSimple,
     required this.onBatchDeleteSmart,
     required this.onBatchMarkBought,
     required this.onBatchDeleteBudget,
@@ -126,6 +128,10 @@ class _ListScreenState extends State<ListScreen> {
 
   // Simple list sort: by name, off → asc → desc → off. null = off.
   SortDir? _simpleDir;
+
+  // Batch selection state (simple mode)
+  bool _simpleBatchMode = false;
+  final Set<String> _simpleSelected = {};
 
   // Batch selection state (budget mode)
   bool _budgetBatchMode = false;
@@ -363,12 +369,16 @@ class _ListScreenState extends State<ListScreen> {
             _AnimatedBottomBar(
               mode: _isSmart && _smartBatchMode
                   ? 0
-                  : (_isBudget && _budgetBatchMode ? 1 : 2),
+                  : (_isBudget && _budgetBatchMode
+                      ? 1
+                      : (!_isSmart && !_isBudget && _simpleBatchMode ? 3 : 2)),
               child: _isSmart && _smartBatchMode
                   ? _buildSmartBatchBar()
                   : (_isBudget && _budgetBatchMode
                       ? _buildBudgetBatchBar()
-                      : _buildAddBar(context)),
+                      : (!_isSmart && !_isBudget && _simpleBatchMode
+                          ? _buildSimpleBatchBar()
+                          : _buildAddBar(context))),
             ),
           ],
         ),
@@ -389,7 +399,9 @@ class _ListScreenState extends State<ListScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  l.shoppingListTitle,
+                  _isSmart
+                      ? l.modeSmart
+                      : (_isBudget ? l.budgetMode : l.modeSimple),
                   style: const TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.w800,
@@ -414,7 +426,7 @@ class _ListScreenState extends State<ListScreen> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    l.completeTrip,
+                    _isSmart ? l.addToInventoryButton : l.completeTrip,
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,

@@ -42,7 +42,7 @@ class _CompleteTripSheetState extends State<_CompleteTripSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              l.completeTrip,
+              l.addToInventoryButton,
               style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
@@ -110,7 +110,7 @@ class _CompleteTripSheetState extends State<_CompleteTripSheet> {
                     widget.onConfirm(_selected.toList());
                   },
                   child: Text(
-                    l.completeTrip,
+                    l.addToInventoryButton,
                     style: const TextStyle(
                         fontSize: 15, fontWeight: FontWeight.w600),
                   ),

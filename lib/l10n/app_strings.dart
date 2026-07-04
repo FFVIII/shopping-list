@@ -17,6 +17,7 @@ abstract class AppStrings {
   String listSubtitlePending(int remaining, DateTime date);
   String listSubtitleDone(DateTime date);
   String get completeTrip;
+  String get addToInventoryButton; // "加入库存" / "Add to inventory"
   String get completeTripTitle; // "完成购物？" / "Finish shopping?"
   String completeTripMessage(int bought); // explains what completing does
   String get tripInventoryHint; // sheet hint about saving to inventory
@@ -212,6 +213,7 @@ class ZhStrings extends AppStrings {
   @override String listSubtitlePending(int r, DateTime d) => '还差 $r 件 · ${_zhDate(d)}';
   @override String listSubtitleDone(DateTime d) => '今天买齐啦 🎉 · ${_zhDate(d)}';
   @override String get completeTrip => '完成购物';
+  @override String get addToInventoryButton => '加入库存';
   @override String get completeTripTitle => '完成购物？';
   @override String completeTripMessage(int bought) =>
       '已买到的 $bought 件会从清单移除，未买到的会保留在清单里。';
@@ -419,6 +421,7 @@ class EnStrings extends AppStrings {
   @override String listSubtitlePending(int r, DateTime d) => '$r left · ${_enDate(d)}';
   @override String listSubtitleDone(DateTime d) => 'All done 🎉 · ${_enDate(d)}';
   @override String get completeTrip => 'Done';
+  @override String get addToInventoryButton => 'Add to inventory';
   @override String get completeTripTitle => 'Finish shopping?';
   @override String completeTripMessage(int bought) =>
       '$bought bought item(s) will be removed from the list; unbought ones stay.';
@@ -432,7 +435,7 @@ class EnStrings extends AppStrings {
   @override String get budgetMode => 'Budget';
   @override String get unitPriceFieldLabel => 'Unit price';
   @override String get budgetTotalLabel => 'Total';
-  @override String budgetCount(int n) => '$n items';
+  @override String budgetCount(int n) => n == 1 ? '1 item' : '$n items';
   @override String get addBudgetTitle => 'Add expense';
   @override String get editBudgetTitle => 'Edit expense';
   @override String get clearBudget => 'Clear';
