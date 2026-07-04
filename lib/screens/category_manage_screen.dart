@@ -156,6 +156,10 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
         }
       }),
       onDelete: hasSelection ? _batchDelete : null,
+      onCancel: () => setState(() {
+        _batchMode = false;
+        _selected.clear();
+      }),
     );
   }
 
@@ -174,15 +178,10 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
         ),
         actions: [
-          if (_batchMode)
-            IconButton(
-              onPressed: () => setState(() {
-                _batchMode = false;
-                _selected.clear();
-              }),
-              icon: const Icon(Icons.close_rounded),
-            )
-          else
+          // Cancel now lives in the bottom BatchBar (left of Delete), matching
+          // the other list screens; the app bar only offers Add when not
+          // selecting.
+          if (!_batchMode)
             IconButton(
               onPressed: _openAdd,
               icon: const Icon(Icons.add_rounded),
@@ -269,7 +268,7 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    cat.name,
+                                    l.data(cat.name),
                                     style: const TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w600,
@@ -278,7 +277,7 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '${l.data(cat.shelfZone)} · ${l.days(cat.defaultDays)}',
+                                    l.days(cat.defaultDays),
                                     style: const TextStyle(
                                       fontSize: 12,
                                       color: AppColors.textMuted,
@@ -435,51 +434,6 @@ class _CategoryEditSheetState extends State<_CategoryEditSheet> {
                         ? const Icon(Icons.check_rounded,
                             size: 18, color: Colors.white)
                         : null,
-                  ),
-                );
-              }).toList(),
-            ),
-            _label(l.shelfZoneLabel),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: widget.shelfZones.map((z) {
-                final sel = z.name == _zone;
-                return GestureDetector(
-                  onTap: () => setState(() => _zone = z.name),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 7),
-                    decoration: BoxDecoration(
-                      color: sel
-                          ? AppColors.brand.withValues(alpha: 0.12)
-                          : AppColors.fieldBg,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: z.dotColor,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          l.data(z.name),
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: sel
-                                ? AppColors.brand
-                                : AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
                 );
               }).toList(),

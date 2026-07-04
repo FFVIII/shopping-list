@@ -42,7 +42,7 @@ class _CompleteTripSheetState extends State<_CompleteTripSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              l.completeTrip,
+              l.addToInventoryButton,
               style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
@@ -110,7 +110,7 @@ class _CompleteTripSheetState extends State<_CompleteTripSheet> {
                     widget.onConfirm(_selected.toList());
                   },
                   child: Text(
-                    l.completeTrip,
+                    l.addToInventoryButton,
                     style: const TextStyle(
                         fontSize: 15, fontWeight: FontWeight.w600),
                   ),
@@ -200,42 +200,6 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
               style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
-            Text(
-              l.chooseCategoryHint,
-              style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: widget.categories.map((cat) {
-                final sel = _selectedCategory == cat;
-                return GestureDetector(
-                  onTap: () => setState(() {
-                    _selectedCategory = cat;
-                    _selectedZone = cat.shelfZone;
-                    _days = cat.defaultDays;
-                  }),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: sel ? cat.color : cat.bgColor,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      cat.name,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: sel ? Colors.white : cat.color,
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 14),
             Row(
               children: [
                 Expanded(
@@ -255,8 +219,12 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
                       ),
                       TextField(
                         controller: _qtyCtrl,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
                         style: const TextStyle(fontSize: 15),
-                        decoration: _fieldDecoration(l.data('1件')),
+                        decoration: _fieldDecoration('1'),
                       ),
                     ],
                   ),
@@ -287,6 +255,46 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 14),
+            Text(
+              l.categoryLabel,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: widget.categories.map((cat) {
+                final sel = _selectedCategory == cat;
+                return GestureDetector(
+                  onTap: () => setState(() {
+                    _selectedCategory = cat;
+                    _selectedZone = cat.shelfZone;
+                    _days = cat.defaultDays;
+                  }),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: sel ? cat.color : cat.bgColor,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      l.data(cat.name),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: sel ? Colors.white : cat.color,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
             const SizedBox(height: 14),
             Padding(
@@ -471,6 +479,8 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
             _label(l.quantityFieldLabel),
             TextField(
               controller: _qtyCtrl,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               style: const TextStyle(fontSize: 15),
               decoration: _fieldDecoration('1'),
             ),
@@ -499,7 +509,7 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      cat.name,
+                      l.data(cat.name),
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -509,19 +519,6 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
                   ),
                 );
               }).toList(),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.location_on_outlined,
-                    size: 14, color: AppColors.textDisabled),
-                const SizedBox(width: 4),
-                Text(
-                  l.shelfZoneInline(l.data(_zone)),
-                  style: const TextStyle(
-                      fontSize: 12, color: AppColors.textMuted),
-                ),
-              ],
             ),
             const SizedBox(height: 20),
             SizedBox(

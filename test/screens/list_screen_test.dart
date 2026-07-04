@@ -86,6 +86,7 @@ Future<void> _pumpList(
           onEditBudget: (_, _, _, _) {},
           onDeleteBudget: (_) {},
           onReorderBudget: (_) {},
+          onBatchDeleteSimple: (_) {},
           onBatchDeleteSmart: (_) {},
           onBatchMarkBought: (_) {},
           onBatchDeleteBudget: (_) {},

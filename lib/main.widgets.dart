@@ -115,12 +115,8 @@ class _DaysSheetState extends State<_DaysSheet> {
               l.editItem,
               style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
             ),
-            const SizedBox(height: 6),
-            Text(
-              l.chooseCategoryHint,
-              style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
+            _fieldLabel(l.productNameHint),
             // ── Name field ────────────────────────────────────────────────
             TextField(
               controller: _nameCtrl,
@@ -131,7 +127,7 @@ class _DaysSheetState extends State<_DaysSheet> {
                     fontSize: 10, color: AppColors.textDisabled),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             // ── Qty + Shelf row ───────────────────────────────────────────
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -143,8 +139,12 @@ class _DaysSheetState extends State<_DaysSheet> {
                       _fieldLabel(l.quantityFieldLabel),
                       TextField(
                         controller: _qtyCtrl,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
                         style: const TextStyle(fontSize: 15),
-                        decoration: _dec(l.data('1件')),
+                        decoration: _dec('1'),
                       ),
                     ],
                   ),
@@ -187,7 +187,7 @@ class _DaysSheetState extends State<_DaysSheet> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      cat.name,
+                      l.data(cat.name),
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -197,19 +197,6 @@ class _DaysSheetState extends State<_DaysSheet> {
                   ),
                 );
               }).toList(),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.location_on_outlined,
-                    size: 14, color: AppColors.textDisabled),
-                const SizedBox(width: 4),
-                Text(
-                  l.shelfZoneInline(l.data(_zone)),
-                  style: const TextStyle(
-                      fontSize: 12, color: AppColors.textMuted),
-                ),
-              ],
             ),
             const SizedBox(height: 14),
             // ── Days section ──────────────────────────────────────────────
@@ -230,7 +217,7 @@ class _DaysSheetState extends State<_DaysSheet> {
                 ],
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 6),
             DaysSelector(
               initialDays: _days,
               onChanged: (d) => setState(() => _days = d),

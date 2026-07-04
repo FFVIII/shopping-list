@@ -78,6 +78,12 @@ class ShoppingListNotifier extends ChangeNotifier {
     persistSimple();
   }
 
+  void batchDeleteSimple(List<String> ids) {
+    final idSet = ids.toSet();
+    simple = simple.where((i) => !idSet.contains(i.id)).toList();
+    persistSimple();
+  }
+
   void renameSimpleItem(String id, String newName) {
     final idx = simple.indexWhere((i) => i.id == id);
     if (idx != -1) simple[idx].name = newName;

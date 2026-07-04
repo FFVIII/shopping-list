@@ -35,15 +35,20 @@ void main() {
     expect(data.shelfZones, isNotEmpty);
   });
 
-  test('seeds English category names when lang is en', () async {
+  test('seeds canonical (zh) category names regardless of load language',
+      () async {
     final repo = AppRepository();
     await repo.init();
 
+    // Even when first loaded in English, category names are stored as the
+    // canonical Chinese; the UI localizes them at display time via l.data().
+    // Persisting translated names used to freeze them and break switching the
+    // UI language later.
     final data = await repo.load(lang: Lang.en);
 
     final produce = data.categories.findById('produce');
     expect(produce, isNotNull);
-    expect(produce!.name, isNot('果蔬'));
+    expect(produce!.name, '果蔬');
   });
 
   test('second load does not reseed — preserves saved changes', () async {

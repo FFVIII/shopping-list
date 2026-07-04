@@ -77,10 +77,7 @@ void showUndoToast(
   }
 
   entry = OverlayEntry(
-    builder: (ctx) => Positioned(
-      left: 0,
-      right: 0,
-      bottom: MediaQuery.of(ctx).padding.bottom + 80,
+    builder: (ctx) => Positioned.fill(
       child: Center(
         child: _UndoToastCard(
           message: message,

@@ -18,6 +18,10 @@ import '../widgets/toast.dart';
 import 'shelf_order_screen.dart';
 import 'category_manage_screen.dart';
 
+// Backup/restore is a planned paid-tier feature; hide the section until
+// that gating lands instead of shipping it free.
+const bool _kDataSectionEnabled = false;
+
 class SettingsScreen extends StatefulWidget {
   final AppSettings settings;
   final void Function(AppSettings) onChanged;
@@ -160,11 +164,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onTap: _pickLeadDays,
               ),
             ]),
-            const SizedBox(height: 16),
-            _buildSection(l.sectionData, [
-              _navRow(l.backupExport, onTap: _exportBackup),
-              _navRow(l.importRestore, onTap: _importBackup),
-            ]),
+            if (_kDataSectionEnabled) ...[
+              const SizedBox(height: 16),
+              _buildSection(l.sectionData, [
+                _navRow(l.backupExport, onTap: _exportBackup),
+                _navRow(l.importRestore, onTap: _importBackup),
+              ]),
+            ],
             const SizedBox(height: 32),
             Center(
               child: Text(
