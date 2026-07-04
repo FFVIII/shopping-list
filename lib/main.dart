@@ -242,13 +242,8 @@ class _AppShellState extends State<AppShell> {
   }
 
   AppData _buildFallbackData(Lang lang) {
+    // Keep canonical (zh) category names; display sites localize via l.data().
     final categories = buildDefaultCategories();
-    if (lang == Lang.en) {
-      final en = EnStrings();
-      for (final c in categories) {
-        c.name = en.data(c.name);
-      }
-    }
     return AppData(
       shoppingSimple: [],
       // Same as AppRepository._seedInitialData(): only the category
@@ -533,6 +528,7 @@ class _AppShellState extends State<AppShell> {
                     onEditBudget: _shoppingNotifier.editBudgetItem,
                     onDeleteBudget: _shoppingNotifier.deleteBudgetItem,
                     onReorderBudget: _shoppingNotifier.reorderBudget,
+                    onBatchDeleteSimple: _shoppingNotifier.batchDeleteSimple,
                     onBatchDeleteSmart: _shoppingNotifier.batchDeleteSmart,
                     onBatchMarkBought: _batchMarkBought,
                     onBatchDeleteBudget: _shoppingNotifier.batchDeleteBudget,

@@ -4,6 +4,44 @@ import '../l10n/app_strings.dart';
 import '../models/item.dart';
 import 'hive_models.dart';
 
+/// Restores canonical (Chinese) names for the six built-in default categories
+/// that older builds persisted with translated (English) names — which broke
+/// UI language switching, since display translation only goes canonical→other.
+///
+/// Only a category whose `id` matches a default AND whose current name is still
+/// exactly that default's English translation is rewritten; custom categories
+/// and user-renamed defaults are left untouched. Idempotent: canonical names
+/// don't match the English translation, so re-running is a no-op.
+void migrateDefaultCategoryNamesToCanonical(List<Category> categories) {
+  final canonicalById = {
+    for (final c in buildDefaultCategories()) c.id: c.name,
+  };
+  final en = EnStrings();
+  for (final c in categories) {
+    final canonical = canonicalById[c.id];
+    if (canonical != null && c.name == en.data(canonical)) {
+      c.name = canonical;
+    }
+  }
+}
+
+/// Strips non-digit characters from persisted quantity labels. Older builds
+/// stored them as free text with a unit (e.g. "2件", "500g"); quantities are
+/// now plain numbers entered via a digits-only field. Idempotent — labels that
+/// are already numeric (or empty) are unchanged.
+void migrateQuantityLabelsToDigits(
+  List<ShoppingItem> shopping,
+  List<InventoryItem> inventory,
+) {
+  String digitsOnly(String s) => s.replaceAll(RegExp(r'\D'), '');
+  for (final i in shopping) {
+    i.quantityLabel = digitsOnly(i.quantityLabel);
+  }
+  for (final i in inventory) {
+    i.quantityLabel = digitsOnly(i.quantityLabel);
+  }
+}
+
 class AppData {
   final List<ShoppingItem> shoppingSimple;
   final List<ShoppingItem> shoppingSmart;
@@ -61,6 +99,12 @@ class AppRepository {
         .cast<Map>()
         .map(categoryFromMap)
         .toList();
+    // Older builds seeded default category names translated into the install
+    // language (e.g. '果蔬' → 'Produce'), which broke language switching since
+    // display translation is one-way (canonical zh → en). Restore canonical
+    // names so l.data() can localize them again. Idempotent; leaves custom and
+    // user-renamed categories untouched.
+    migrateDefaultCategoryNamesToCanonical(categories);
 
     List<ShoppingItem> readShopping(Box box) =>
         ((box.get('items') as List?) ?? const [])
@@ -75,6 +119,13 @@ class AppRepository {
         .cast<Map>()
         .map((m) => inventoryItemFromMap(m, categories))
         .toList();
+    // Older builds stored quantity labels as free text with units (e.g. "2件");
+    // quantities are now plain numbers. Strip any non-digits so existing data
+    // matches the new digits-only input. Idempotent.
+    migrateQuantityLabelsToDigits(
+      [...shoppingSimple, ...shoppingSmart],
+      inventory,
+    );
 
     final budget = ((_budgetBox.get('items') as List?) ?? const [])
         .cast<Map>()
@@ -107,13 +158,10 @@ class AppRepository {
   }
 
   Future<void> _seedInitialData(Lang lang) async {
+    // Always seed canonical (zh) category names; display sites localize them
+    // via l.data(). Storing translated names here would break switching the UI
+    // language later (see migrateDefaultCategoryNamesToCanonical).
     final categories = buildDefaultCategories();
-    if (lang == Lang.en) {
-      final en = EnStrings();
-      for (final c in categories) {
-        c.name = en.data(c.name);
-      }
-    }
     await _categoriesBox.put(
         'items', categories.map((c) => c.toMap()).toList());
     // Shopping/inventory/budget start empty — only the category structure

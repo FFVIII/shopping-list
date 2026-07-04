@@ -138,6 +138,8 @@ extension _SmartModeState on _ListScreenState {
       }
     }
 
+    final firstHeaderIndex = flat.indexWhere((e) => e.isHeader);
+
     return ReorderableListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       buildDefaultDragHandles: false,
@@ -150,6 +152,7 @@ extension _SmartModeState on _ListScreenState {
             groupCounts[entry.groupKey] ?? 0,
             color: groupColors[entry.groupKey],
             key: Key('h_${entry.groupKey}'),
+            trailing: i == firstHeaderIndex ? _buildSummaryTrailing() : null,
           );
         }
         final item = entry.item!;
@@ -185,7 +188,8 @@ extension _SmartModeState on _ListScreenState {
     );
   }
 
-  Widget _buildSectionHeader(String zone, int count, {Key? key, Color? color}) {
+  Widget _buildSectionHeader(String zone, int count,
+      {Key? key, Color? color, Widget? trailing}) {
     final l = L10n.of(context);
     final color0 = color ?? AppColors.textMuted;
     return Padding(
@@ -226,6 +230,10 @@ extension _SmartModeState on _ListScreenState {
               ),
             ),
           ),
+          if (trailing != null) ...[
+            const Spacer(),
+            trailing,
+          ],
         ],
       ),
     );
@@ -374,6 +382,15 @@ class _SmartRow extends StatelessWidget {
                                   ),
                                 ],
                               ],
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              l.days(
+                                  item.estimatedDays ?? item.category.defaultDays),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textDisabled,
+                              ),
                             ),
                             if (code != null) ...[
                               const SizedBox(height: 5),

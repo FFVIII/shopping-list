@@ -106,6 +106,14 @@ extension _BudgetModeState on _ListScreenState {
           ),
           const Spacer(),
           Text(
+            l.budgetCount(widget.budgetItems.length),
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.textMuted,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
             l.money(total),
             style: const TextStyle(
               fontSize: 18,
@@ -305,6 +313,13 @@ class _BudgetSheetState extends State<_BudgetSheet> {
     super.dispose();
   }
 
+  // When a name is already provided (typed in the add bar, or editing an
+  // existing item), focus the quantity field instead of re-focusing the name —
+  // otherwise opening the sheet yanks the keyboard back onto the name the user
+  // just entered.
+  bool get _namePrefilled =>
+      (widget.item?.name ?? widget.initialName).trim().isNotEmpty;
+
   int get _qty {
     final n = int.tryParse(_qtyCtrl.text.trim()) ?? 1;
     return n < 1 ? 1 : n;
@@ -314,7 +329,10 @@ class _BudgetSheetState extends State<_BudgetSheet> {
 
   void _confirm() {
     final name = _nameCtrl.text.trim();
-    if (name.isEmpty) return;
+    if (name.isEmpty) {
+      showAppToast(context, L10n.of(context).addItemNameRequired);
+      return;
+    }
     Navigator.pop(context);
     widget.onConfirm(name, _qty, _price);
   }
@@ -368,7 +386,7 @@ class _BudgetSheetState extends State<_BudgetSheet> {
             const SizedBox(height: 14),
             TextField(
               controller: _nameCtrl,
-              autofocus: true,
+              autofocus: !_namePrefilled,
               style: const TextStyle(fontSize: 15),
               decoration: _dec(l.productNameHint),
               onSubmitted: (_) => _confirm(),
@@ -383,6 +401,7 @@ class _BudgetSheetState extends State<_BudgetSheet> {
                       _label(l.quantityFieldLabel),
                       TextField(
                         controller: _qtyCtrl,
+                        autofocus: _namePrefilled,
                         keyboardType: TextInputType.number,
                         style: const TextStyle(fontSize: 15),
                         decoration: _dec('1'),

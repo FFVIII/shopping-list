@@ -2,22 +2,9 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../l10n/l10n.dart';
 
-/// A single extra action pill rendered in the BatchBar.
-class BatchBarAction {
-  final String label;
-  final Color color;
-  final VoidCallback? onTap; // null = disabled
-
-  const BatchBarAction({
-    required this.label,
-    required this.color,
-    this.onTap,
-  });
-}
-
 /// Shared bottom bar for batch-select mode.
 ///
-/// Layout: [SelectAll] [extraActions…] [Spacer] [Cancel?] [Delete]
+/// Layout: [SelectAll] [Spacer] [Cancel?] [Delete]
 /// SelectAll always sits on the far left; Cancel (when present) and Delete
 /// are grouped together on the far right, in that order.
 class BatchBar extends StatelessWidget {
@@ -33,9 +20,6 @@ class BatchBar extends StatelessWidget {
   /// If set, a Cancel pill appears next to Delete to exit batch mode.
   final VoidCallback? onCancel;
 
-  /// Extra action pills inserted after SelectAll, before the spacer/Delete.
-  final List<BatchBarAction> extraActions;
-
   const BatchBar({
     super.key,
     required this.selectedCount,
@@ -44,7 +28,6 @@ class BatchBar extends StatelessWidget {
     required this.onToggleAll,
     this.onDelete,
     this.onCancel,
-    this.extraActions = const [],
   });
 
   Widget _pill(String text, Color textColor, Color bgColor, VoidCallback? onTap) {
@@ -104,15 +87,6 @@ class BatchBar extends StatelessWidget {
                 allSelected ? AppColors.brand.withValues(alpha: 0.12) : AppColors.fieldBg,
                 onToggleAll,
               ),
-              for (final action in extraActions) ...[
-                const SizedBox(width: 8),
-                _pill(
-                  action.label,
-                  action.onTap != null ? action.color : AppColors.textDisabled,
-                  action.onTap != null ? action.color.withValues(alpha: 0.12) : AppColors.fieldBg,
-                  action.onTap,
-                ),
-              ],
               const Spacer(),
               if (onCancel != null) ...[
                 _pill(l.cancel, AppColors.textSecondary, AppColors.fieldBg, onCancel),

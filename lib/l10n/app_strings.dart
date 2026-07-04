@@ -17,6 +17,7 @@ abstract class AppStrings {
   String listSubtitlePending(int remaining, DateTime date);
   String listSubtitleDone(DateTime date);
   String get completeTrip;
+  String get addToInventoryButton; // "加入库存" / "Add to inventory"
   String get completeTripTitle; // "完成购物？" / "Finish shopping?"
   String completeTripMessage(int bought); // explains what completing does
   String get tripInventoryHint; // sheet hint about saving to inventory
@@ -61,7 +62,6 @@ abstract class AppStrings {
   String get smartAddHint;
   String get simpleAddHint;
   String addItemTitle(String name);
-  String get chooseCategoryHint;
   String shelfZoneInline(String zoneDisplay); // "货架区：果蔬区" / "Aisle: Produce"
   String get addToList;
   String get rename;
@@ -184,7 +184,6 @@ abstract class AppStrings {
 
   // ── Batch operations ──
   String get batchEdit;         // "编辑" / "Edit"
-  String get batchDone;         // "完成" / "Done"
   String get selectAll;         // "全选" / "Select all"
   String get batchMarkBought;   // "勾选已购" / "Mark bought"
   String get batchAddToRestock; // "加入补货" / "Add to restock"
@@ -214,6 +213,7 @@ class ZhStrings extends AppStrings {
   @override String listSubtitlePending(int r, DateTime d) => '还差 $r 件 · ${_zhDate(d)}';
   @override String listSubtitleDone(DateTime d) => '今天买齐啦 🎉 · ${_zhDate(d)}';
   @override String get completeTrip => '完成购物';
+  @override String get addToInventoryButton => '加入库存';
   @override String get completeTripTitle => '完成购物？';
   @override String completeTripMessage(int bought) =>
       '已买到的 $bought 件会从清单移除，未买到的会保留在清单里。';
@@ -261,7 +261,6 @@ class ZhStrings extends AppStrings {
   @override String get smartAddHint => '添加商品，选分类后入库...';
   @override String get simpleAddHint => '随手记，添加到清单...';
   @override String addItemTitle(String name) => '添加「$name」';
-  @override String get chooseCategoryHint => '选择分类，方便按货架分组';
   @override String shelfZoneInline(String z) => '货架区：$z';
   @override String get addToList => '加入清单';
   @override String get rename => '重命名';
@@ -376,7 +375,7 @@ class ZhStrings extends AppStrings {
   @override String get importSuccessToast => '已恢复备份';
   @override String get exportFailedToast => '导出失败';
   @override String get storageUnavailableBanner => '存储初始化失败，当前的修改不会被保存';
-  @override String get appFooter => '购物清单 v1.0.0';
+  @override String get appFooter => '购物清单 v1.0.2';
   @override String get language => '语言';
   @override String get languageSystem => '跟随系统';
   @override String get languageZh => '中文';
@@ -385,7 +384,6 @@ class ZhStrings extends AppStrings {
       lang == AppLanguage.zh ? '中文' : lang == AppLanguage.en ? 'English' : '跟随系统';
 
   @override String get batchEdit => '编辑';
-  @override String get batchDone => '完成';
   @override String get selectAll => '全选';
   @override String get batchMarkBought => '勾选已购';
   @override String get batchAddToRestock => '加入补货';
@@ -423,6 +421,7 @@ class EnStrings extends AppStrings {
   @override String listSubtitlePending(int r, DateTime d) => '$r left · ${_enDate(d)}';
   @override String listSubtitleDone(DateTime d) => 'All done 🎉 · ${_enDate(d)}';
   @override String get completeTrip => 'Done';
+  @override String get addToInventoryButton => 'Add to inventory';
   @override String get completeTripTitle => 'Finish shopping?';
   @override String completeTripMessage(int bought) =>
       '$bought bought item(s) will be removed from the list; unbought ones stay.';
@@ -436,7 +435,7 @@ class EnStrings extends AppStrings {
   @override String get budgetMode => 'Budget';
   @override String get unitPriceFieldLabel => 'Unit price';
   @override String get budgetTotalLabel => 'Total';
-  @override String budgetCount(int n) => '$n items';
+  @override String budgetCount(int n) => n == 1 ? '1 item' : '$n items';
   @override String get addBudgetTitle => 'Add expense';
   @override String get editBudgetTitle => 'Edit expense';
   @override String get clearBudget => 'Clear';
@@ -473,7 +472,6 @@ class EnStrings extends AppStrings {
   @override String get smartAddHint => 'Add item, pick a category...';
   @override String get simpleAddHint => 'Jot it down, add to list...';
   @override String addItemTitle(String name) => 'Add "$name"';
-  @override String get chooseCategoryHint => 'Pick a category to group by aisle';
   @override String shelfZoneInline(String z) => 'Aisle: $z';
   @override String get addToList => 'Add to list';
   @override String get rename => 'Rename';
@@ -593,7 +591,7 @@ class EnStrings extends AppStrings {
   @override String get exportFailedToast => 'Export failed';
   @override String get storageUnavailableBanner =>
       'Storage failed to start — your changes won\'t be saved';
-  @override String get appFooter => 'Shopping List v1.0.0';
+  @override String get appFooter => 'Shopping List v1.0.2';
   @override String get language => 'Language';
   @override String get languageSystem => 'Follow system';
   @override String get languageZh => '中文';
@@ -602,7 +600,6 @@ class EnStrings extends AppStrings {
       lang == AppLanguage.zh ? '中文' : lang == AppLanguage.en ? 'English' : 'Follow system';
 
   @override String get batchEdit => 'Edit';
-  @override String get batchDone => 'Done';
   @override String get selectAll => 'Select all';
   @override String get batchMarkBought => 'Mark bought';
   @override String get batchAddToRestock => 'Add to restock';
