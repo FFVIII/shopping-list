@@ -74,8 +74,13 @@ void main() {
     await repository.load(lang: Lang.zh);
   });
 
-  tearDown(() async {
-    await Hive.deleteFromDisk();
+  tearDown(() {
+    // The confirm-trip tap triggers real (unawaited) Hive writes, which may
+    // still be in flight here. `Hive.deleteFromDisk()` waits on those boxes
+    // closing, but tearDown runs inside the same fake-async zone as the test
+    // body, where that real I/O never advances — it hangs indefinitely. Each
+    // test gets its own throwaway temp directory, so skip Hive's own
+    // close-all-boxes bookkeeping and just delete the directory directly.
     if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
   });
 
