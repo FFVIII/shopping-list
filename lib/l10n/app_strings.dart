@@ -156,6 +156,9 @@ abstract class AppStrings {
   String get notifRestockTitle;                       // "该补货了" / "Time to restock"
   String notifRestockBody(int count, List<String> names); // 最多列 3 个名字
   String get notifPermissionDenied; // 开关打开但授权被拒时的 toast
+  String get notifPrimerTitle;      // 请求系统通知权限前的应用内说明弹窗标题
+  String get notifPrimerMessage;    // 说明弹窗正文
+  String get notifPrimerConfirm;    // 说明弹窗确认按钮，之后才弹系统权限框
   String get importConfirmTitle;    // "导入备份？" / "Import backup?"
   String get importConfirmMessage;  // 覆盖警告
   String get importAction;          // "导入" / "Import"
@@ -345,6 +348,9 @@ class ZhStrings extends AppStrings {
     return '有 $count 件物品需要补货：$shown$suffix';
   }
   @override String get notifPermissionDenied => '通知权限未开启，请在系统设置中允许通知';
+  @override String get notifPrimerTitle => '开启补货提醒';
+  @override String get notifPrimerMessage => '开启后，库存不足时会通过系统通知提醒你，需要授权通知权限。';
+  @override String get notifPrimerConfirm => '好的，开启';
   @override String get importConfirmTitle => '导入备份？';
   @override String get importConfirmMessage =>
       '将覆盖当前全部数据（清单、库存、记账、分类、设置），此操作不可撤销。';
@@ -550,6 +556,10 @@ class EnStrings extends AppStrings {
   }
   @override String get notifPermissionDenied =>
       'Notifications are off. Enable them in system Settings.';
+  @override String get notifPrimerTitle => 'Enable restock reminders';
+  @override String get notifPrimerMessage =>
+      'We\'ll send a system notification when items are running low. This needs notification permission.';
+  @override String get notifPrimerConfirm => 'OK, enable';
   @override String get importConfirmTitle => 'Import backup?';
   @override String get importConfirmMessage =>
       'This will replace ALL current data (lists, inventory, expenses, categories, settings). This cannot be undone.';
