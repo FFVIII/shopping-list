@@ -5,6 +5,7 @@ import 'package:shopping_list/l10n/app_strings.dart';
 import 'package:shopping_list/l10n/l10n.dart';
 import 'package:shopping_list/models/item.dart';
 import 'package:shopping_list/screens/list_screen.dart';
+import 'package:shopping_list/widgets/drag_handle.dart';
 
 // Characterization tests for ListScreen's default (simple) mode. The screen
 // takes plain data + callbacks, so it can be pumped in isolation without Hive
@@ -54,6 +55,8 @@ Future<void> _pumpList(
   void Function(String id)? onToggleSimple,
   void Function(String id)? onToggleSmart,
   void Function(String name)? onAddSimple,
+  void Function(List<String> ids)? onBatchDeleteSimple,
+  void Function(List<String> ids)? onBatchMarkBought,
 }) async {
   tester.view.physicalSize = const Size(1290, 2796);
   tester.view.devicePixelRatio = 3.0;
@@ -86,9 +89,9 @@ Future<void> _pumpList(
           onEditBudget: (_, _, _, _) {},
           onDeleteBudget: (_) {},
           onReorderBudget: (_) {},
-          onBatchDeleteSimple: (_) {},
+          onBatchDeleteSimple: onBatchDeleteSimple ?? (_) {},
           onBatchDeleteSmart: (_) {},
-          onBatchMarkBought: (_) {},
+          onBatchMarkBought: onBatchMarkBought ?? (_) {},
           onBatchDeleteBudget: (_) {},
           smartModeRequest: 0,
           shelfCodeOrder: const [],
@@ -144,11 +147,63 @@ void main() {
 
     await tester.enterText(find.byType(TextField), '   ');
     await tester.testTextInput.receiveAction(TextInputAction.done);
-    // The blank-name path shows a toast (Timer-backed); let it elapse so no
-    // pending timer trips the test harness.
     await tester.pump(const Duration(seconds: 2));
 
     expect(added, isEmpty);
+  });
+
+  testWidgets(
+      'pressing the keyboard done key on a blank field just dismisses it, '
+      'no "enter a name" toast', (tester) async {
+    // Regression test: the add bar's onSubmitted used to call the same
+    // validation path as the "+" button, so pressing the keyboard's return
+    // key with nothing typed (i.e. just trying to close the keyboard) would
+    // pop the "enter an item name" toast. It should now silently unfocus.
+    await _pumpList(tester);
+
+    await tester.tap(find.byType(TextField));
+    await tester.pump();
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(find.text(ZhStrings().addItemNameRequired), findsNothing);
+  });
+
+  testWidgets('tapping the + button with a blank name shows the toast',
+      (tester) async {
+    // The explicit add button is a deliberate action, unlike the keyboard's
+    // return key, so it should still validate and show the toast.
+    await _pumpList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+
+    expect(find.text(ZhStrings().addItemNameRequired), findsOneWidget);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets(
+      'batch-selecting a simple item and deleting it calls onBatchDeleteSimple',
+      (tester) async {
+    List<String>? deletedIds;
+    await _pumpList(
+      tester,
+      simpleItems: [_simple('a', '牛奶')],
+      onBatchDeleteSimple: (ids) => deletedIds = ids,
+    );
+
+    // Tap the row's drag handle to enter batch mode with this item selected.
+    await tester.tap(find.byType(DragHandle));
+    await tester.pump();
+
+    expect(find.text(ZhStrings().selectedCount(1)), findsOneWidget);
+
+    await tester.tap(find.text(ZhStrings().delete));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(ZhStrings().delete).last);
+    await tester.pumpAndSettle();
+
+    expect(deletedIds, ['a']);
   });
 
   // ── Smart mode (reached via the mode toggle; '计划' = modeSmart in zh) ────────
@@ -181,6 +236,31 @@ void main() {
     await tester.tap(find.text('牛奶'));
 
     expect(toggled, 'a');
+  });
+
+  testWidgets(
+      'batch-selecting a smart item and tapping "Mark bought" calls '
+      'onBatchMarkBought', (tester) async {
+    List<String>? markedIds;
+    await _pumpList(
+      tester,
+      smartItems: [_smart('a', '牛奶')],
+      onBatchMarkBought: (ids) => markedIds = ids,
+    );
+
+    await tester.tap(find.text('计划'));
+    await tester.pumpAndSettle();
+
+    // Tap the row's drag handle to enter batch mode with this item selected.
+    await tester.tap(find.byType(DragHandle));
+    await tester.pump();
+
+    expect(find.text(ZhStrings().batchMarkBought), findsOneWidget);
+
+    await tester.tap(find.text(ZhStrings().batchMarkBought));
+    await tester.pump();
+
+    expect(markedIds, ['a']);
   });
 
   // ── Budget mode ('记账' = budgetMode in zh) ──────────────────────────────────

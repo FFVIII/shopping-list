@@ -51,4 +51,13 @@ void main() {
     expect(en.data('1件'), '1 item');
     expect(zh.data('1件'), '1件');
   });
+
+  test('budgetCount pluralizes correctly in English', () {
+    // Regression test: English previously always said "N items", showing
+    // the grammatically wrong "1 items" for a single budget entry.
+    expect(en.budgetCount(1), '1 item');
+    expect(en.budgetCount(0), '0 items');
+    expect(en.budgetCount(2), '2 items');
+    expect(zh.budgetCount(1), '共 1 项');
+  });
 }
