@@ -404,7 +404,7 @@ class _BudgetSheetState extends State<_BudgetSheet> {
               style:
                   const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
             ),
-            const SizedBox(height: 14),
+            _label(l.productNameHint),
             TextField(
               controller: _nameCtrl,
               autofocus: !_namePrefilled,
