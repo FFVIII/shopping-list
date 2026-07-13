@@ -223,23 +223,20 @@ class _DaysSheetState extends State<_DaysSheet> {
               onChanged: (d) => setState(() => _days = d),
             ),
             const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.brand,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                  elevation: 0,
-                ),
-                onPressed: _confirm,
-                child: Text(
-                  l.confirmEdit,
-                  style: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w600),
-                ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.brand,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+                elevation: 0,
+                minimumSize: const Size(double.infinity, 50),
+              ),
+              onPressed: _confirm,
+              child: Text(
+                l.confirmEdit,
+                style: const TextStyle(
+                    fontSize: 15, fontWeight: FontWeight.w600),
               ),
             ),
           ],

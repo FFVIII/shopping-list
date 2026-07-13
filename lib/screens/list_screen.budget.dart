@@ -96,29 +96,41 @@ extension _BudgetModeState on _ListScreenState {
       ),
       child: Row(
         children: [
-          Text(
-            l.budgetTotalLabel,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+          Flexible(
+            child: Text(
+              l.budgetTotalLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
             ),
           ),
           const Spacer(),
-          Text(
-            l.budgetCount(widget.budgetItems.length),
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppColors.textMuted,
+          Flexible(
+            child: Text(
+              l.budgetCount(widget.budgetItems.length),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textMuted,
+              ),
             ),
           ),
           const SizedBox(width: 8),
-          Text(
-            l.money(total),
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: AppColors.brand,
+          Flexible(
+            child: Text(
+              l.money(total),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: AppColors.brand,
+              ),
             ),
           ),
         ],
@@ -449,23 +461,20 @@ class _BudgetSheetState extends State<_BudgetSheet> {
               ],
             ),
             const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.brand,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                  elevation: 0,
-                ),
-                onPressed: _confirm,
-                child: Text(
-                  l.save,
-                  style: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w600),
-                ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.brand,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+                elevation: 0,
+                minimumSize: const Size(double.infinity, 48),
+              ),
+              onPressed: _confirm,
+              child: Text(
+                l.save,
+                style: const TextStyle(
+                    fontSize: 15, fontWeight: FontWeight.w600),
               ),
             ),
           ],

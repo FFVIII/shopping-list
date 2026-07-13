@@ -11,6 +11,7 @@ Future<void> _pumpSettings(
   WidgetTester tester, {
   bool isPro = false,
   Future<bool> Function()? requestNotificationPermission,
+  TextScaler textScaler = TextScaler.noScaling,
 }) async {
   final purchaseService = PurchaseService()..isPro = isPro;
 
@@ -18,7 +19,9 @@ Future<void> _pumpSettings(
     L10n(
       strings: ZhStrings(),
       language: AppLanguage.zh,
-      child: MaterialApp(
+      child: MediaQuery(
+        data: MediaQueryData(textScaler: textScaler),
+        child: MaterialApp(
         home: SettingsScreen(
           settings: AppSettings(),
           onChanged: (_) {},
@@ -41,6 +44,7 @@ Future<void> _pumpSettings(
           requestNotificationPermission:
               requestNotificationPermission ?? () async => true,
           purchaseService: purchaseService,
+        ),
         ),
       ),
     ),
@@ -116,5 +120,12 @@ void main() {
 
     expect(requested, isFalse);
     expect(find.text(ZhStrings().notifPrimerTitle), findsNothing);
+  });
+
+  testWidgets(
+      'renders without layout exceptions at a large system text scale',
+      (tester) async {
+    await _pumpSettings(tester, textScaler: const TextScaler.linear(3.0));
+    expect(tester.takeException(), isNull);
   });
 }

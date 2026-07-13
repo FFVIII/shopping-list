@@ -258,13 +258,16 @@ class _ReminderRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Center(
-                child: Text(
-                  displayName,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: displayName.length > 2 ? 10 : 13,
-                    fontWeight: FontWeight.w600,
-                    color: item.category.color.withValues(alpha: 0.8),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    displayName,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: displayName.length > 2 ? 10 : 13,
+                      fontWeight: FontWeight.w600,
+                      color: item.category.color.withValues(alpha: 0.8),
+                    ),
                   ),
                 ),
               ),

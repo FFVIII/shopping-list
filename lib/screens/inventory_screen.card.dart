@@ -100,12 +100,15 @@ class _InventoryCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Center(
-                          child: Text(
-                            dn.isNotEmpty ? dn.substring(0, 1) : '',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: item.category.color.withValues(alpha: 0.45),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              dn.isNotEmpty ? dn.substring(0, 1) : '',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: item.category.color.withValues(alpha: 0.45),
+                              ),
                             ),
                           ),
                         ),
@@ -191,9 +194,16 @@ class _InventoryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      endDateStr,
-                      style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                    SizedBox(
+                      width: 64,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          endDateStr,
+                          style: const TextStyle(
+                              fontSize: 11, color: AppColors.textMuted),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 4),
                     SizedBox(
@@ -201,14 +211,20 @@ class _InventoryCard extends StatelessWidget {
                       child: _ProgressBar(ratio: item.progressRatio, color: status.color),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      status == StockStatus.empty
-                          ? l.usedUp
-                          : '${l.stockStatus(status)}(${l.daysShort(remaining.clamp(0, 999))})',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: status.color,
+                    SizedBox(
+                      width: 64,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          status == StockStatus.empty
+                              ? l.usedUp
+                              : '${l.stockStatus(status)}(${l.daysShort(remaining.clamp(0, 999))})',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: status.color,
+                          ),
+                        ),
                       ),
                     ),
                   ],

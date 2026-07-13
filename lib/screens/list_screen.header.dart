@@ -30,82 +30,97 @@ extension _HeaderAndAddBarState on _ListScreenState {
             ),
           ),
           if (_isSmart && _smartBatchMode)
-            GestureDetector(
-              onTap: _smartSelected.isNotEmpty
-                  ? () {
-                      widget.onBatchMarkBought(_smartSelected.toList());
-                      // False positive: this extension method runs on the
-                      // real _ListScreenState instance, but the analyzer
-                      // doesn't treat extension bodies as members of the
-                      // extended class.
-                      // ignore: invalid_use_of_protected_member
-                      setState(() {
-                        _smartSelected.clear();
-                        _smartBatchMode = false;
-                      });
-                    }
-                  : null,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 7),
-                decoration: BoxDecoration(
-                  color: _smartSelected.isNotEmpty
-                      ? AppColors.brand
-                      : AppColors.fieldBg,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  l.batchMarkBought,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+            Flexible(
+              child: GestureDetector(
+                onTap: _smartSelected.isNotEmpty
+                    ? () {
+                        widget.onBatchMarkBought(_smartSelected.toList());
+                        // False positive: this extension method runs on the
+                        // real _ListScreenState instance, but the analyzer
+                        // doesn't treat extension bodies as members of the
+                        // extended class.
+                        // ignore: invalid_use_of_protected_member
+                        setState(() {
+                          _smartSelected.clear();
+                          _smartBatchMode = false;
+                        });
+                      }
+                    : null,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 7),
+                  decoration: BoxDecoration(
                     color: _smartSelected.isNotEmpty
-                        ? Colors.white
-                        : AppColors.textDisabled,
+                        ? AppColors.brand
+                        : AppColors.fieldBg,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      l.batchMarkBought,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: _smartSelected.isNotEmpty
+                            ? Colors.white
+                            : AppColors.textDisabled,
+                      ),
+                    ),
                   ),
                 ),
               ),
             )
           else if ((_isSmart && widget.smartItems.isNotEmpty) ||
               (!_isSmart && !_isBudget && widget.simpleItems.isNotEmpty))
-            TutorialTarget(
-              id: 'complete_trip_button',
-              child: GestureDetector(
-                onTap: _confirmCompleteTrip,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: _isSmart ? AppColors.brand : AppColors.danger,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    _isSmart ? l.addToInventoryButton : l.clearBudget,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
+            Flexible(
+              child: TutorialTarget(
+                id: 'complete_trip_button',
+                child: GestureDetector(
+                  onTap: _confirmCompleteTrip,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: _isSmart ? AppColors.brand : AppColors.danger,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        _isSmart ? l.addToInventoryButton : l.clearBudget,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
             )
           else if (_isBudget && widget.budgetItems.isNotEmpty)
-            GestureDetector(
-              onTap: _confirmClearBudget,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 7),
-                decoration: BoxDecoration(
-                  color: AppColors.danger,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  l.clearBudget,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+            Flexible(
+              child: GestureDetector(
+                onTap: _confirmClearBudget,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: AppColors.danger,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      l.clearBudget,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ),
               ),

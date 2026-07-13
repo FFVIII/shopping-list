@@ -172,18 +172,21 @@ class _SegmentBtn extends StatelessWidget {
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
         child: Center(
-          child: AnimatedDefaultTextStyle(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOut,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight:
-                  selected ? FontWeight.w600 : FontWeight.normal,
-              color: selected
-                  ? AppColors.textPrimary
-                  : const Color(0xFF8A8A8A),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOut,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight:
+                    selected ? FontWeight.w600 : FontWeight.normal,
+                color: selected
+                    ? AppColors.textPrimary
+                    : const Color(0xFF8A8A8A),
+              ),
+              child: Text(label),
             ),
-            child: Text(label),
           ),
         ),
       ),
@@ -325,23 +328,20 @@ class _RenameSheetState extends State<_RenameSheet> {
             onSubmitted: (_) => _confirm(),
           ),
           const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brand,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-                elevation: 0,
-              ),
-              onPressed: _confirm,
-              child: Text(
-                l.confirmEdit,
-                style: const TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.w600),
-              ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.brand,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
+              elevation: 0,
+              minimumSize: const Size(double.infinity, 48),
+            ),
+            onPressed: _confirm,
+            child: Text(
+              l.confirmEdit,
+              style: const TextStyle(
+                  fontSize: 15, fontWeight: FontWeight.w600),
             ),
           ),
         ],

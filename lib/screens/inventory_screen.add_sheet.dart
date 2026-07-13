@@ -178,23 +178,20 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
             onChanged: (d) => setState(() => _days = d),
           ),
           const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brand,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: AppColors.divider,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-                elevation: 0,
-              ),
-              onPressed: _nameCtrl.text.trim().isEmpty ? null : _submit,
-              child: Text(
-                l.addToInventoryBtn,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-              ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.brand,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: AppColors.divider,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
+              elevation: 0,
+              minimumSize: const Size(double.infinity, 48),
+            ),
+            onPressed: _nameCtrl.text.trim().isEmpty ? null : _submit,
+            child: Text(
+              l.addToInventoryBtn,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             ),
           ),
         ],

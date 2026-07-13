@@ -343,42 +343,41 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
               },
             ),
             const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 44,
-              child: TextButton(
-                style: TextButton.styleFrom(foregroundColor: AppColors.danger),
-                onPressed: () async {
-                  final ok = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: Text(l.deleteFromInventory),
-                      content: Text(l.deleteConfirmMessage),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: Text(l.cancel),
-                        ),
-                        TextButton(
-                          style: TextButton.styleFrom(
-                              foregroundColor: AppColors.danger),
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: Text(l.delete),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (ok != true || !context.mounted) return;
-                  // Discard pending edits — the item is being removed.
-                  _draft.dirty = false;
-                  Navigator.pop(context);
-                  widget.onDelete();
-                },
-                child: Text(
-                  l.deleteFromInventory,
-                  style: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w500),
-                ),
+            TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.danger,
+                minimumSize: const Size(double.infinity, 44),
+              ),
+              onPressed: () async {
+                final ok = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: Text(l.deleteFromInventory),
+                    content: Text(l.deleteConfirmMessage),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: Text(l.cancel),
+                      ),
+                      TextButton(
+                        style: TextButton.styleFrom(
+                            foregroundColor: AppColors.danger),
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: Text(l.delete),
+                      ),
+                    ],
+                  ),
+                );
+                if (ok != true || !context.mounted) return;
+                // Discard pending edits — the item is being removed.
+                _draft.dirty = false;
+                Navigator.pop(context);
+                widget.onDelete();
+              },
+              child: Text(
+                l.deleteFromInventory,
+                style: const TextStyle(
+                    fontSize: 14, fontWeight: FontWeight.w500),
               ),
             ),
           ],

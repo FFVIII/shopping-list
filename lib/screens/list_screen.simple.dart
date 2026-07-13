@@ -124,12 +124,16 @@ extension _SimpleModeState on _ListScreenState {
       child: Row(
         children: [
           const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: color,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
             ),
           ),
           if (icon != null) ...[
@@ -154,7 +158,7 @@ extension _SimpleModeState on _ListScreenState {
           ),
           if (trailing != null) ...[
             const Spacer(),
-            trailing,
+            Flexible(child: trailing),
           ],
         ],
       ),
