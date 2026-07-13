@@ -301,7 +301,8 @@ extension _InvListBuilders on _InventoryScreenState {
                 BoxDecoration(color: resolvedColor, shape: BoxShape.circle),
           ),
           const SizedBox(width: 8),
-          Flexible(
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 120),
             child: Text(
               l.data(zone),
               maxLines: 1,
@@ -333,7 +334,10 @@ extension _InvListBuilders on _InventoryScreenState {
           ),
           if (trailing != null) ...[
             const Spacer(),
-            Flexible(child: trailing),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 140),
+              child: trailing,
+            ),
           ],
         ],
       ),

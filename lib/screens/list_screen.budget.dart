@@ -97,7 +97,8 @@ extension _BudgetModeState on _ListScreenState {
       ),
       child: Row(
         children: [
-          Flexible(
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 100),
             child: Text(
               l.budgetTotalLabel,
               maxLines: 1,
@@ -110,7 +111,8 @@ extension _BudgetModeState on _ListScreenState {
             ),
           ),
           const Spacer(),
-          Flexible(
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 100),
             child: Text(
               l.budgetCount(widget.budgetItems.length),
               maxLines: 1,
@@ -122,7 +124,8 @@ extension _BudgetModeState on _ListScreenState {
             ),
           ),
           const SizedBox(width: 8),
-          Flexible(
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 140),
             child: Text(
               l.money(total),
               maxLines: 1,

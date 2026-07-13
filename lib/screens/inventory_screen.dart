@@ -353,7 +353,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
           // list and category screens; the header offers Add when not
           // selecting, or Add-to-restock when a batch selection is active.
           if (_batchMode)
-            Flexible(
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 160),
               child: GestureDetector(
                 onTap: _selected.isNotEmpty
                     ? () {

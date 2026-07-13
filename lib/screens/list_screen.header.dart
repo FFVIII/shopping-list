@@ -30,7 +30,8 @@ extension _HeaderAndAddBarState on _ListScreenState {
             ),
           ),
           if (_isSmart && _smartBatchMode)
-            Flexible(
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 160),
               child: GestureDetector(
                 onTap: _smartSelected.isNotEmpty
                     ? () {
@@ -73,7 +74,8 @@ extension _HeaderAndAddBarState on _ListScreenState {
             )
           else if ((_isSmart && widget.smartItems.isNotEmpty) ||
               (!_isSmart && !_isBudget && widget.simpleItems.isNotEmpty))
-            Flexible(
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 160),
               child: TutorialTarget(
                 id: 'complete_trip_button',
                 child: GestureDetector(
@@ -101,7 +103,8 @@ extension _HeaderAndAddBarState on _ListScreenState {
               ),
             )
           else if (_isBudget && widget.budgetItems.isNotEmpty)
-            Flexible(
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 160),
               child: GestureDetector(
                 onTap: _confirmClearBudget,
                 child: Container(
