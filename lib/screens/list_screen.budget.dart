@@ -25,14 +25,10 @@ extension _BudgetModeState on _ListScreenState {
     );
   }
 
-  // Hides items mid-swipe-delete and anything not matching the search query.
-  List<BudgetItem> get _filteredBudgetItems => widget.budgetItems
-      .where((i) => !_pendingDeleteIds.contains(i.id))
-      .where((i) => _queryMatches(i.name))
-      .toList();
-
   Widget _buildBudgetList() {
-    final visible = _filteredBudgetItems;
+    final visible = widget.budgetItems
+        .where((i) => !_pendingDeleteIds.contains(i.id))
+        .toList();
     final sorted = _budgetSort != BudgetSortMode.manual
         ? ([...visible]..sort((a, b) {
             final cmp = _budgetSort == BudgetSortMode.name
@@ -41,38 +37,6 @@ extension _BudgetModeState on _ListScreenState {
             return _budgetDir == SortDir.asc ? cmp : -cmp;
           }))
         : visible;
-
-    Widget rowBuilder(BuildContext ctx, int i, {int? reorderIndex}) {
-      final item = sorted[i];
-      return _BudgetRow(
-        key: Key('budget_${item.id}'),
-        item: item,
-        reorderIndex: reorderIndex,
-        batchMode: _budgetBatchMode,
-        selected: _budgetSelected.contains(item.id),
-        onTap: () => _budgetBatchMode
-            ? _toggleBudgetSelection(item.id)
-            : _showBudgetSheet(item: item),
-        onDelete: () => _handleSwipeDelete(
-            id: item.id,
-            label: L10n.of(context).data(item.name),
-            realDelete: () => widget.onDeleteBudget(item.id)),
-        onHandleTap: () => _budgetBatchMode
-            ? _toggleBudgetSelection(item.id)
-            : _enterBudgetBatchWithItem(item.id),
-      );
-    }
-
-    // Search results aren't draggable (dragging would reorder only the
-    // filtered subset and silently drop the rest from the persisted order).
-    if (_query.isNotEmpty) {
-      return ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-        itemCount: sorted.length,
-        itemBuilder: (ctx, i) => rowBuilder(ctx, i),
-      );
-    }
-
     return ReorderableListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       buildDefaultDragHandles: false,
@@ -96,7 +60,26 @@ extension _BudgetModeState on _ListScreenState {
         child: child,
       ),
       itemCount: sorted.length,
-      itemBuilder: (ctx, i) => rowBuilder(ctx, i, reorderIndex: i),
+      itemBuilder: (ctx, i) {
+        final item = sorted[i];
+        return _BudgetRow(
+          key: Key('budget_${item.id}'),
+          item: item,
+          reorderIndex: i,
+          batchMode: _budgetBatchMode,
+          selected: _budgetSelected.contains(item.id),
+          onTap: () => _budgetBatchMode
+              ? _toggleBudgetSelection(item.id)
+              : _showBudgetSheet(item: item),
+          onDelete: () => _handleSwipeDelete(
+              id: item.id,
+              label: L10n.of(context).data(item.name),
+              realDelete: () => widget.onDeleteBudget(item.id)),
+          onHandleTap: () => _budgetBatchMode
+              ? _toggleBudgetSelection(item.id)
+              : _enterBudgetBatchWithItem(item.id),
+        );
+      },
     );
   }
 
@@ -175,7 +158,7 @@ extension _BudgetModeState on _ListScreenState {
 
 class _BudgetRow extends StatelessWidget {
   final BudgetItem item;
-  final int? reorderIndex;
+  final int reorderIndex;
   final bool batchMode;
   final bool selected;
   final VoidCallback onTap;
@@ -185,7 +168,7 @@ class _BudgetRow extends StatelessWidget {
   const _BudgetRow({
     super.key,
     required this.item,
-    this.reorderIndex,
+    required this.reorderIndex,
     required this.batchMode,
     required this.selected,
     required this.onTap,
@@ -264,8 +247,9 @@ class _BudgetRow extends StatelessWidget {
                   ),
                 ),
               ),
-              () {
-                final price = Padding(
+              ReorderableDragStartListener(
+                index: reorderIndex,
+                child: Padding(
                   padding: const EdgeInsets.only(left: 10),
                   child: Text(
                     l.money(item.lineTotal),
@@ -275,12 +259,8 @@ class _BudgetRow extends StatelessWidget {
                       color: AppColors.textPrimary,
                     ),
                   ),
-                );
-                return reorderIndex != null
-                    ? ReorderableDragStartListener(
-                        index: reorderIndex!, child: price)
-                    : price;
-              }(),
+                ),
+              ),
               DragHandle(index: reorderIndex, onTap: onHandleTap),
             ],
           ),

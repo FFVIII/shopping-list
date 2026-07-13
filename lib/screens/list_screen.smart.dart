@@ -3,12 +3,9 @@ part of 'list_screen.dart';
 // ── Smart mode state extension ────────────────────────────────────────────────
 
 extension _SmartModeState on _ListScreenState {
-  // Hides items mid-swipe-delete (undo toast still up) and anything not
-  // matching the search query, from every grouping.
+  // Hides items mid-swipe-delete (undo toast still up) from every grouping.
   List<ShoppingItem> get _visibleSmartItems => widget.smartItems
       .where((i) => !_pendingDeleteIds.contains(i.id))
-      .where((i) => _queryMatches(i.name,
-          category: i.category.name, shelfZone: i.shelfZone))
       .toList();
 
   Map<String, List<ShoppingItem>> _groupByShelf() {
@@ -143,56 +140,44 @@ extension _SmartModeState on _ListScreenState {
 
     final firstHeaderIndex = flat.indexWhere((e) => e.isHeader);
 
-    Widget itemBuilder(BuildContext ctx, int i, {int? reorderIndex}) {
-      final entry = flat[i];
-      if (entry.isHeader) {
-        return _buildSectionHeader(
-          entry.groupKey,
-          groupCounts[entry.groupKey] ?? 0,
-          color: groupColors[entry.groupKey],
-          key: Key('h_${entry.groupKey}'),
-          trailing: i == firstHeaderIndex ? _buildSummaryTrailing() : null,
-        );
-      }
-      final item = entry.item!;
-      final zoneColor = item.category.color;
-      return _SmartRow(
-        key: Key('si_${item.id}'),
-        item: item,
-        zoneColor: zoneColor,
-        onToggle: () => widget.onToggleSmart(item.id),
-        onDelete: () => _handleSwipeDelete(
-            id: item.id,
-            label: L10n.of(context).data(item.name),
-            realDelete: () => widget.onDeleteSmart(item.id)),
-        onLongPress: _smartBatchMode ? null : () => _enterSmartBatchWithItem(item.id),
-        reorderIndex: reorderIndex,
-        batchMode: _smartBatchMode,
-        selected: _smartSelected.contains(item.id),
-        onSelect: () => _toggleSmartSelection(item.id),
-        tripSelected: _tripSelected.contains(item.id),
-        onTripToggle: () => _toggleTripSelection(item.id),
-        onHandleTap: _smartBatchMode
-            ? () => _toggleSmartSelection(item.id)
-            : () => _enterSmartBatchWithItem(item.id),
-      );
-    }
-
-    // Search results aren't draggable (dragging would reorder only the
-    // filtered subset and silently drop the rest from the persisted order).
-    if (_query.isNotEmpty) {
-      return ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-        itemCount: flat.length,
-        itemBuilder: (ctx, i) => itemBuilder(ctx, i),
-      );
-    }
-
     return ReorderableListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       buildDefaultDragHandles: false,
       itemCount: flat.length,
-      itemBuilder: (ctx, i) => itemBuilder(ctx, i, reorderIndex: i),
+      itemBuilder: (ctx, i) {
+        final entry = flat[i];
+        if (entry.isHeader) {
+          return _buildSectionHeader(
+            entry.groupKey,
+            groupCounts[entry.groupKey] ?? 0,
+            color: groupColors[entry.groupKey],
+            key: Key('h_${entry.groupKey}'),
+            trailing: i == firstHeaderIndex ? _buildSummaryTrailing() : null,
+          );
+        }
+        final item = entry.item!;
+        final zoneColor = item.category.color;
+        return _SmartRow(
+          key: Key('si_${item.id}'),
+          item: item,
+          zoneColor: zoneColor,
+          onToggle: () => widget.onToggleSmart(item.id),
+          onDelete: () => _handleSwipeDelete(
+              id: item.id,
+              label: L10n.of(context).data(item.name),
+              realDelete: () => widget.onDeleteSmart(item.id)),
+          onLongPress: _smartBatchMode ? null : () => _enterSmartBatchWithItem(item.id),
+          reorderIndex: i,
+          batchMode: _smartBatchMode,
+          selected: _smartSelected.contains(item.id),
+          onSelect: () => _toggleSmartSelection(item.id),
+          tripSelected: _tripSelected.contains(item.id),
+          onTripToggle: () => _toggleTripSelection(item.id),
+          onHandleTap: _smartBatchMode
+              ? () => _toggleSmartSelection(item.id)
+              : () => _enterSmartBatchWithItem(item.id),
+        );
+      },
       onReorderItem: (old, newIdx) => _onSmartReorder(old, newIdx, flat),
       proxyDecorator: (child, index, animation) => Material(
         elevation: 6,
@@ -263,7 +248,7 @@ class _SmartRow extends StatelessWidget {
   final VoidCallback onToggle;
   final VoidCallback onDelete;
   final VoidCallback? onLongPress;
-  final int? reorderIndex;
+  final int reorderIndex;
   final bool batchMode;
   final bool selected;
   final VoidCallback? onSelect;
@@ -278,7 +263,7 @@ class _SmartRow extends StatelessWidget {
     required this.onToggle,
     required this.onDelete,
     this.onLongPress,
-    this.reorderIndex,
+    required this.reorderIndex,
     this.batchMode = false,
     this.selected = false,
     this.onSelect,
@@ -431,11 +416,10 @@ class _SmartRow extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (reorderIndex != null)
-                    ReorderableDragStartListener(
-                      index: reorderIndex!,
-                      child: const SizedBox(width: 12),
-                    ),
+                  ReorderableDragStartListener(
+                    index: reorderIndex,
+                    child: const SizedBox(width: 12),
+                  ),
                   DragHandle(index: reorderIndex, onTap: onHandleTap),
                 ],
               ),

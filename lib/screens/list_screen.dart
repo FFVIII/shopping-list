@@ -146,9 +146,6 @@ class _ListScreenState extends State<ListScreen> {
   // Items mid-swipe-delete: hidden from view while their undo toast is up.
   final Set<String> _pendingDeleteIds = {};
 
-  final _searchCtrl = TextEditingController();
-  String _query = '';
-
   final _nameCtrl = TextEditingController();
   final _nameFocus = FocusNode();
   bool _tutorialPrefilled = false;
@@ -243,7 +240,6 @@ class _ListScreenState extends State<ListScreen> {
   void dispose() {
     _nameCtrl.dispose();
     _nameFocus.dispose();
-    _searchCtrl.dispose();
     _speech.cancel();
     super.dispose();
   }
@@ -251,16 +247,6 @@ class _ListScreenState extends State<ListScreen> {
   List<ShoppingItem> get _activeItems =>
       _isSmart ? widget.smartItems : widget.simpleItems;
   int get _pendingCount => _activeItems.where((i) => !i.checked).length;
-
-  // Search matching, shared across all three modes: name always checked,
-  // category/shelfZone optional (budget items have neither).
-  bool _queryMatches(String name, {String? category, String? shelfZone}) {
-    if (_query.isEmpty) return true;
-    final q = _query.toLowerCase();
-    return name.toLowerCase().contains(q) ||
-        (category != null && category.toLowerCase().contains(q)) ||
-        (shelfZone != null && shelfZone.toLowerCase().contains(q));
-  }
 
   // Trailing summary text ("1 left · Jul 3"), tucked onto the first section
   // header of the Simple/Plan lists rather than the page header, so it only
@@ -363,7 +349,6 @@ class _ListScreenState extends State<ListScreen> {
         child: Column(
           children: [
             _buildHeader(),
-            _buildSearchBar(),
             _buildModeToggle(),
             if (_isSmart) _buildSmartSubToggle(),
             if (!_isSmart && !_isBudget) _buildSimpleSortToggle(),
@@ -373,17 +358,12 @@ class _ListScreenState extends State<ListScreen> {
               child: _isBudget
                   ? (widget.budgetItems.isEmpty
                       ? _budgetEmptyState()
-                      : (_filteredBudgetItems.isEmpty
-                          ? _searchEmptyState()
-                          : _buildBudgetList()))
+                      : _buildBudgetList())
                   : _activeItems.isEmpty
                       ? _emptyState()
-                      : (_isSmart ? _visibleSmartItems : _visibleSimpleItems)
-                              .isEmpty
-                          ? _searchEmptyState()
-                          : _isSmart
-                              ? _buildSmartList()
-                              : _buildSimpleList(),
+                      : _isSmart
+                          ? _buildSmartList()
+                          : _buildSimpleList(),
             ),
             if (_isBudget && widget.budgetItems.isNotEmpty && !_budgetBatchMode)
               _buildBudgetTotalBar(),

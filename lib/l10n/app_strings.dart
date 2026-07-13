@@ -80,7 +80,7 @@ abstract class AppStrings {
   String inventorySummary(int total, int restock);
   String get searchHint;
   String get inventoryEmptyTitle;
-  String searchNoResults(String query);
+  String inventoryNoResults(String query);
   String get inventoryEmptySubtitle;
   String get inventoryEmptySubtitleQuery;
   String get addManually;
@@ -270,7 +270,7 @@ class ZhStrings extends AppStrings {
   @override String inventorySummary(int t, int r) => '$t件常备 · $r件需补货';
   @override String get searchHint => '搜索商品或货架';
   @override String get inventoryEmptyTitle => '库存还是空的';
-  @override String searchNoResults(String q) => '没有找到「$q」';
+  @override String inventoryNoResults(String q) => '没有找到「$q」';
   @override String get inventoryEmptySubtitle => '先从清单购买并记录到库存';
   @override String get inventoryEmptySubtitleQuery => '试试其他关键词';
   @override String get addManually => '手动添加商品';
@@ -474,7 +474,7 @@ class EnStrings extends AppStrings {
   @override String inventorySummary(int t, int r) => '$t stocked · $r to restock';
   @override String get searchHint => 'Search items or aisle';
   @override String get inventoryEmptyTitle => 'Inventory is empty';
-  @override String searchNoResults(String q) => 'No results for "$q"';
+  @override String inventoryNoResults(String q) => 'No results for "$q"';
   @override String get inventoryEmptySubtitle => 'Buy from your list and log it here';
   @override String get inventoryEmptySubtitleQuery => 'Try another keyword';
   @override String get addManually => 'Add item manually';

@@ -344,7 +344,7 @@ extension _InvListBuilders on _InventoryScreenState {
           Text(
             _query.isEmpty
                 ? l.inventoryEmptyTitle
-                : l.searchNoResults(_query),
+                : l.inventoryNoResults(_query),
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
