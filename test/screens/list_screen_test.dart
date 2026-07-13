@@ -357,6 +357,26 @@ void main() {
   );
 
   testWidgets(
+    'completing a simple-mode trip with nothing bought shows no celebration',
+    (tester) async {
+      var completed = false;
+      await _pumpList(
+        tester,
+        simpleItems: [_simple('a', '牛奶')],
+        onCompleteSimple: () => completed = true,
+      );
+
+      await tester.tap(find.text('清空'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(ZhStrings().delete));
+      await tester.pump();
+
+      expect(completed, isTrue);
+      expect(find.text(ZhStrings().tripCompletedCelebration), findsNothing);
+    },
+  );
+
+  testWidgets(
     'completing a smart-mode trip shows the completion celebration',
     (tester) async {
       List<String>? completedIds;

@@ -284,7 +284,9 @@ class _ListScreenState extends State<ListScreen> {
     );
     if (ok != true) return;
     widget.onCompleteSimple();
-    if (mounted) {
+    // Only celebrate if something was actually bought — an empty trip isn't
+    // an accomplishment.
+    if (mounted && bought > 0) {
       HapticFeedback.mediumImpact();
       showCompletionCelebration(context, l.tripCompletedCelebration);
     }
@@ -311,7 +313,8 @@ class _ListScreenState extends State<ListScreen> {
                 ..addAll(selectedIds);
             });
             widget.onCompleteSmart(selectedIds);
-            if (mounted) {
+            // Only celebrate if something was actually saved to inventory.
+            if (mounted && selectedIds.isNotEmpty) {
               HapticFeedback.mediumImpact();
               showCompletionCelebration(
                   context, L10n.of(context).tripCompletedCelebration);
