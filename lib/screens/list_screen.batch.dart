@@ -15,6 +15,7 @@ extension _ListBatch on _ListScreenState {
   }
 
   void _toggleSimpleSelection(String id) {
+    HapticFeedback.selectionClick();
     setState(() {
       if (_simpleSelected.contains(id)) {
         _simpleSelected.remove(id);
@@ -87,6 +88,7 @@ extension _ListBatch on _ListScreenState {
   }
 
   void _toggleSmartSelection(String id) {
+    HapticFeedback.selectionClick();
     setState(() {
       if (_smartSelected.contains(id)) {
         _smartSelected.remove(id);
@@ -97,6 +99,7 @@ extension _ListBatch on _ListScreenState {
   }
 
   void _toggleTripSelection(String id) {
+    HapticFeedback.selectionClick();
     setState(() {
       if (_tripSelected.contains(id)) {
         _tripSelected.remove(id);
@@ -114,6 +117,7 @@ extension _ListBatch on _ListScreenState {
   }
 
   void _toggleBudgetSelection(String id) {
+    HapticFeedback.selectionClick();
     setState(() {
       if (_budgetSelected.contains(id)) {
         _budgetSelected.remove(id);

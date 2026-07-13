@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme/app_colors.dart';
 import '../widgets/drag_handle.dart';
 import '../models/item.dart';
@@ -98,6 +99,7 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
   }
 
   void _handleReorder(int oldIndex, int newIndex) {
+    HapticFeedback.lightImpact();
     widget.onReorder(oldIndex, newIndex);
     setState(() {
       final item = _categories.removeAt(oldIndex);

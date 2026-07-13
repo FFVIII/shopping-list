@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme/app_colors.dart';
 import '../widgets/drag_handle.dart';
 import '../widgets/sort_toggle_button.dart';
@@ -54,6 +55,7 @@ class _ShelfOrderScreenState extends State<ShelfOrderScreen> {
   }
 
   void _handleReorder(int oldIndex, int newIndex) {
+    HapticFeedback.lightImpact();
     final wasUnsorted = _sortDir == null;
     final reordered = List<String>.from(_displayCodes);
     final moved = reordered.removeAt(oldIndex);
