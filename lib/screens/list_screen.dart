@@ -284,7 +284,10 @@ class _ListScreenState extends State<ListScreen> {
     );
     if (ok != true) return;
     widget.onCompleteSimple();
-    if (mounted) showCompletionCelebration(context, l.tripCompletedCelebration);
+    if (mounted) {
+      HapticFeedback.mediumImpact();
+      showCompletionCelebration(context, l.tripCompletedCelebration);
+    }
   }
 
   void _confirmCompleteTrip() {
@@ -309,6 +312,7 @@ class _ListScreenState extends State<ListScreen> {
             });
             widget.onCompleteSmart(selectedIds);
             if (mounted) {
+              HapticFeedback.mediumImpact();
               showCompletionCelebration(
                   context, L10n.of(context).tripCompletedCelebration);
             }

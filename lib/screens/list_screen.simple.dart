@@ -41,7 +41,10 @@ extension _SimpleModeState on _ListScreenState {
                 key: Key('p_${item.id}'),
                 item: item,
                 reorderIndex: i,
-                onToggle: () => widget.onToggleSimple(item.id),
+                onToggle: () {
+                  HapticFeedback.lightImpact();
+                  widget.onToggleSimple(item.id);
+                },
                 onDelete: () => _handleSwipeDelete(id: item.id, label: l.data(item.name), realDelete: () => widget.onDeleteSimple(item.id)),
                 onLongPress: () => _showRenameSheet(item, false),
                 showDragHandle: true,
@@ -54,6 +57,7 @@ extension _SimpleModeState on _ListScreenState {
               );
             },
             onReorderItem: (oldIdx, newIdx) {
+              HapticFeedback.lightImpact();
               final newPending = [...pending];
               final moved = newPending.removeAt(oldIdx);
               newPending.insert(newIdx, moved);
@@ -92,7 +96,10 @@ extension _SimpleModeState on _ListScreenState {
                 ...done.map((item) => _SimpleRow(
                       key: Key('d_${item.id}'),
                       item: item,
-                      onToggle: () => widget.onToggleSimple(item.id),
+                      onToggle: () {
+                  HapticFeedback.lightImpact();
+                  widget.onToggleSimple(item.id);
+                },
                       onDelete: () => _handleSwipeDelete(id: item.id, label: l.data(item.name), realDelete: () => widget.onDeleteSimple(item.id)),
                       onLongPress: () => _showRenameSheet(item, false),
                       batchMode: _simpleBatchMode,

@@ -75,6 +75,7 @@ extension _SmartModeState on _ListScreenState {
 
   void _onSmartReorder(int oldIndex, int newIndex, List<_FlatEntry> flat) {
     if (flat[oldIndex].isHeader) return;
+    HapticFeedback.lightImpact();
     final movedItem = flat[oldIndex].item!;
 
     final mutable = List<_FlatEntry>.from(flat);
@@ -161,7 +162,10 @@ extension _SmartModeState on _ListScreenState {
           key: Key('si_${item.id}'),
           item: item,
           zoneColor: zoneColor,
-          onToggle: () => widget.onToggleSmart(item.id),
+          onToggle: () {
+            HapticFeedback.lightImpact();
+            widget.onToggleSmart(item.id);
+          },
           onDelete: () => _handleSwipeDelete(
               id: item.id,
               label: L10n.of(context).data(item.name),

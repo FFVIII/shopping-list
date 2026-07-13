@@ -41,6 +41,7 @@ extension _BudgetModeState on _ListScreenState {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       buildDefaultDragHandles: false,
       onReorderItem: (oldIdx, newIdx) {
+        HapticFeedback.lightImpact();
         final newSorted = [...sorted];
         final moved = newSorted.removeAt(oldIdx);
         newSorted.insert(newIdx, moved);

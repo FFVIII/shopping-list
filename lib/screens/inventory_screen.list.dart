@@ -22,6 +22,7 @@ extension _InvListBuilders on _InventoryScreenState {
           thresholdDays: widget.thresholdDays,
           onTap: _batchMode
               ? () => setState(() {
+                    HapticFeedback.selectionClick();
                     if (_selected.contains(item.id)) {
                       _selected.remove(item.id);
                     } else {
@@ -33,6 +34,7 @@ extension _InvListBuilders on _InventoryScreenState {
           batchMode: _batchMode,
           selected: _selected.contains(item.id),
           onHandleTap: () => setState(() {
+            HapticFeedback.selectionClick();
             if (_batchMode) {
               if (_selected.contains(item.id)) {
                 _selected.remove(item.id);
@@ -66,6 +68,7 @@ extension _InvListBuilders on _InventoryScreenState {
                 thresholdDays: widget.thresholdDays,
                 onTap: _batchMode
                     ? () => setState(() {
+                          HapticFeedback.selectionClick();
                           if (_selected.contains(item.id)) {
                             _selected.remove(item.id);
                           } else {
@@ -77,6 +80,7 @@ extension _InvListBuilders on _InventoryScreenState {
                 batchMode: _batchMode,
                 selected: _selected.contains(item.id),
                 onHandleTap: () => setState(() {
+                  HapticFeedback.selectionClick();
                   if (_batchMode) {
                     if (_selected.contains(item.id)) {
                       _selected.remove(item.id);
@@ -140,6 +144,7 @@ extension _InvListBuilders on _InventoryScreenState {
           thresholdDays: widget.thresholdDays,
           onTap: _batchMode
               ? () => setState(() {
+                    HapticFeedback.selectionClick();
                     if (_selected.contains(item.id)) {
                       _selected.remove(item.id);
                     } else {
@@ -152,6 +157,7 @@ extension _InvListBuilders on _InventoryScreenState {
           batchMode: _batchMode,
           selected: _selected.contains(item.id),
           onHandleTap: () => setState(() {
+            HapticFeedback.selectionClick();
             if (_batchMode) {
               if (_selected.contains(item.id)) {
                 _selected.remove(item.id);
@@ -231,6 +237,7 @@ extension _InvListBuilders on _InventoryScreenState {
 
   void _onInvReorder(int oldIndex, int newIndex, List<_InvEntry> flat) {
     if (flat[oldIndex].isHeader) return;
+    HapticFeedback.lightImpact();
     final movedItem = flat[oldIndex].item!;
 
     final mutable = List<_InvEntry>.from(flat);
