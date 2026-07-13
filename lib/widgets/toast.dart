@@ -262,21 +262,23 @@ class _CelebrationCardState extends State<_CelebrationCard>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 1500),
     );
+    // Weights are ms-out-of-1500: pop-in and settle stay snappy (same
+    // absolute timing as before), the extra time all goes into the hold.
     _scale = TweenSequence<double>([
       TweenSequenceItem(
         tween: Tween(begin: 0.4, end: 1.12)
             .chain(CurveTween(curve: Curves.easeOutBack)),
-        weight: 40,
+        weight: 24,
       ),
-      TweenSequenceItem(tween: Tween(begin: 1.12, end: 1.0), weight: 15),
-      TweenSequenceItem(tween: ConstantTween(1.0), weight: 30),
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.92), weight: 15),
+      TweenSequenceItem(tween: Tween(begin: 1.12, end: 1.0), weight: 9),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 58),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.92), weight: 9),
     ]).animate(_controller);
     _opacity = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 15),
-      TweenSequenceItem(tween: ConstantTween(1.0), weight: 65),
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 9),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 71),
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 20),
     ]).animate(_controller);
     _controller.forward().whenComplete(widget.onDone);
