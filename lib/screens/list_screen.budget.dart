@@ -302,6 +302,8 @@ class _BudgetSheetState extends State<_BudgetSheet> {
   late final TextEditingController _nameCtrl;
   late final TextEditingController _qtyCtrl;
   late final TextEditingController _priceCtrl;
+  final _priceFocus = FocusNode();
+  final _qtyFocus = FocusNode();
 
   @override
   void initState() {
@@ -322,13 +324,16 @@ class _BudgetSheetState extends State<_BudgetSheet> {
     _nameCtrl.dispose();
     _qtyCtrl.dispose();
     _priceCtrl.dispose();
+    _priceFocus.dispose();
+    _qtyFocus.dispose();
     super.dispose();
   }
 
   // When a name is already provided (typed in the add bar, or editing an
-  // existing item), focus the quantity field instead of re-focusing the name —
+  // existing item), focus the price field instead of re-focusing the name —
   // otherwise opening the sheet yanks the keyboard back onto the name the user
-  // just entered.
+  // just entered. Price comes before quantity in the entry flow (spec: after
+  // the name, the amount is what the user wants to key in next).
   bool get _namePrefilled =>
       (widget.item?.name ?? widget.initialName).trim().isNotEmpty;
 
@@ -401,7 +406,8 @@ class _BudgetSheetState extends State<_BudgetSheet> {
               autofocus: !_namePrefilled,
               style: const TextStyle(fontSize: 15),
               decoration: _dec(l.productNameHint),
-              onSubmitted: (_) => _confirm(),
+              textInputAction: TextInputAction.next,
+              onSubmitted: (_) => _priceFocus.requestFocus(),
             ),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -413,11 +419,15 @@ class _BudgetSheetState extends State<_BudgetSheet> {
                       _label(l.unitPriceFieldLabel),
                       TextField(
                         controller: _priceCtrl,
+                        focusNode: _priceFocus,
+                        autofocus: _namePrefilled,
                         keyboardType: const TextInputType.numberWithOptions(
                             decimal: true),
                         style: const TextStyle(fontSize: 15),
                         decoration: _dec(l.currencySymbol),
+                        textInputAction: TextInputAction.next,
                         onChanged: (_) => setState(() {}),
+                        onSubmitted: (_) => _qtyFocus.requestFocus(),
                       ),
                     ],
                   ),
@@ -430,11 +440,13 @@ class _BudgetSheetState extends State<_BudgetSheet> {
                       _label(l.quantityFieldLabel),
                       TextField(
                         controller: _qtyCtrl,
-                        autofocus: _namePrefilled,
+                        focusNode: _qtyFocus,
                         keyboardType: TextInputType.number,
                         style: const TextStyle(fontSize: 15),
                         decoration: _dec('1'),
+                        textInputAction: TextInputAction.done,
                         onChanged: (_) => setState(() {}),
+                        onSubmitted: (_) => _confirm(),
                       ),
                     ],
                   ),

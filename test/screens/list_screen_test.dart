@@ -359,4 +359,25 @@ void main() {
       expect(find.text(ZhStrings().tripCompletedCelebration), findsOneWidget);
     },
   );
+
+  // ── Budget add-expense sheet ──────────────────────────────────────────────
+
+  testWidgets(
+    'opening the add-expense sheet after typing a name focuses price, not '
+    'quantity', (tester) async {
+      await _pumpList(tester);
+
+      await tester.tap(find.text('记账'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), '牛奶');
+      await tester.tap(find.byIcon(Icons.add_rounded));
+      await tester.pumpAndSettle();
+
+      final focused = tester.widgetList<TextField>(find.byType(TextField)).where(
+          (w) => w.focusNode?.hasFocus ?? false);
+      expect(focused, hasLength(1));
+      expect(focused.single.decoration?.hintText, ZhStrings().currencySymbol);
+    },
+  );
 }
