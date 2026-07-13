@@ -323,8 +323,11 @@ class ZhStrings extends AppStrings {
   @override String get sectionReminder => '提醒';
   @override String get restockReminder => '补货提醒';
   @override String get reminderTimeLabel => '提醒时间';
-  @override String reminderTimeDisplay(int h, int m) =>
-      '每天 ${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
+  @override String reminderTimeDisplay(int h, int m) {
+    final period = h < 12 ? '上午' : '下午';
+    final h12 = h % 12 == 0 ? 12 : h % 12;
+    return '每天 $period$h12:${m.toString().padLeft(2, '0')}';
+  }
   @override String get advanceDays => '提前天数';
   @override String get customDaysLabel => '自定义';
   @override String get dayUnit => '天';
@@ -522,8 +525,11 @@ class EnStrings extends AppStrings {
   @override String get sectionReminder => 'Reminders';
   @override String get restockReminder => 'Restock reminder';
   @override String get reminderTimeLabel => 'Reminder time';
-  @override String reminderTimeDisplay(int h, int m) =>
-      'Daily ${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
+  @override String reminderTimeDisplay(int h, int m) {
+    final period = h < 12 ? 'AM' : 'PM';
+    final h12 = h % 12 == 0 ? 12 : h % 12;
+    return 'Daily $h12:${m.toString().padLeft(2, '0')} $period';
+  }
   @override String get advanceDays => 'Lead days';
   @override String get customDaysLabel => 'Custom';
   @override String get dayUnit => 'days';
