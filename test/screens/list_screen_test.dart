@@ -299,8 +299,11 @@ void main() {
     (tester) async {
       await _pumpList(
         tester,
-        simpleItems: [_simple('a', '牛奶')],
-        budgetItems: [_budget('b', '鸡蛋')],
+        // Checked so the "Clear" header pill actually renders — otherwise
+        // this wouldn't exercise the header-pill overflow fix at all.
+        simpleItems: [_simple('a', '牛奶', checked: true)],
+        smartItems: [_smart('b', '鸡蛋')],
+        budgetItems: [_budget('c', '面包')],
         textScaler: const TextScaler.linear(3.0),
       );
       expect(tester.takeException(), isNull);
@@ -323,7 +326,8 @@ void main() {
       // makes them split the whole row 50/50 instead of "title takes what's
       // left after the pill's own natural width" — the pill ends up stuck
       // around the row's midpoint instead of hugging the right edge.
-      await _pumpList(tester, simpleItems: [_simple('a', '牛奶')]);
+      await _pumpList(
+          tester, simpleItems: [_simple('a', '牛奶', checked: true)]);
 
       final screenWidth = tester
           .getTopRight(find.byType(MaterialApp))
@@ -357,22 +361,13 @@ void main() {
   );
 
   testWidgets(
-    'completing a simple-mode trip with nothing bought shows no celebration',
+    'the "Clear" button is hidden in simple mode until something is checked',
     (tester) async {
-      var completed = false;
-      await _pumpList(
-        tester,
-        simpleItems: [_simple('a', '牛奶')],
-        onCompleteSimple: () => completed = true,
-      );
-
-      await tester.tap(find.text('清空'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text(ZhStrings().delete));
-      await tester.pump();
-
-      expect(completed, isTrue);
-      expect(find.text(ZhStrings().tripCompletedCelebration), findsNothing);
+      // Regression test: the button used to show (and be tappable, opening a
+      // "0 bought item(s)" dialog that did nothing useful) as soon as the
+      // list had any items at all, checked or not.
+      await _pumpList(tester, simpleItems: [_simple('a', '牛奶')]);
+      expect(find.text('清空'), findsNothing);
     },
   );
 

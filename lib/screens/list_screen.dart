@@ -463,7 +463,9 @@ class _ListScreenState extends State<ListScreen> {
               ),
             )
           else if ((_isSmart && widget.smartItems.isNotEmpty) ||
-              (!_isSmart && !_isBudget && widget.simpleItems.isNotEmpty))
+              (!_isSmart &&
+                  !_isBudget &&
+                  widget.simpleItems.any((i) => i.checked)))
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 160),
               child: TutorialTarget(
