@@ -57,6 +57,8 @@ Future<void> _pumpList(
   void Function(String name)? onAddSimple,
   void Function(List<String> ids)? onBatchDeleteSimple,
   void Function(List<String> ids)? onBatchMarkBought,
+  VoidCallback? onCompleteSimple,
+  void Function(List<String> ids)? onCompleteSmart,
   TextScaler textScaler = TextScaler.noScaling,
 }) async {
   tester.view.physicalSize = const Size(1290, 2796);
@@ -81,8 +83,8 @@ Future<void> _pumpList(
             onAddSmart: (_, _, _, _, _, _) {},
             onDeleteSimple: (_) {},
             onDeleteSmart: (_) {},
-            onCompleteSimple: () {},
-            onCompleteSmart: (_) {},
+            onCompleteSimple: onCompleteSimple ?? () {},
+            onCompleteSmart: onCompleteSmart ?? (_) {},
             onReorderSimple: (_) {},
             onReorderSmart: (_, _, _, _, _) {},
             onRenameSimple: (_, _) {},
@@ -329,6 +331,51 @@ void main() {
       final pillRight = tester.getTopRight(find.text('清空')).dx;
 
       expect(pillRight, greaterThan(screenWidth * 0.7));
+    },
+  );
+
+  // ── Trip-completion celebration ──────────────────────────────────────────
+
+  testWidgets(
+    'completing a simple-mode trip shows the completion celebration',
+    (tester) async {
+      var completed = false;
+      await _pumpList(
+        tester,
+        simpleItems: [_simple('a', '牛奶', checked: true)],
+        onCompleteSimple: () => completed = true,
+      );
+
+      await tester.tap(find.text('清空'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(ZhStrings().delete));
+      await tester.pump();
+
+      expect(completed, isTrue);
+      expect(find.text(ZhStrings().tripCompletedCelebration), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'completing a smart-mode trip shows the completion celebration',
+    (tester) async {
+      List<String>? completedIds;
+      await _pumpList(
+        tester,
+        smartItems: [_smart('a', '牛奶')],
+        onCompleteSmart: (ids) => completedIds = ids,
+      );
+
+      await tester.tap(find.text('计划'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(ZhStrings().addToInventoryButton));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(
+          ElevatedButton, ZhStrings().addToInventoryButton));
+      await tester.pump();
+
+      expect(completedIds, ['a']);
+      expect(find.text(ZhStrings().tripCompletedCelebration), findsOneWidget);
     },
   );
 }

@@ -217,3 +217,118 @@ class _ToastCardState extends State<_ToastCard> {
     );
   }
 }
+
+/// A brief animated checkmark + caption shown center-screen in the root
+/// [Overlay] — the "done!" moment after completing a shopping trip.
+/// Self-dismisses once its animation finishes (~900ms); does not block input.
+void showCompletionCelebration(BuildContext context, String message) {
+  final overlay = Overlay.maybeOf(context);
+  if (overlay == null) return;
+
+  late final OverlayEntry entry;
+  entry = OverlayEntry(
+    builder: (ctx) => Positioned.fill(
+      child: IgnorePointer(
+        child: Center(
+          child: _CelebrationCard(
+            message: message,
+            onDone: () => entry.remove(),
+          ),
+        ),
+      ),
+    ),
+  );
+  overlay.insert(entry);
+}
+
+class _CelebrationCard extends StatefulWidget {
+  final String message;
+  final VoidCallback onDone;
+  const _CelebrationCard({required this.message, required this.onDone});
+
+  @override
+  State<_CelebrationCard> createState() => _CelebrationCardState();
+}
+
+class _CelebrationCardState extends State<_CelebrationCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+  late final Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _scale = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(begin: 0.4, end: 1.12)
+            .chain(CurveTween(curve: Curves.easeOutBack)),
+        weight: 40,
+      ),
+      TweenSequenceItem(tween: Tween(begin: 1.12, end: 1.0), weight: 15),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 30),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.92), weight: 15),
+    ]).animate(_controller);
+    _opacity = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 15),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 65),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 20),
+    ]).animate(_controller);
+    _controller.forward().whenComplete(widget.onDone);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _opacity,
+      child: ScaleTransition(
+        scale: _scale,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 22),
+            decoration: BoxDecoration(
+              color: const Color(0xFF313131).withValues(alpha: 0.92),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF8BD17C),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check_rounded,
+                      color: Colors.white, size: 32),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  widget.message,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                    decoration: TextDecoration.none,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

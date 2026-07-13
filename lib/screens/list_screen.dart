@@ -284,6 +284,7 @@ class _ListScreenState extends State<ListScreen> {
     );
     if (ok != true) return;
     widget.onCompleteSimple();
+    if (mounted) showCompletionCelebration(context, l.tripCompletedCelebration);
   }
 
   void _confirmCompleteTrip() {
@@ -307,6 +308,10 @@ class _ListScreenState extends State<ListScreen> {
                 ..addAll(selectedIds);
             });
             widget.onCompleteSmart(selectedIds);
+            if (mounted) {
+              showCompletionCelebration(
+                  context, L10n.of(context).tripCompletedCelebration);
+            }
           },
         ),
       );

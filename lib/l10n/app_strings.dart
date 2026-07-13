@@ -20,6 +20,7 @@ abstract class AppStrings {
   String get completeTripTitle; // "完成购物？" / "Finish shopping?"
   String completeTripMessage(int bought); // explains what completing does
   String get tripInventoryHint; // sheet hint about saving to inventory
+  String get tripCompletedCelebration; // brief "all done!" shown after completing a trip
   String get cancel; // "取消" / "Cancel"
   String get smartHint; // smart-mode explanation banner
   String get modeSimple;
@@ -208,6 +209,7 @@ class ZhStrings extends AppStrings {
       '已买到的 $bought 件会从清单移除，未买到的会保留在清单里。';
   @override String get tripInventoryHint =>
       '购买后将保存到库存，取消勾选则不保存。';
+  @override String get tripCompletedCelebration => '搞定！';
   @override String get cancel => '取消';
   @override String get smartHint =>
       '圆圈选中=将存入库存；点「完成购物」完成本次采购。';
@@ -409,6 +411,7 @@ class EnStrings extends AppStrings {
       '$bought bought item(s) will be removed from the list; unbought ones stay.';
   @override String get tripInventoryHint =>
       'Unchecked items won\'t be saved to inventory.';
+  @override String get tripCompletedCelebration => 'All done!';
   @override String get cancel => 'Cancel';
   @override String get smartHint =>
       'Circles mark items to save to inventory. Tap \'Done\' to finish shopping.';
