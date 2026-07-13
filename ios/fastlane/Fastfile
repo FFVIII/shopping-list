@@ -1,0 +1,44 @@
+default_platform(:ios)
+
+platform :ios do
+  IPA_PATH = "../build/ios/ipa/shopping_list.ipa"
+
+  def app_store_connect_key
+    app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"],
+      issuer_id: ENV["ASC_ISSUER_ID"],
+      key_filepath: File.expand_path("fastlane/AuthKey_NH64PBF76Y.p8", "..")
+    )
+  end
+
+  desc "Build the release IPA via `flutter build ipa`"
+  lane :build do
+    Dir.chdir("..") do
+      sh("flutter", "clean")
+      sh("flutter", "build", "ipa", "--release")
+    end
+  end
+
+  desc "Build and upload a new beta build to TestFlight"
+  lane :beta do
+    app_store_connect_key
+    build
+    upload_to_testflight(
+      ipa: IPA_PATH,
+      skip_waiting_for_build_processing: true
+    )
+  end
+
+  desc "Build and submit a new build to App Store review"
+  lane :release do
+    app_store_connect_key
+    build
+    upload_to_app_store(
+      ipa: IPA_PATH,
+      skip_screenshots: true,
+      skip_metadata: true,
+      submit_for_review: false,
+      force: true
+    )
+  end
+end

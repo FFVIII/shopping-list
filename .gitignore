@@ -44,6 +44,16 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# fastlane
+**/fastlane/report.xml
+**/fastlane/Preview.html
+**/fastlane/screenshots/**/*.png
+**/fastlane/test_output
+**/fastlane/api_key.p8
+**/fastlane/api_key.json
+**/fastlane/AuthKey_*.p8
+ios/vendor/
+
 # Flutter DevTools generated options
 devtools_options.yaml
 
