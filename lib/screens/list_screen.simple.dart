@@ -124,7 +124,8 @@ extension _SimpleModeState on _ListScreenState {
       child: Row(
         children: [
           const SizedBox(width: 6),
-          Flexible(
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 120),
             child: Text(
               label,
               maxLines: 1,
@@ -158,7 +159,10 @@ extension _SimpleModeState on _ListScreenState {
           ),
           if (trailing != null) ...[
             const Spacer(),
-            Flexible(child: trailing),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 140),
+              child: trailing,
+            ),
           ],
         ],
       ),
