@@ -131,7 +131,7 @@ void main() {
     final added = <String>[];
     await _pumpList(tester, onAddSimple: added.add);
 
-    await tester.enterText(find.byType(TextField), '  面包  ');
+    await tester.enterText(find.byKey(const Key('list_add_bar_field')), '  面包  ');
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pump();
 
@@ -145,7 +145,7 @@ void main() {
     final added = <String>[];
     await _pumpList(tester, onAddSimple: added.add);
 
-    await tester.enterText(find.byType(TextField), '   ');
+    await tester.enterText(find.byKey(const Key('list_add_bar_field')), '   ');
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pump(const Duration(seconds: 2));
 
@@ -161,7 +161,7 @@ void main() {
     // pop the "enter an item name" toast. It should now silently unfocus.
     await _pumpList(tester);
 
-    await tester.tap(find.byType(TextField));
+    await tester.tap(find.byKey(const Key('list_add_bar_field')));
     await tester.pump();
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pump(const Duration(seconds: 2));
@@ -277,5 +277,85 @@ void main() {
 
     expect(find.text('牛奶'), findsOneWidget);
     expect(find.text('鸡蛋'), findsOneWidget);
+  });
+
+  // ── Search ────────────────────────────────────────────────────────────────
+
+  testWidgets('searching in simple mode filters to matching items',
+      (tester) async {
+    await _pumpList(tester, simpleItems: [
+      _simple('a', '牛奶'),
+      _simple('b', '鸡蛋'),
+    ]);
+
+    await tester.enterText(find.byKey(const Key('list_search_field')), '牛');
+    await tester.pump();
+
+    expect(find.text('牛奶'), findsOneWidget);
+    expect(find.text('鸡蛋'), findsNothing);
+  });
+
+  testWidgets('clearing the simple-mode search restores the full list',
+      (tester) async {
+    await _pumpList(tester, simpleItems: [
+      _simple('a', '牛奶'),
+      _simple('b', '鸡蛋'),
+    ]);
+
+    await tester.enterText(find.byKey(const Key('list_search_field')), '牛');
+    await tester.pump();
+    expect(find.text('鸡蛋'), findsNothing);
+
+    await tester.enterText(find.byKey(const Key('list_search_field')), '');
+    await tester.pump();
+
+    expect(find.text('牛奶'), findsOneWidget);
+    expect(find.text('鸡蛋'), findsOneWidget);
+  });
+
+  testWidgets('searching in simple mode with no matches shows the no-results state',
+      (tester) async {
+    await _pumpList(tester, simpleItems: [_simple('a', '牛奶')]);
+
+    await tester.enterText(
+        find.byKey(const Key('list_search_field')), '不存在的东西');
+    await tester.pump();
+
+    expect(find.text('牛奶'), findsNothing);
+    expect(find.text(ZhStrings().searchNoResults('不存在的东西')), findsOneWidget);
+  });
+
+  testWidgets('searching in smart mode filters to matching items',
+      (tester) async {
+    await _pumpList(tester, smartItems: [
+      _smart('a', '牛奶'),
+      _smart('b', '鸡蛋'),
+    ]);
+
+    await tester.tap(find.text('计划'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('list_search_field')), '蛋');
+    await tester.pump();
+
+    expect(find.text('鸡蛋'), findsOneWidget);
+    expect(find.text('牛奶'), findsNothing);
+  });
+
+  testWidgets('searching in budget mode filters to matching items',
+      (tester) async {
+    await _pumpList(tester, budgetItems: [
+      _budget('a', '牛奶'),
+      _budget('b', '鸡蛋'),
+    ]);
+
+    await tester.tap(find.text('记账'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('list_search_field')), '蛋');
+    await tester.pump();
+
+    expect(find.text('鸡蛋'), findsOneWidget);
+    expect(find.text('牛奶'), findsNothing);
   });
 }

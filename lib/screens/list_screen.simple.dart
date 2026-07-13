@@ -3,10 +3,17 @@ part of 'list_screen.dart';
 // ── Simple mode state extension ───────────────────────────────────────────────
 
 extension _SimpleModeState on _ListScreenState {
+  // Hides items mid-swipe-delete and anything not matching the search query.
+  List<ShoppingItem> get _visibleSimpleItems => widget.simpleItems
+      .where((i) => !_pendingDeleteIds.contains(i.id))
+      .where((i) => _queryMatches(i.name,
+          category: i.category.name, shelfZone: i.shelfZone))
+      .toList();
+
   Widget _buildSimpleList() {
     final l = L10n.of(context);
-    final visible =
-        widget.simpleItems.where((i) => !_pendingDeleteIds.contains(i.id));
+    final searching = _query.isNotEmpty;
+    final visible = _visibleSimpleItems;
     final pendingRaw = visible.where((i) => !i.checked).toList();
     final pending = _simpleDir != null
         ? ([...pendingRaw]..sort((a, b) => _simpleDir == SortDir.asc
@@ -31,6 +38,35 @@ extension _SimpleModeState on _ListScreenState {
               ),
             ),
           ),
+        if (searching)
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (ctx, i) {
+                  final item = pending[i];
+                  return _SimpleRow(
+                    key: Key('p_${item.id}'),
+                    item: item,
+                    onToggle: () => widget.onToggleSimple(item.id),
+                    onDelete: () => _handleSwipeDelete(
+                        id: item.id,
+                        label: l.data(item.name),
+                        realDelete: () => widget.onDeleteSimple(item.id)),
+                    onLongPress: () => _showRenameSheet(item, false),
+                    batchMode: _simpleBatchMode,
+                    selected: _simpleSelected.contains(item.id),
+                    onSelect: () => _toggleSimpleSelection(item.id),
+                    onHandleTap: _simpleBatchMode
+                        ? () => _toggleSimpleSelection(item.id)
+                        : () => _enterSimpleBatchWithItem(item.id),
+                  );
+                },
+                childCount: pending.length,
+              ),
+            ),
+          )
+        else
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
           sliver: SliverReorderableList(

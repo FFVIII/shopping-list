@@ -122,6 +122,73 @@ extension _HeaderAndAddBarState on _ListScreenState {
     );
   }
 
+  // ── Search bar ──────────────────────────────────────────────────────────────
+
+  Widget _buildSearchBar() {
+    final l = L10n.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: SizedBox(
+        height: 44,
+        child: TextField(
+          key: const Key('list_search_field'),
+          controller: _searchCtrl,
+          // ignore: invalid_use_of_protected_member
+          onChanged: (v) => setState(() => _query = v),
+          style: const TextStyle(fontSize: 14),
+          decoration: InputDecoration(
+            hintText: l.searchHint,
+            hintStyle:
+                const TextStyle(color: AppColors.textDisabled, fontSize: 14),
+            prefixIcon: const Icon(Icons.search_rounded,
+                color: AppColors.textDisabled, size: 20),
+            filled: true,
+            fillColor: AppColors.fieldBg,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+            suffixIcon: _query.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.close_rounded,
+                        color: AppColors.textDisabled, size: 18),
+                    onPressed: () {
+                      _searchCtrl.clear();
+                      // ignore: invalid_use_of_protected_member
+                      setState(() => _query = '');
+                    },
+                  )
+                : null,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _searchEmptyState() {
+    final l = L10n.of(context);
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.search_off_rounded,
+              size: 56, color: Color(0xFFD8D8D3)),
+          const SizedBox(height: 16),
+          Text(
+            l.searchNoResults(_query),
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textMuted,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ── Empty state (simple / smart) ────────────────────────────────────────────
 
   Widget _emptyState() {
@@ -182,6 +249,7 @@ extension _HeaderAndAddBarState on _ListScreenState {
         children: [
           Expanded(
             child: TextField(
+              key: const Key('list_add_bar_field'),
               controller: _nameCtrl,
               focusNode: _nameFocus,
               style: const TextStyle(fontSize: 15),
