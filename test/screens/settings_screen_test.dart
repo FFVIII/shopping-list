@@ -9,12 +9,15 @@ import 'package:shopping_list/screens/settings_screen.dart';
 Future<void> _pumpSettings(
   WidgetTester tester, {
   Future<bool> Function()? requestNotificationPermission,
+  TextScaler textScaler = TextScaler.noScaling,
 }) async {
   await tester.pumpWidget(
     L10n(
       strings: ZhStrings(),
       language: AppLanguage.zh,
-      child: MaterialApp(
+      child: MediaQuery(
+        data: MediaQueryData(textScaler: textScaler),
+        child: MaterialApp(
         home: SettingsScreen(
           settings: AppSettings(),
           onChanged: (_) {},
@@ -36,6 +39,7 @@ Future<void> _pumpSettings(
           onImportBackup: (_) async {},
           requestNotificationPermission:
               requestNotificationPermission ?? () async => true,
+        ),
         ),
       ),
     ),
@@ -95,5 +99,12 @@ void main() {
 
     expect(requested, isFalse);
     expect(find.text(ZhStrings().notifPrimerTitle), findsNothing);
+  });
+
+  testWidgets(
+      'renders without layout exceptions at a large system text scale',
+      (tester) async {
+    await _pumpSettings(tester, textScaler: const TextScaler.linear(3.0));
+    expect(tester.takeException(), isNull);
   });
 }

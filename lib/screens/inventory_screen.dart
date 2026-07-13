@@ -351,36 +351,41 @@ class _InventoryScreenState extends State<InventoryScreen> {
           // list and category screens; the header offers Add when not
           // selecting, or Add-to-restock when a batch selection is active.
           if (_batchMode)
-            GestureDetector(
-              onTap: _selected.isNotEmpty
-                  ? () {
-                      final selectedItems = widget.items
-                          .where((i) => _selected.contains(i.id))
-                          .toList();
-                      widget.onBatchAddToRestock(selectedItems);
-                      setState(() {
-                        _selected.clear();
-                        _batchMode = false;
-                      });
-                    }
-                  : null,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-                decoration: BoxDecoration(
-                  color: _selected.isNotEmpty
-                      ? AppColors.brand
-                      : AppColors.fieldBg,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  l.batchAddToRestock,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+            Flexible(
+              child: GestureDetector(
+                onTap: _selected.isNotEmpty
+                    ? () {
+                        final selectedItems = widget.items
+                            .where((i) => _selected.contains(i.id))
+                            .toList();
+                        widget.onBatchAddToRestock(selectedItems);
+                        setState(() {
+                          _selected.clear();
+                          _batchMode = false;
+                        });
+                      }
+                    : null,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                  decoration: BoxDecoration(
                     color: _selected.isNotEmpty
-                        ? Colors.white
-                        : AppColors.textDisabled,
+                        ? AppColors.brand
+                        : AppColors.fieldBg,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      l.batchAddToRestock,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: _selected.isNotEmpty
+                            ? Colors.white
+                            : AppColors.textDisabled,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -416,37 +421,34 @@ class _InventoryScreenState extends State<InventoryScreen> {
     final l = L10n.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: SizedBox(
-        height: 44,
-        child: TextField(
-          controller: _searchCtrl,
-          onChanged: (v) => setState(() => _query = v),
-          style: const TextStyle(fontSize: 14),
-          decoration: InputDecoration(
-            hintText: l.searchHint,
-            hintStyle:
-                const TextStyle(color: AppColors.textDisabled, fontSize: 14),
-            prefixIcon: const Icon(Icons.search_rounded,
-                color: AppColors.textDisabled, size: 20),
-            filled: true,
-            fillColor: AppColors.fieldBg,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-                vertical: 12, horizontal: 4),
-            suffixIcon: _query.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.close_rounded,
-                        color: AppColors.textDisabled, size: 18),
-                    onPressed: () {
-                      _searchCtrl.clear();
-                      setState(() => _query = '');
-                    },
-                  )
-                : null,
+      child: TextField(
+        controller: _searchCtrl,
+        onChanged: (v) => setState(() => _query = v),
+        style: const TextStyle(fontSize: 14),
+        decoration: InputDecoration(
+          hintText: l.searchHint,
+          hintStyle:
+              const TextStyle(color: AppColors.textDisabled, fontSize: 14),
+          prefixIcon: const Icon(Icons.search_rounded,
+              color: AppColors.textDisabled, size: 20),
+          filled: true,
+          fillColor: AppColors.fieldBg,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
           ),
+          contentPadding: const EdgeInsets.symmetric(
+              vertical: 12, horizontal: 4),
+          suffixIcon: _query.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.close_rounded,
+                      color: AppColors.textDisabled, size: 18),
+                  onPressed: () {
+                    _searchCtrl.clear();
+                    setState(() => _query = '');
+                  },
+                )
+              : null,
         ),
       ),
     );

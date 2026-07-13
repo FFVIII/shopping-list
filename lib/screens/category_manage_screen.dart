@@ -476,23 +476,20 @@ class _CategoryEditSheetState extends State<_CategoryEditSheet> {
               ],
             ),
             const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.brand,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                  elevation: 0,
-                ),
-                onPressed: _submit,
-                child: Text(
-                  widget.initial == null ? l.addToList : l.confirmEdit,
-                  style: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w600),
-                ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.brand,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+                elevation: 0,
+                minimumSize: const Size(double.infinity, 48),
+              ),
+              onPressed: _submit,
+              child: Text(
+                widget.initial == null ? l.addToList : l.confirmEdit,
+                style: const TextStyle(
+                    fontSize: 15, fontWeight: FontWeight.w600),
               ),
             ),
           ],

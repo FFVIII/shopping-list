@@ -251,23 +251,20 @@ class _TutorialCard extends StatelessWidget {
                 fontSize: 15, height: 1.5, color: AppColors.textPrimary),
           ),
           const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            height: 46,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brand,
-                foregroundColor: Colors.white,
-                shape:
-                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                elevation: 0,
-              ),
-              onPressed: onPressed,
-              child: Text(
-                buttonLabel,
-                style:
-                    const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-              ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.brand,
+              foregroundColor: Colors.white,
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              elevation: 0,
+              minimumSize: const Size(double.infinity, 46),
+            ),
+            onPressed: onPressed,
+            child: Text(
+              buttonLabel,
+              style:
+                  const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             ),
           ),
         ],

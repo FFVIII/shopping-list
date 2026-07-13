@@ -204,13 +204,17 @@ extension _SmartModeState on _ListScreenState {
                 BoxDecoration(color: color0, shape: BoxShape.circle),
           ),
           const SizedBox(width: 8),
-          Text(
-            l.data(zone),
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-              letterSpacing: 0.1,
+          Flexible(
+            child: Text(
+              l.data(zone),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+                letterSpacing: 0.1,
+              ),
             ),
           ),
           const SizedBox(width: 8),
@@ -232,7 +236,7 @@ extension _SmartModeState on _ListScreenState {
           ),
           if (trailing != null) ...[
             const Spacer(),
-            trailing,
+            Flexible(child: trailing),
           ],
         ],
       ),

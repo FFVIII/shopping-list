@@ -116,7 +116,6 @@ class _DaysSelectorState extends State<DaysSelector> {
                   children: [
                     SizedBox(
                       width: 64,
-                      height: 36,
                       child: TextField(
                         controller: _customCtrl,
                         keyboardType: TextInputType.number,

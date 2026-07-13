@@ -100,12 +100,15 @@ class _InventoryCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Center(
-                          child: Text(
-                            dn.isNotEmpty ? dn.substring(0, 1) : '',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: item.category.color.withValues(alpha: 0.45),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              dn.isNotEmpty ? dn.substring(0, 1) : '',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: item.category.color.withValues(alpha: 0.45),
+                              ),
                             ),
                           ),
                         ),
@@ -191,9 +194,16 @@ class _InventoryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      endDateStr,
-                      style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                    SizedBox(
+                      width: 64,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          endDateStr,
+                          style: const TextStyle(
+                              fontSize: 11, color: AppColors.textMuted),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 4),
                     SizedBox(
@@ -201,14 +211,20 @@ class _InventoryCard extends StatelessWidget {
                       child: _ProgressBar(ratio: item.progressRatio, color: status.color),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      status == StockStatus.empty
-                          ? l.usedUp
-                          : '${l.stockStatus(status)}(${l.daysShort(remaining.clamp(0, 999))})',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: status.color,
+                    SizedBox(
+                      width: 64,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          status == StockStatus.empty
+                              ? l.usedUp
+                              : '${l.stockStatus(status)}(${l.daysShort(remaining.clamp(0, 999))})',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: status.color,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -576,12 +592,12 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
               },
             ),
             const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 44,
-              child: TextButton(
-                style: TextButton.styleFrom(foregroundColor: AppColors.danger),
-                onPressed: () async {
+            TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.danger,
+                minimumSize: const Size(double.infinity, 44),
+              ),
+              onPressed: () async {
                   final ok = await showDialog<bool>(
                     context: context,
                     builder: (ctx) => AlertDialog(
@@ -607,11 +623,10 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                   Navigator.pop(context);
                   widget.onDelete();
                 },
-                child: Text(
-                  l.deleteFromInventory,
-                  style: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w500),
-                ),
+              child: Text(
+                l.deleteFromInventory,
+                style: const TextStyle(
+                    fontSize: 14, fontWeight: FontWeight.w500),
               ),
             ),
           ],
@@ -799,23 +814,20 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
             onChanged: (d) => setState(() => _days = d),
           ),
           const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brand,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: AppColors.divider,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-                elevation: 0,
-              ),
-              onPressed: _nameCtrl.text.trim().isEmpty ? null : _submit,
-              child: Text(
-                l.addToInventoryBtn,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-              ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.brand,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: AppColors.divider,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
+              elevation: 0,
+              minimumSize: const Size(double.infinity, 48),
+            ),
+            onPressed: _nameCtrl.text.trim().isEmpty ? null : _submit,
+            child: Text(
+              l.addToInventoryBtn,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             ),
           ),
         ],

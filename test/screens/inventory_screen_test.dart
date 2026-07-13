@@ -33,6 +33,7 @@ InventoryItem _inv(String id, String name) => InventoryItem(
 Future<void> _pumpInventory(
   WidgetTester tester, {
   List<InventoryItem> items = const [],
+  TextScaler textScaler = TextScaler.noScaling,
 }) async {
   tester.view.physicalSize = const Size(1290, 2796);
   tester.view.devicePixelRatio = 3.0;
@@ -43,20 +44,23 @@ Future<void> _pumpInventory(
     L10n(
       strings: ZhStrings(),
       language: AppLanguage.zh,
-      child: MaterialApp(
-        home: InventoryScreen(
-          items: items,
-          categories: [_category('other')],
-          thresholdDays: 5,
-          onAdd: (_) {},
-          onRestock: (_, _) {},
-          onDelete: (_) {},
-          onAddToShoppingList: (_) {},
-          onReorder: (_, _, _, _, _) {},
-          onEdit: (_, _, _, _, _, _) {},
-          onBatchDelete: (_) {},
-          onBatchAddToRestock: (_) {},
-          shelfCodeOrder: const [],
+      child: MediaQuery(
+        data: MediaQueryData(textScaler: textScaler),
+        child: MaterialApp(
+          home: InventoryScreen(
+            items: items,
+            categories: [_category('other')],
+            thresholdDays: 5,
+            onAdd: (_) {},
+            onRestock: (_, _) {},
+            onDelete: (_) {},
+            onAddToShoppingList: (_) {},
+            onReorder: (_, _, _, _, _) {},
+            onEdit: (_, _, _, _, _, _) {},
+            onBatchDelete: (_) {},
+            onBatchAddToRestock: (_) {},
+            shelfCodeOrder: const [],
+          ),
         ),
       ),
     ),
@@ -93,4 +97,16 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets(
+    'renders without layout exceptions at a large system text scale',
+    (tester) async {
+      await _pumpInventory(
+        tester,
+        items: [_inv('a', '牛奶'), _inv('b', '鸡蛋')],
+        textScaler: const TextScaler.linear(3.0),
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
