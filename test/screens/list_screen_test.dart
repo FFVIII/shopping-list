@@ -394,6 +394,41 @@ void main() {
     },
   );
 
+  testWidgets(
+    'the add-to-inventory sheet stays on screen and its Save button is '
+    'reachable with many items', (tester) async {
+      // Regression test: with enough items the sheet's content used to grow
+      // taller than the screen with nothing capping it, pushing the header
+      // off the top and leaving no way to scroll down to the Save button.
+      final many = List.generate(30, (i) => _smart('id$i', 'item$i'));
+      await _pumpList(tester, smartItems: many);
+
+      await tester.tap(find.text('计划'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(ZhStrings().addToInventoryButton));
+      await tester.pumpAndSettle();
+
+      final screenHeight =
+          tester.getBottomRight(find.byType(MaterialApp)).dy;
+      final titleTop = tester
+          .getTopLeft(find.text(ZhStrings().addToInventoryButton).last)
+          .dy;
+      // The header must not be pushed above the visible screen.
+      expect(titleTop, greaterThanOrEqualTo(0));
+
+      final saveButton = find.widgetWithText(
+          ElevatedButton, ZhStrings().addToInventoryButton);
+      final buttonBottom = tester.getBottomRight(saveButton).dy;
+      // The Save button must be within the visible screen, not off the
+      // bottom edge.
+      expect(buttonBottom, lessThanOrEqualTo(screenHeight));
+
+      await tester.tap(saveButton);
+      await tester.pump();
+      expect(find.text(ZhStrings().tripCompletedCelebration), findsOneWidget);
+    },
+  );
+
   // ── Budget add-expense sheet ──────────────────────────────────────────────
 
   testWidgets(

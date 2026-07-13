@@ -29,14 +29,21 @@ class _CompleteTripSheetState extends State<_CompleteTripSheet> {
   @override
   Widget build(BuildContext context) {
     final l = L10n.of(context);
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-      ),
-      child: SingleChildScrollView(
+    // The item list can be arbitrarily long, so it gets its own height cap
+    // (unlike the app's other, few-field sheets) — otherwise its content
+    // grows past the screen and the header gets pushed off the top instead
+    // of the list becoming scrollable. Only the item list itself is capped +
+    // scrollable (as a shrink-wrapped ListView); the header and Save button
+    // are plain Column children so they always stay fully visible.
+    final listMaxHeight = MediaQuery.of(context).size.height * 0.5;
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 20,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,46 +58,52 @@ class _CompleteTripSheetState extends State<_CompleteTripSheet> {
               style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
             ),
             const SizedBox(height: 16),
-            ...widget.items.map((item) {
-              final sel = _selected.contains(item.id);
-              final qty = item.quantityLabel;
-              return GestureDetector(
-                onTap: () => setState(() {
-                  if (sel) {
-                    _selected.remove(item.id);
-                  } else {
-                    _selected.add(item.id);
-                  }
-                }),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  child: Row(
-                    children: [
-                      _SelectCircle(selected: sel),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          l.data(item.name),
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: sel
-                                ? AppColors.textPrimary
-                                : AppColors.textDisabled,
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: listMaxHeight),
+              child: ListView(
+                shrinkWrap: true,
+                children: widget.items.map((item) {
+                  final sel = _selected.contains(item.id);
+                  final qty = item.quantityLabel;
+                  return GestureDetector(
+                    onTap: () => setState(() {
+                      if (sel) {
+                        _selected.remove(item.id);
+                      } else {
+                        _selected.add(item.id);
+                      }
+                    }),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Row(
+                        children: [
+                          _SelectCircle(selected: sel),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              l.data(item.name),
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                                color: sel
+                                    ? AppColors.textPrimary
+                                    : AppColors.textDisabled,
+                              ),
+                            ),
                           ),
-                        ),
+                          if (qty.isNotEmpty)
+                            Text(
+                              l.data(qty),
+                              style: const TextStyle(
+                                  fontSize: 13, color: AppColors.textMuted),
+                            ),
+                        ],
                       ),
-                      if (qty.isNotEmpty)
-                        Text(
-                          l.data(qty),
-                          style: const TextStyle(
-                              fontSize: 13, color: AppColors.textMuted),
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            }),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
             const SizedBox(height: 16),
             TutorialTarget(
               id: 'confirm_trip_button',
