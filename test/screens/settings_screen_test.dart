@@ -7,8 +7,11 @@ import 'package:shopping_list/models/item.dart';
 import 'package:shopping_list/screens/settings_screen.dart';
 import 'package:shopping_list/services/purchase_service.dart';
 
-Future<void> _pumpSettings(WidgetTester tester,
-    {required bool isPro}) async {
+Future<void> _pumpSettings(
+  WidgetTester tester, {
+  bool isPro = false,
+  Future<bool> Function()? requestNotificationPermission,
+}) async {
   final purchaseService = PurchaseService()..isPro = isPro;
 
   await tester.pumpWidget(
@@ -35,7 +38,8 @@ Future<void> _pumpSettings(WidgetTester tester,
           onReorderCategories: (_, _) {},
           buildBackupBytes: () => <int>[],
           onImportBackup: (_) async {},
-          requestNotificationPermission: () async => true,
+          requestNotificationPermission:
+              requestNotificationPermission ?? () async => true,
           purchaseService: purchaseService,
         ),
       ),
@@ -59,5 +63,58 @@ void main() {
 
     expect(find.text(ZhStrings().sectionData), findsOneWidget);
     expect(find.text(ZhStrings().proUpgrade), findsNothing);
+  });
+
+  testWidgets(
+      'turning on the restock reminder shows the primer dialog before any '
+      'system permission request', (tester) async {
+    var requested = false;
+    await _pumpSettings(tester, requestNotificationPermission: () async {
+      requested = true;
+      return true;
+    });
+
+    await tester.tap(find.byType(Switch));
+    await tester.pumpAndSettle();
+
+    expect(find.text(ZhStrings().notifPrimerTitle), findsOneWidget);
+    expect(find.text(ZhStrings().notifPrimerMessage), findsOneWidget);
+    // The dialog is up; the real permission request hasn't fired yet.
+    expect(requested, isFalse);
+  });
+
+  testWidgets(
+      'confirming the primer dialog requests the system notification '
+      'permission', (tester) async {
+    var requested = false;
+    await _pumpSettings(tester, requestNotificationPermission: () async {
+      requested = true;
+      return true;
+    });
+
+    await tester.tap(find.byType(Switch));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(ZhStrings().notifPrimerConfirm));
+    await tester.pumpAndSettle();
+
+    expect(requested, isTrue);
+  });
+
+  testWidgets(
+      'dismissing the primer dialog never requests the system permission',
+      (tester) async {
+    var requested = false;
+    await _pumpSettings(tester, requestNotificationPermission: () async {
+      requested = true;
+      return true;
+    });
+
+    await tester.tap(find.byType(Switch));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(ZhStrings().cancel));
+    await tester.pumpAndSettle();
+
+    expect(requested, isFalse);
+    expect(find.text(ZhStrings().notifPrimerTitle), findsNothing);
   });
 }

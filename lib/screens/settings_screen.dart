@@ -471,6 +471,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _onReminderToggle(bool enabled) async {
     if (enabled) {
+      final l = L10n.of(context);
+      // Show our own explanation before the system permission prompt (rather
+      // than letting the OS prompt appear with no context) — priming like
+      // this measurably improves opt-in rates and avoids the "why is it
+      // asking me this" confusion of a bare system dialog.
+      final primed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l.notifPrimerTitle),
+          content: Text(l.notifPrimerMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l.cancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l.notifPrimerConfirm),
+            ),
+          ],
+        ),
+      );
+      if (primed != true || !mounted) return;
+
       final granted = await widget.requestNotificationPermission();
       if (!mounted) return;
       if (!granted) {
