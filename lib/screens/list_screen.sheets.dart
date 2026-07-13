@@ -216,6 +216,7 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
                       ),
                       TextField(
                         controller: _qtyCtrl,
+                        autofocus: true,
                         keyboardType: TextInputType.number,
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly
