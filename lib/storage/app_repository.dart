@@ -195,6 +195,14 @@ class AppRepository {
   Future<void> saveShelfCodeOrder(List<String> order) =>
       _metaBox.put('shelf_code_order', order);
 
+  /// Purchase entitlement — intentionally NOT part of [AppData]/[replaceAll]:
+  /// restoring a backup from another install must not overwrite whether
+  /// *this* Apple ID has purchased Pro.
+  Future<bool> loadIsPro() async =>
+      _metaBox.get('is_pro') as bool? ?? false;
+
+  Future<void> saveIsPro(bool value) => _metaBox.put('is_pro', value);
+
   /// Overwrites every persisted collection with [data] (backup import,
   /// spec 2026-07-02 §5.3).
   Future<void> replaceAll(AppData data) async {

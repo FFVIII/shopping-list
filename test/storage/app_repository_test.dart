@@ -129,4 +129,19 @@ void main() {
     expect(reloaded.settings.restockReminderEnabled, false);
     expect(reloaded.shelfCodeOrder, ['A1']);
   });
+
+  test('isPro persists across load calls and defaults to false', () async {
+    final repo = AppRepository();
+    await repo.init();
+
+    expect(await repo.loadIsPro(), isFalse);
+
+    await repo.saveIsPro(true);
+    expect(await repo.loadIsPro(), isTrue);
+
+    // Simulates an app restart against the same on-disk box.
+    final repo2 = AppRepository();
+    await repo2.init();
+    expect(await repo2.loadIsPro(), isTrue);
+  });
 }
