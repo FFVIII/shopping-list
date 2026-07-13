@@ -16,7 +16,6 @@ abstract class AppStrings {
   String get shoppingListTitle;
   String listSubtitlePending(int remaining, DateTime date);
   String listSubtitleDone(DateTime date);
-  String get completeTrip;
   String get addToInventoryButton; // "加入库存" / "Add to inventory"
   String get completeTripTitle; // "完成购物？" / "Finish shopping?"
   String completeTripMessage(int bought); // explains what completing does
@@ -67,16 +66,12 @@ abstract class AppStrings {
   String get rename;
   String get confirmEdit;
   String get editItem; // "编辑商品" / "Edit item"
-  String editItemTitle(String name); // "编辑「鸡蛋」" / 'Edit "Eggs"'
   String get quantityFieldLabel; // "数量" / "Quantity"
   String get shelfCodeFieldLabel; // "货架码" / "Shelf code"
   String get shelfCodeFieldHint; // example placeholder, e.g. "货架B1" / "Shelf B1"
-  String get recordedBadge; // "已记" / "Logged"
-  String itemMeta(String quantity, String? shelfCode); // "1串 · 货架B3"
 
   // ── Days sheet (main.dart) ──
   String boughtTitle(String name);
-  String get estimatedDaysQuestion;
   String days(int n); // "7天" / "7 days"
   String recordToInventory(int n);
 
@@ -85,7 +80,6 @@ abstract class AppStrings {
   String inventorySummary(int total, int restock);
   String get searchHint;
   String get inventoryEmptyTitle;
-  String get inventoryEmptyTitleQuery; // uses query
   String inventoryNoResults(String query);
   String get inventoryEmptySubtitle;
   String get inventoryEmptySubtitleQuery;
@@ -93,9 +87,7 @@ abstract class AppStrings {
   String get usedUp; // "已用完" / "Used up"
   String daysRemainingLong(int n); // "还剩约 N 天" / "About N days left"
   String daysShort(int n); // "N天"
-  String daysShortApprox(int n); // "约N天" / "~N days"
   String get resetTimerSection; // "重新购买，重置计时"
-  String resetTimer(int n); // "重置计时（N天）"
   String get addToRestockList; // "加入补货清单"
   String get deleteFromInventory; // "从库存删除"
   String get addToInventoryTitle; // "添加到库存"
@@ -138,15 +130,12 @@ abstract class AppStrings {
   String get delete;
   String get undo;
   String itemDeletedToast(String name); // e.g. "已删除 "牛奶"" / 'Deleted "Milk"'
-  String deleteCategoryTitle(String name);
   String get deleteCategoryMessage;
   String categoriesCount(int n); // "12类"
   String get shelfOrder;
   String get noShelfCodes;
   String get addShelfCodeTitle;
-  String get shelfCodeNameLabel;
   String get shelfCodeNameHint;
-  String deleteShelfCodeTitle(String code);
   String get deleteShelfCodeMessage;
   String get sectionReminder;
   String get restockReminder;
@@ -158,7 +147,6 @@ abstract class AppStrings {
   String get saveChangesTitle; // "保存修改？" / "Save changes?"
   String get discardChanges;   // "不保存" / "Discard"
   String get savedToast;       // "已保存" / "Saved"
-  String get restockToast;     // "计时已重置" / "Timer reset"
   String get customDaysMaxHint; // "最多 1000 天" / "Max 1000 days"
   String get sectionData;
   String get backupExport;
@@ -183,7 +171,6 @@ abstract class AppStrings {
   String labelForLanguage(/* AppLanguage */ Object lang); // trailing display
 
   // ── Batch operations ──
-  String get batchEdit;         // "编辑" / "Edit"
   String get selectAll;         // "全选" / "Select all"
   String get batchMarkBought;   // "勾选已购" / "Mark bought"
   String get batchAddToRestock; // "加入补货" / "Add to restock"
@@ -212,9 +199,8 @@ class ZhStrings extends AppStrings {
   @override String get shoppingListTitle => '购物清单';
   @override String listSubtitlePending(int r, DateTime d) => '还差 $r 件 · ${_zhDate(d)}';
   @override String listSubtitleDone(DateTime d) => '今天买齐啦 🎉 · ${_zhDate(d)}';
-  @override String get completeTrip => '完成购物';
   @override String get addToInventoryButton => '加入库存';
-  @override String get completeTripTitle => '完成购物？';
+  @override String get completeTripTitle => '清空已购？';
   @override String completeTripMessage(int bought) =>
       '已买到的 $bought 件会从清单移除，未买到的会保留在清单里。';
   @override String get tripInventoryHint =>
@@ -222,7 +208,7 @@ class ZhStrings extends AppStrings {
   @override String get cancel => '取消';
   @override String get smartHint =>
       '圆圈选中=将存入库存；点「完成购物」完成本次采购。';
-  @override String get modeSimple => '简单';
+  @override String get modeSimple => '速记';
   @override String get modeSmart => '计划';
   @override String get budgetMode => '记账';
   @override String get unitPriceFieldLabel => '单价';
@@ -266,15 +252,11 @@ class ZhStrings extends AppStrings {
   @override String get rename => '重命名';
   @override String get confirmEdit => '确认修改';
   @override String get editItem => '编辑商品';
-  @override String editItemTitle(String name) => '编辑「$name」';
   @override String get quantityFieldLabel => '数量';
   @override String get shelfCodeFieldLabel => '货架码';
   @override String get shelfCodeFieldHint => '货架B1';
-  @override String get recordedBadge => '已记';
-  @override String itemMeta(String q, String? code) => code != null ? '$q · $code' : q;
 
   @override String boughtTitle(String name) => '「$name」买到了！';
-  @override String get estimatedDaysQuestion => '预计能用几天？';
   @override String days(int n) => '$n天';
   @override String recordToInventory(int n) => '记录到库存（$n天）';
 
@@ -282,7 +264,6 @@ class ZhStrings extends AppStrings {
   @override String inventorySummary(int t, int r) => '$t件常备 · $r件需补货';
   @override String get searchHint => '搜索商品或货架';
   @override String get inventoryEmptyTitle => '库存还是空的';
-  @override String get inventoryEmptyTitleQuery => '';
   @override String inventoryNoResults(String q) => '没有找到「$q」';
   @override String get inventoryEmptySubtitle => '先从清单购买并记录到库存';
   @override String get inventoryEmptySubtitleQuery => '试试其他关键词';
@@ -290,9 +271,7 @@ class ZhStrings extends AppStrings {
   @override String get usedUp => '已用完';
   @override String daysRemainingLong(int n) => '还剩约 $n 天';
   @override String daysShort(int n) => '$n天';
-  @override String daysShortApprox(int n) => '约$n天';
   @override String get resetTimerSection => '重新购买，重置计时';
-  @override String resetTimer(int n) => '重置计时（$n天）';
   @override String get addToRestockList => '加入补货清单';
   @override String get deleteFromInventory => '从库存删除';
   @override String get addToInventoryTitle => '添加到库存';
@@ -333,15 +312,12 @@ class ZhStrings extends AppStrings {
   @override String get delete => '删除';
   @override String get undo => '撤销';
   @override String itemDeletedToast(String name) => '已删除"$name"';
-  @override String deleteCategoryTitle(String name) => '删除「$name」？';
   @override String get deleteCategoryMessage => '使用此分类的商品会改派到「其他」。';
   @override String categoriesCount(int n) => '$n类';
   @override String get shelfOrder => '货架顺序';
   @override String get noShelfCodes => '暂无货架码';
   @override String get addShelfCodeTitle => '新建货架码';
-  @override String get shelfCodeNameLabel => '货架码';
   @override String get shelfCodeNameHint => '如：货架B1';
-  @override String deleteShelfCodeTitle(String code) => '删除「$code」？';
   @override String get deleteShelfCodeMessage => '从顺序列表中移除此货架码。';
 
   @override String get sectionReminder => '提醒';
@@ -355,7 +331,6 @@ class ZhStrings extends AppStrings {
   @override String get saveChangesTitle => '保存修改？';
   @override String get discardChanges => '不保存';
   @override String get savedToast => '已保存';
-  @override String get restockToast => '计时已重置';
   @override String get customDaysMaxHint => '最多 1000 天';
   @override String get sectionData => '数据';
   @override String get backupExport => '备份导出';
@@ -383,7 +358,6 @@ class ZhStrings extends AppStrings {
   @override String labelForLanguage(Object lang) =>
       lang == AppLanguage.zh ? '中文' : lang == AppLanguage.en ? 'English' : '跟随系统';
 
-  @override String get batchEdit => '编辑';
   @override String get selectAll => '全选';
   @override String get batchMarkBought => '勾选已购';
   @override String get batchAddToRestock => '加入补货';
@@ -420,9 +394,8 @@ class EnStrings extends AppStrings {
   @override String get shoppingListTitle => 'Shopping List';
   @override String listSubtitlePending(int r, DateTime d) => '$r left · ${_enDate(d)}';
   @override String listSubtitleDone(DateTime d) => 'All done 🎉 · ${_enDate(d)}';
-  @override String get completeTrip => 'Done';
   @override String get addToInventoryButton => 'Add to inventory';
-  @override String get completeTripTitle => 'Finish shopping?';
+  @override String get completeTripTitle => 'Clear bought items?';
   @override String completeTripMessage(int bought) =>
       '$bought bought item(s) will be removed from the list; unbought ones stay.';
   @override String get tripInventoryHint =>
@@ -430,7 +403,7 @@ class EnStrings extends AppStrings {
   @override String get cancel => 'Cancel';
   @override String get smartHint =>
       'Circles mark items to save to inventory. Tap \'Done\' to finish shopping.';
-  @override String get modeSimple => 'Simple';
+  @override String get modeSimple => 'Jot';
   @override String get modeSmart => 'Plan';
   @override String get budgetMode => 'Budget';
   @override String get unitPriceFieldLabel => 'Unit price';
@@ -477,15 +450,11 @@ class EnStrings extends AppStrings {
   @override String get rename => 'Rename';
   @override String get confirmEdit => 'Save';
   @override String get editItem => 'Edit item';
-  @override String editItemTitle(String name) => 'Edit "$name"';
   @override String get quantityFieldLabel => 'Quantity';
   @override String get shelfCodeFieldLabel => 'Shelf code';
   @override String get shelfCodeFieldHint => 'Shelf B1';
-  @override String get recordedBadge => 'Logged';
-  @override String itemMeta(String q, String? code) => code != null ? '$q · $code' : q;
 
   @override String boughtTitle(String name) => '"$name" bought!';
-  @override String get estimatedDaysQuestion => 'How long will it last?';
   @override String days(int n) => '$n days';
   @override String recordToInventory(int n) => 'Save to inventory ($n days)';
 
@@ -493,7 +462,6 @@ class EnStrings extends AppStrings {
   @override String inventorySummary(int t, int r) => '$t stocked · $r to restock';
   @override String get searchHint => 'Search items or aisle';
   @override String get inventoryEmptyTitle => 'Inventory is empty';
-  @override String get inventoryEmptyTitleQuery => '';
   @override String inventoryNoResults(String q) => 'No results for "$q"';
   @override String get inventoryEmptySubtitle => 'Buy from your list and log it here';
   @override String get inventoryEmptySubtitleQuery => 'Try another keyword';
@@ -501,9 +469,7 @@ class EnStrings extends AppStrings {
   @override String get usedUp => 'Used up';
   @override String daysRemainingLong(int n) => 'About $n days left';
   @override String daysShort(int n) => '${n}d';
-  @override String daysShortApprox(int n) => '~${n}d';
   @override String get resetTimerSection => 'Repurchase, reset the timer';
-  @override String resetTimer(int n) => 'Reset timer ($n days)';
   @override String get addToRestockList => 'Add to restock list';
   @override String get deleteFromInventory => 'Delete from inventory';
   @override String get addToInventoryTitle => 'Add to inventory';
@@ -544,16 +510,13 @@ class EnStrings extends AppStrings {
   @override String get delete => 'Delete';
   @override String get undo => 'Undo';
   @override String itemDeletedToast(String name) => 'Deleted "$name"';
-  @override String deleteCategoryTitle(String name) => 'Delete "$name"?';
   @override String get deleteCategoryMessage =>
       'Items in this category will be reassigned to "Other".';
   @override String categoriesCount(int n) => '$n';
   @override String get shelfOrder => 'Aisle order';
   @override String get noShelfCodes => 'No shelf codes yet';
   @override String get addShelfCodeTitle => 'New shelf code';
-  @override String get shelfCodeNameLabel => 'Shelf code';
   @override String get shelfCodeNameHint => 'e.g. Aisle B1';
-  @override String deleteShelfCodeTitle(String code) => 'Remove "$code"?';
   @override String get deleteShelfCodeMessage => 'Removes this code from the order list.';
 
   @override String get sectionReminder => 'Reminders';
@@ -567,7 +530,6 @@ class EnStrings extends AppStrings {
   @override String get saveChangesTitle => 'Save changes?';
   @override String get discardChanges => 'Discard';
   @override String get savedToast => 'Saved';
-  @override String get restockToast => 'Timer reset';
   @override String get customDaysMaxHint => 'Max 1000 days';
   @override String get sectionData => 'Data';
   @override String get backupExport => 'Backup & export';
@@ -599,7 +561,6 @@ class EnStrings extends AppStrings {
   @override String labelForLanguage(Object lang) =>
       lang == AppLanguage.zh ? '中文' : lang == AppLanguage.en ? 'English' : 'Follow system';
 
-  @override String get batchEdit => 'Edit';
   @override String get selectAll => 'Select all';
   @override String get batchMarkBought => 'Mark bought';
   @override String get batchAddToRestock => 'Add to restock';

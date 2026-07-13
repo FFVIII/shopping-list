@@ -24,6 +24,7 @@ import 'state/shopping_list_notifier.dart';
 import 'storage/app_repository.dart';
 import 'storage/backup.dart';
 import 'widgets/days_selector.dart';
+import 'widgets/toast.dart';
 import 'widgets/tutorial_target.dart';
 
 part 'main.widgets.dart';
@@ -419,19 +420,26 @@ class _AppShellState extends State<AppShell> {
 
   void _completeTripSmart(List<String> selectedIds) {
     final selectedSet = selectedIds.toSet();
-    final purchasedNames = _shoppingNotifier.smart
+    final purchased = _shoppingNotifier.smart
         .where((item) => selectedSet.contains(item.id))
-        .map((item) => item.name)
         .toList();
-    for (final item in _shoppingNotifier.smart) {
-      if (!selectedSet.contains(item.id)) continue;
+    final purchasedNames = purchased.map((item) => item.name).toList();
+    for (final item in purchased) {
       _inventoryNotifier.applyPurchaseFor(
           item, item.estimatedDays ?? item.category.defaultDays);
     }
-    _shoppingNotifier.smart.clear();
+    _shoppingNotifier.smart.removeWhere((item) => selectedSet.contains(item.id));
     _inventoryNotifier.persistItems();
     _shoppingNotifier.persistSmart();
     TutorialController.instance.onTripCompleted(purchasedNames);
+    // Only a single purchased item has an unambiguous name to name-drop in
+    // the toast; a multi-item trip just relies on the list visibly emptying.
+    if (purchased.length == 1) {
+      final item = purchased.first;
+      final l = L10n.of(context);
+      final days = item.estimatedDays ?? item.category.defaultDays;
+      showAppToast(context, '${l.boughtTitle(l.data(item.name))} ${l.recordToInventory(days)}');
+    }
   }
 
   // ── 提醒：加入 / 移出清单（跨域：读库存，写清单 + smartModeRequest）───────
