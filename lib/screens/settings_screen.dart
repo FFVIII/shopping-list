@@ -603,7 +603,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               height: 216,
               child: CupertinoDatePicker(
                 mode: CupertinoDatePickerMode.time,
-                use24hFormat: true,
+                use24hFormat: false,
                 initialDateTime: selected,
                 onDateTimeChanged: (dt) => selected = dt,
               ),
