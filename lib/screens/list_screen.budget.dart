@@ -410,13 +410,13 @@ class _BudgetSheetState extends State<_BudgetSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _label(l.quantityFieldLabel),
+                      _label(l.unitPriceFieldLabel),
                       TextField(
-                        controller: _qtyCtrl,
-                        autofocus: _namePrefilled,
-                        keyboardType: TextInputType.number,
+                        controller: _priceCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
                         style: const TextStyle(fontSize: 15),
-                        decoration: _dec('1'),
+                        decoration: _dec(l.currencySymbol),
                         onChanged: (_) => setState(() {}),
                       ),
                     ],
@@ -427,13 +427,13 @@ class _BudgetSheetState extends State<_BudgetSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _label(l.unitPriceFieldLabel),
+                      _label(l.quantityFieldLabel),
                       TextField(
-                        controller: _priceCtrl,
-                        keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true),
+                        controller: _qtyCtrl,
+                        autofocus: _namePrefilled,
+                        keyboardType: TextInputType.number,
                         style: const TextStyle(fontSize: 15),
-                        decoration: _dec(l.currencySymbol),
+                        decoration: _dec('1'),
                         onChanged: (_) => setState(() {}),
                       ),
                     ],
@@ -453,7 +453,7 @@ class _BudgetSheetState extends State<_BudgetSheet> {
                 Text(
                   l.money(_qty * _price),
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 22,
                     fontWeight: FontWeight.w800,
                     color: AppColors.brand,
                   ),

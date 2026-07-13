@@ -223,7 +223,7 @@ class ZhStrings extends AppStrings {
   @override String get modeSmart => '计划';
   @override String get budgetMode => '记账';
   @override String get unitPriceFieldLabel => '单价';
-  @override String get budgetTotalLabel => '合计';
+  @override String get budgetTotalLabel => '合计：';
   @override String budgetCount(int n) => '共 $n 项';
   @override String get addBudgetTitle => '记一笔';
   @override String get editBudgetTitle => '编辑记录';
@@ -431,7 +431,7 @@ class EnStrings extends AppStrings {
   @override String get modeSmart => 'Plan';
   @override String get budgetMode => 'Budget';
   @override String get unitPriceFieldLabel => 'Unit price';
-  @override String get budgetTotalLabel => 'Total';
+  @override String get budgetTotalLabel => 'Total:';
   @override String budgetCount(int n) => n == 1 ? '1 item' : '$n items';
   @override String get addBudgetTitle => 'Add expense';
   @override String get editBudgetTitle => 'Edit expense';
