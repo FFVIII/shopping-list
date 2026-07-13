@@ -9,7 +9,9 @@ import '../widgets/drag_handle.dart';
 import '../widgets/sort_toggle_button.dart';
 import '../widgets/batch_bar.dart';
 
-part 'inventory_screen.widgets.dart';
+part 'inventory_screen.card.dart';
+part 'inventory_screen.detail_sheet.dart';
+part 'inventory_screen.add_sheet.dart';
 part 'inventory_screen.list.dart';
 
 /// Grouping mode (base view): items shown under section headers, draggable.
