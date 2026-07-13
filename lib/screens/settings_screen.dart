@@ -15,12 +15,10 @@ import '../l10n/app_strings.dart';
 import '../storage/app_repository.dart';
 import '../storage/backup.dart';
 import '../widgets/toast.dart';
+import '../services/purchase_service.dart';
+import 'pro_upgrade_screen.dart';
 import 'shelf_order_screen.dart';
 import 'category_manage_screen.dart';
-
-// Backup/restore is a planned paid-tier feature; hide the section until
-// that gating lands instead of shipping it free.
-const bool _kDataSectionEnabled = false;
 
 class SettingsScreen extends StatefulWidget {
   final AppSettings settings;
@@ -49,6 +47,7 @@ class SettingsScreen extends StatefulWidget {
   final List<int> Function() buildBackupBytes;
   final Future<void> Function(AppData data) onImportBackup;
   final Future<bool> Function() requestNotificationPermission;
+  final PurchaseService purchaseService;
 
   const SettingsScreen({
     super.key,
@@ -71,6 +70,7 @@ class SettingsScreen extends StatefulWidget {
     required this.buildBackupBytes,
     required this.onImportBackup,
     required this.requestNotificationPermission,
+    required this.purchaseService,
   });
 
   @override
@@ -78,9 +78,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  // Temporarily hidden — not ready to sell Pro yet. Flip back on when it is.
-  static const bool _proCardEnabled = false;
-
   late AppSettings _settings;
 
   @override
@@ -124,9 +121,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsets.fromLTRB(0, 0, 0, 40),
           children: [
             _buildHeader(l),
-            if (_proCardEnabled) ...[
+            if (!widget.purchaseService.isPro) ...[
               const SizedBox(height: 4),
-              _buildProCard(l),
+              GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        ProUpgradeScreen(purchaseService: widget.purchaseService),
+                  ),
+                ),
+                child: _buildProCard(l),
+              ),
             ],
             const SizedBox(height: 24),
             _buildSection(l.sectionCategoryShelf, [
@@ -164,7 +170,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onTap: _pickLeadDays,
               ),
             ]),
-            if (_kDataSectionEnabled) ...[
+            if (widget.purchaseService.isPro) ...[
               const SizedBox(height: 16),
               _buildSection(l.sectionData, [
                 _navRow(l.backupExport, onTap: _exportBackup),

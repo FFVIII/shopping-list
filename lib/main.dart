@@ -26,6 +26,7 @@ import 'storage/backup.dart';
 import 'widgets/days_selector.dart';
 import 'widgets/toast.dart';
 import 'widgets/tutorial_target.dart';
+import 'services/purchase_service.dart';
 
 part 'main.widgets.dart';
 
@@ -158,6 +159,7 @@ class _AppShellState extends State<AppShell> {
   late final CategoriesNotifier _categoriesNotifier =
       CategoriesNotifier(_repo);
   late final SettingsNotifier _settingsNotifier = SettingsNotifier(_repo);
+  late final PurchaseService _purchaseService = PurchaseService();
 
   AppRepository get _repo => widget.repository;
 
@@ -190,6 +192,7 @@ class _AppShellState extends State<AppShell> {
       _inventoryNotifier,
       _categoriesNotifier,
       _settingsNotifier,
+      _purchaseService,
     ]) {
       n.addListener(_onDomainChanged);
     }
@@ -204,6 +207,7 @@ class _AppShellState extends State<AppShell> {
       _inventoryNotifier,
       _categoriesNotifier,
       _settingsNotifier,
+      _purchaseService,
     ]) {
       n.removeListener(_onDomainChanged);
       n.dispose();
@@ -224,6 +228,7 @@ class _AppShellState extends State<AppShell> {
       loadFailed = true;
     }
     if (!mounted) return;
+    unawaited(_purchaseService.init(_repo));
     _shoppingNotifier.load(data);
     _inventoryNotifier.load(data);
     _categoriesNotifier.load(data);
@@ -590,6 +595,7 @@ class _AppShellState extends State<AppShell> {
                     onImportBackup: _applyBackup,
                     requestNotificationPermission:
                         widget.notifications.requestPermission,
+                    purchaseService: _purchaseService,
                   ),
                 ],
               ),
