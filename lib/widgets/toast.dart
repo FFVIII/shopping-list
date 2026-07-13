@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 
 /// A lightweight, self-contained toast shown in the root [Overlay].
 ///
@@ -298,8 +299,15 @@ class _CelebrationCardState extends State<_CelebrationCard>
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 22),
             decoration: BoxDecoration(
-              color: const Color(0xFF313131).withValues(alpha: 0.92),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(20),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x1F000000),
+                  blurRadius: 20,
+                  offset: Offset(0, 8),
+                ),
+              ],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -320,7 +328,7 @@ class _CelebrationCardState extends State<_CelebrationCard>
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                    color: AppColors.textPrimary,
                     decoration: TextDecoration.none,
                   ),
                 ),
