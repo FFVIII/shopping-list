@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart'
     show CupertinoDatePicker, CupertinoDatePickerMode, CupertinoPicker;
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -175,6 +176,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildSection(l.sectionData, [
                 _navRow(l.backupExport, onTap: _exportBackup),
                 _navRow(l.importRestore, onTap: _importBackup),
+              ]),
+            ],
+            if (kDebugMode) ...[
+              const SizedBox(height: 16),
+              _buildSection('Debug', [
+                _switchRow(
+                  'Force Pro (debug only)',
+                  widget.purchaseService.isPro,
+                  (value) => widget.purchaseService.debugSetIsPro(value),
+                ),
               ]),
             ],
             const SizedBox(height: 32),

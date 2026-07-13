@@ -101,6 +101,27 @@ void main() {
     service.dispose();
   });
 
+  test('debugSetIsPro flips isPro and persists it (debug-only escape hatch)',
+      () async {
+    final controller = StreamController<List<PurchaseDetails>>.broadcast();
+    final service = PurchaseService(
+      purchaseStream: controller.stream,
+      completePurchase: (_) async {},
+    );
+    await service.init(repo);
+
+    await service.debugSetIsPro(true);
+    expect(service.isPro, isTrue);
+    expect(await repo.loadIsPro(), isTrue);
+
+    await service.debugSetIsPro(false);
+    expect(service.isPro, isFalse);
+    expect(await repo.loadIsPro(), isFalse);
+
+    await controller.close();
+    service.dispose();
+  });
+
   test('an error status does not set isPro and records lastError', () async {
     final controller = StreamController<List<PurchaseDetails>>.broadcast();
     final service = PurchaseService(

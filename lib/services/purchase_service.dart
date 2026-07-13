@@ -92,6 +92,15 @@ class PurchaseService extends ChangeNotifier {
     await InAppPurchase.instance.restorePurchases();
   }
 
+  /// Debug-only escape hatch to try the Pro-gated UI before the real
+  /// in-app-purchase product exists in App Store Connect. Only wired up
+  /// behind `kDebugMode` at the call site — never shipped to real users.
+  Future<void> debugSetIsPro(bool value) async {
+    isPro = value;
+    await _repo.saveIsPro(value);
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     _subscription?.cancel();
