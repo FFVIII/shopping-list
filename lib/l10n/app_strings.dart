@@ -119,6 +119,12 @@ abstract class AppStrings {
   String get proUpgrade;
   String get proDesc;
   String get proCta;
+  String get proScreenTitle;
+  String get proBuyButton;
+  String get proRestoreButton;
+  String get proPriceUnavailable;
+  String get proPurchaseSuccessToast;
+  String get proPurchaseFailedToast;
   String get sectionCategoryShelf;
   String get manageCategories;
   String get addCategoryTitle;
@@ -299,8 +305,14 @@ class ZhStrings extends AppStrings {
 
   @override String get settingsTitle => '设置';
   @override String get proUpgrade => '升级 Pro';
-  @override String get proDesc => '拍照识别配图 · 快捷加项组件 · 多设备同步备份';
-  @override String get proCta => '查看 Pro 功能 →';
+  @override String get proDesc => '解锁备份导出与导入恢复';
+  @override String get proCta => '查看详情 →';
+  @override String get proScreenTitle => '解锁 Pro';
+  @override String get proBuyButton => '购买解锁';
+  @override String get proRestoreButton => '恢复购买';
+  @override String get proPriceUnavailable => '价格加载中…';
+  @override String get proPurchaseSuccessToast => '已解锁 Pro！';
+  @override String get proPurchaseFailedToast => '购买失败，请重试';
   @override String get sectionCategoryShelf => '分类与货架';
   @override String get manageCategories => '商品分类';
   @override String get addCategoryTitle => '新建分类';
@@ -497,8 +509,14 @@ class EnStrings extends AppStrings {
 
   @override String get settingsTitle => 'Settings';
   @override String get proUpgrade => 'Upgrade to Pro';
-  @override String get proDesc => 'Photo recognition · Quick-add widget · Multi-device sync';
-  @override String get proCta => 'See Pro features →';
+  @override String get proDesc => 'Unlock backup export & import restore';
+  @override String get proCta => 'See details →';
+  @override String get proScreenTitle => 'Unlock Pro';
+  @override String get proBuyButton => 'Unlock now';
+  @override String get proRestoreButton => 'Restore purchases';
+  @override String get proPriceUnavailable => 'Loading price…';
+  @override String get proPurchaseSuccessToast => 'Pro unlocked!';
+  @override String get proPurchaseFailedToast => 'Purchase failed, please try again';
   @override String get sectionCategoryShelf => 'Categories & aisles';
   @override String get manageCategories => 'Product categories';
   @override String get addCategoryTitle => 'New category';
