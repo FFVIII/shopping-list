@@ -165,6 +165,31 @@ void main() {
     });
   });
 
+  group('BudgetHistoryEntry', () {
+    test('toMap/fromMap round-trips all fields', () {
+      final clearedAt = DateTime(2026, 7, 13, 20, 15);
+      final entry = BudgetHistoryEntry(
+        id: 'hist_1',
+        clearedAt: clearedAt,
+        items: [
+          BudgetHistoryLineItem(name: '牛奶', quantity: 2, unitPrice: 8.5),
+          BudgetHistoryLineItem(name: '鸡蛋', quantity: 1, unitPrice: 12.0),
+        ],
+      );
+
+      final restored = budgetHistoryEntryFromMap(entry.toMap());
+
+      expect(restored.id, entry.id);
+      expect(restored.clearedAt, clearedAt);
+      expect(restored.items.length, 2);
+      expect(restored.items[0].name, '牛奶');
+      expect(restored.items[0].quantity, 2);
+      expect(restored.items[0].unitPrice, 8.5);
+      expect(restored.items[1].name, '鸡蛋');
+      expect(restored.totalAmount, 2 * 8.5 + 1 * 12.0);
+    });
+  });
+
   group('AppSettings', () {
     test('toMap/fromMap round-trips all fields', () {
       final settings = AppSettings(
