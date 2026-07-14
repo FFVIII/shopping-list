@@ -349,7 +349,17 @@ extension _InvListBuilders on _InventoryScreenState {
           if (trailing != null) ...[
             const Spacer(),
             ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 140),
+              // Generous at normal text size so English summaries like
+              // "1 stocked · 0 to restock" aren't needlessly ellipsized;
+              // tighter at large accessibility sizes, where the zone
+              // name/count chip on the left need the room instead and
+              // truncation here is an acceptable fallback.
+              constraints: BoxConstraints(
+                maxWidth:
+                    MediaQuery.textScalerOf(context).scale(1) > 1.3
+                        ? 140
+                        : 200,
+              ),
               child: trailing,
             ),
           ],
