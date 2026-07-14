@@ -14,8 +14,13 @@ platform :ios do
   desc "Build the release IPA via `flutter build ipa`"
   lane :build do
     Dir.chdir("..") do
-      sh("flutter", "clean")
-      sh("flutter", "build", "ipa", "--release")
+      # `flutter build ipa` shells out to `pod install`, which needs the
+      # system CocoaPods gem — but `bundle exec` restricts GEM_PATH to only
+      # this Gemfile's gems (fastlane), making `pod` look "broken" to it.
+      Bundler.with_unbundled_env do
+        sh("flutter", "clean")
+        sh("flutter", "build", "ipa", "--release")
+      end
     end
   end
 
