@@ -12,6 +12,8 @@ Future<void> _pumpSettings(
   bool isPro = false,
   Future<bool> Function()? requestNotificationPermission,
   TextScaler textScaler = TextScaler.noScaling,
+  List<BudgetHistoryEntry> budgetHistory = const [],
+  void Function(String id)? onDeleteBudgetHistoryEntry,
 }) async {
   final purchaseService = PurchaseService()..isPro = isPro;
 
@@ -44,6 +46,8 @@ Future<void> _pumpSettings(
           requestNotificationPermission:
               requestNotificationPermission ?? () async => true,
           purchaseService: purchaseService,
+          budgetHistory: budgetHistory,
+          onDeleteBudgetHistoryEntry: onDeleteBudgetHistoryEntry ?? (_) {},
         ),
         ),
       ),
@@ -127,5 +131,24 @@ void main() {
       (tester) async {
     await _pumpSettings(tester, textScaler: const TextScaler.linear(3.0));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Spending History row hidden when not Pro', (tester) async {
+    await _pumpSettings(tester, isPro: false);
+
+    expect(find.text(ZhStrings().spendingHistory), findsNothing);
+  });
+
+  testWidgets(
+      'Spending History row visible and navigates when Pro', (tester) async {
+    await _pumpSettings(tester, isPro: true);
+
+    expect(find.text(ZhStrings().spendingHistory), findsOneWidget);
+    await tester.ensureVisible(find.text(ZhStrings().spendingHistory));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(ZhStrings().spendingHistory));
+    await tester.pumpAndSettle();
+
+    expect(find.text(ZhStrings().spendingHistoryEmpty), findsOneWidget);
   });
 }
