@@ -267,8 +267,11 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
                       ),
                       TextField(
                         controller: _shelfCtrl,
+                        maxLength: 20,
                         style: const TextStyle(fontSize: 15),
-                        decoration: _fieldDecoration(l.shelfCodeFieldHint),
+                        decoration: _fieldDecoration(l.shelfCodeFieldHint).copyWith(
+                            counterStyle: const TextStyle(
+                                fontSize: 10, color: AppColors.textDisabled)),
                       ),
                     ],
                   ),
@@ -506,8 +509,11 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
             _label(l.shelfCodeFieldLabel),
             TextField(
               controller: _shelfCtrl,
+              maxLength: 20,
               style: const TextStyle(fontSize: 15),
-              decoration: _fieldDecoration(''),
+              decoration: _fieldDecoration('').copyWith(
+                  counterStyle: const TextStyle(
+                      fontSize: 10, color: AppColors.textDisabled)),
             ),
             _label(l.categoryLabel),
             Wrap(
