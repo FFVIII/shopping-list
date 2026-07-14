@@ -66,7 +66,7 @@ extension _InvListBuilders on _InventoryScreenState {
           ...entry.value.map((item) => _InventoryCard(
                 item: item,
                 thresholdDays: widget.thresholdDays,
-                showShelfCode: !_byCategory,
+                showShelfCode: _byCategory,
                 onTap: _batchMode
                     ? () => setState(() {
                           HapticFeedback.selectionClick();
@@ -150,7 +150,7 @@ extension _InvListBuilders on _InventoryScreenState {
           key: isTutorialExampleItem ? null : Key('invc_${item.id}'),
           item: item,
           thresholdDays: widget.thresholdDays,
-          showShelfCode: !_byCategory,
+          showShelfCode: _byCategory,
           onTap: _batchMode
               ? () => setState(() {
                     HapticFeedback.selectionClick();
