@@ -241,7 +241,9 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
                         ],
                         maxLength: 8,
                         style: const TextStyle(fontSize: 15),
-                        decoration: _fieldDecoration('1').copyWith(counterText: ''),
+                        decoration: _fieldDecoration('1').copyWith(
+                            counterStyle: const TextStyle(
+                                fontSize: 10, color: AppColors.textDisabled)),
                       ),
                     ],
                   ),
@@ -497,7 +499,9 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               maxLength: 8,
               style: const TextStyle(fontSize: 15),
-              decoration: _fieldDecoration('1').copyWith(counterText: ''),
+              decoration: _fieldDecoration('1').copyWith(
+                  counterStyle: const TextStyle(
+                      fontSize: 10, color: AppColors.textDisabled)),
             ),
             _label(l.shelfCodeFieldLabel),
             TextField(

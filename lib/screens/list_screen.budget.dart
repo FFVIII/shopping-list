@@ -252,7 +252,7 @@ class _BudgetRow extends StatelessWidget {
                             ),
                             const SizedBox(height: 3),
                             Text(
-                              '${item.quantity} × ${l.money(item.unitPrice)}',
+                              '${l.money(item.unitPrice)} × ${item.quantity}',
                               style: const TextStyle(
                                   fontSize: 12, color: AppColors.textMuted),
                             ),
@@ -432,7 +432,9 @@ class _BudgetSheetState extends State<_BudgetSheet> {
                         ],
                         maxLength: 8,
                         style: const TextStyle(fontSize: 15),
-                        decoration: _dec(l.currencySymbol).copyWith(counterText: ''),
+                        decoration: _dec(l.currencySymbol).copyWith(
+                            counterStyle: const TextStyle(
+                                fontSize: 10, color: AppColors.textDisabled)),
                         textInputAction: TextInputAction.next,
                         onChanged: (_) => setState(() {}),
                         onSubmitted: (_) => _qtyFocus.requestFocus(),
@@ -453,7 +455,9 @@ class _BudgetSheetState extends State<_BudgetSheet> {
                         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                         maxLength: 8,
                         style: const TextStyle(fontSize: 15),
-                        decoration: _dec('1').copyWith(counterText: ''),
+                        decoration: _dec('1').copyWith(
+                            counterStyle: const TextStyle(
+                                fontSize: 10, color: AppColors.textDisabled)),
                         textInputAction: TextInputAction.done,
                         onChanged: (_) => setState(() {}),
                         onSubmitted: (_) => _confirm(),
