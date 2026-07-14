@@ -29,6 +29,7 @@ void main() {
     expect(data.shoppingSmart, isEmpty);
     expect(data.inventory, isEmpty);
     expect(data.budget, isEmpty);
+    expect(data.budgetHistory, isEmpty);
     expect(data.shoppingSimple, isEmpty);
     expect(data.shelfCodeOrder, isEmpty);
     expect(data.settings.reminderThresholdDays, 5);
@@ -98,6 +99,28 @@ void main() {
     expect(reloaded.shelfCodeOrder, ['货架A1', '货架B2']);
   });
 
+  test('saveHistory persists and round-trips budget history entries',
+      () async {
+    final repo = AppRepository();
+    await repo.init();
+    await repo.load(lang: Lang.zh);
+
+    final entry = BudgetHistoryEntry(
+      id: 'hist_1',
+      clearedAt: DateTime(2026, 7, 13, 9, 0),
+      items: [BudgetHistoryLineItem(name: '牛奶', quantity: 2, unitPrice: 8.5)],
+    );
+    await repo.saveHistory([entry]);
+
+    final repo2 = AppRepository();
+    await repo2.init();
+    final reloaded = await repo2.load(lang: Lang.zh);
+
+    expect(reloaded.budgetHistory.single.id, 'hist_1');
+    expect(reloaded.budgetHistory.single.items.single.name, '牛奶');
+    expect(reloaded.budgetHistory.single.totalAmount, 17.0);
+  });
+
   test('replaceAll overwrites every collection', () async {
     final repo = AppRepository();
     await repo.init();
@@ -109,6 +132,13 @@ void main() {
       shoppingSmart: [],
       inventory: [],
       budget: [BudgetItem(id: 'only', name: '替换', quantity: 2, unitPrice: 3.5)],
+      budgetHistory: [
+        BudgetHistoryEntry(
+          id: 'h1',
+          clearedAt: DateTime(2026, 1, 1),
+          items: [BudgetHistoryLineItem(name: '旧记录', quantity: 1, unitPrice: 1)],
+        ),
+      ],
       categories: categories,
       settings: AppSettings(
         reminderThresholdDays: 1,
@@ -125,6 +155,7 @@ void main() {
     expect(reloaded.shoppingSmart, isEmpty);
     expect(reloaded.inventory, isEmpty);
     expect(reloaded.budget.single.name, '替换');
+    expect(reloaded.budgetHistory.single.id, 'h1');
     expect(reloaded.settings.reminderHour, 6);
     expect(reloaded.settings.restockReminderEnabled, false);
     expect(reloaded.shelfCodeOrder, ['A1']);

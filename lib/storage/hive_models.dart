@@ -101,6 +101,40 @@ BudgetItem budgetItemFromMap(Map map) => BudgetItem(
       unitPrice: (map['unitPrice'] as num?)?.toDouble() ?? 0,
     );
 
+// ─── BudgetHistoryEntry ───────────────────────────────────────────────────────
+
+extension BudgetHistoryLineItemHiveX on BudgetHistoryLineItem {
+  Map<String, dynamic> toMap() => {
+        'name': name,
+        'quantity': quantity,
+        'unitPrice': unitPrice,
+      };
+}
+
+BudgetHistoryLineItem budgetHistoryLineItemFromMap(Map map) =>
+    BudgetHistoryLineItem(
+      name: map['name'] as String,
+      quantity: map['quantity'] as int? ?? 1,
+      unitPrice: (map['unitPrice'] as num?)?.toDouble() ?? 0,
+    );
+
+extension BudgetHistoryEntryHiveX on BudgetHistoryEntry {
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'clearedAt': clearedAt.millisecondsSinceEpoch,
+        'items': items.map((i) => i.toMap()).toList(),
+      };
+}
+
+BudgetHistoryEntry budgetHistoryEntryFromMap(Map map) => BudgetHistoryEntry(
+      id: map['id'] as String,
+      clearedAt: DateTime.fromMillisecondsSinceEpoch(map['clearedAt'] as int),
+      items: (map['items'] as List)
+          .cast<Map>()
+          .map(budgetHistoryLineItemFromMap)
+          .toList(),
+    );
+
 // ─── AppSettings ──────────────────────────────────────────────────────────────
 
 extension AppSettingsHiveX on AppSettings {

@@ -37,6 +37,11 @@ abstract class AppStrings {
   String get budgetAddHint; // add-bar hint
   String get budgetEmptyTitle;
   String get budgetEmptySubtitle;
+  String get spendingHistory; // 设置页入口/页面标题 / "Spending History"
+  String spendingHistoryMonthTotal(String formattedAmount); // "本月共花 ¥xxx"
+  String get spendingHistoryEmpty;
+  String get deleteHistoryEntryTitle;
+  String get deleteHistoryEntryMessage;
   String get save; // "保存" / "Save"
   String get currencySymbol; // "¥" / "$"
   String money(double v); // "¥12.50" / "$12.50"
@@ -233,6 +238,12 @@ class ZhStrings extends AppStrings {
   @override String get budgetAddHint => '记一笔花费…';
   @override String get budgetEmptyTitle => '还没有记账';
   @override String get budgetEmptySubtitle => '在下方记一笔花费';
+  @override String get spendingHistory => '消费历史';
+  @override String spendingHistoryMonthTotal(String formattedAmount) =>
+      '本月共花 $formattedAmount';
+  @override String get spendingHistoryEmpty => '暂无消费记录';
+  @override String get deleteHistoryEntryTitle => '删除这条记录？';
+  @override String get deleteHistoryEntryMessage => '删除后无法恢复。';
   @override String get save => '保存';
   @override String get currencySymbol => '¥';
   @override String money(double v) => '¥${v.toStringAsFixed(2)}';
@@ -442,6 +453,12 @@ class EnStrings extends AppStrings {
   @override String get budgetAddHint => 'Add an expense…';
   @override String get budgetEmptyTitle => 'No expenses yet';
   @override String get budgetEmptySubtitle => 'Add an expense below';
+  @override String get spendingHistory => 'Spending History';
+  @override String spendingHistoryMonthTotal(String formattedAmount) =>
+      '$formattedAmount spent this month';
+  @override String get spendingHistoryEmpty => 'No spending history yet';
+  @override String get deleteHistoryEntryTitle => 'Delete this record?';
+  @override String get deleteHistoryEntryMessage => 'This cannot be undone.';
   @override String get save => 'Save';
   @override String get currencySymbol => '\$';
   @override String money(double v) => '\$${v.toStringAsFixed(2)}';

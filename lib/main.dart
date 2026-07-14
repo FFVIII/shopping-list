@@ -257,6 +257,7 @@ class _AppShellState extends State<AppShell> {
       shoppingSmart: [],
       inventory: [],
       budget: [],
+      budgetHistory: [],
       categories: categories,
       settings: AppSettings(),
       shelfZones: defaultShelfZones.toList(),
@@ -473,6 +474,7 @@ class _AppShellState extends State<AppShell> {
         shoppingSmart: _shoppingNotifier.smart,
         inventory: _inventoryNotifier.items,
         budget: _shoppingNotifier.budget,
+        budgetHistory: _shoppingNotifier.budgetHistory,
         categories: _categoriesNotifier.categories,
         settings: _settingsNotifier.settings,
         shelfZones: _categoriesNotifier.shelfZones,
@@ -541,6 +543,11 @@ class _AppShellState extends State<AppShell> {
                     onEditBudget: _shoppingNotifier.editBudgetItem,
                     onDeleteBudget: _shoppingNotifier.deleteBudgetItem,
                     onReorderBudget: _shoppingNotifier.reorderBudget,
+                    onRecordBudgetPurchase: (snapshot) {
+                      if (_purchaseService.isPro) {
+                        _shoppingNotifier.recordBudgetPurchase(snapshot);
+                      }
+                    },
                     onBatchDeleteSimple: _shoppingNotifier.batchDeleteSimple,
                     onBatchDeleteSmart: _shoppingNotifier.batchDeleteSmart,
                     onBatchMarkBought: _batchMarkBought,
@@ -596,6 +603,9 @@ class _AppShellState extends State<AppShell> {
                     requestNotificationPermission:
                         widget.notifications.requestPermission,
                     purchaseService: _purchaseService,
+                    budgetHistory: _shoppingNotifier.budgetHistory,
+                    onDeleteBudgetHistoryEntry:
+                        _shoppingNotifier.deleteBudgetHistoryEntry,
                   ),
                 ],
               ),

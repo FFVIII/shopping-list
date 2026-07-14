@@ -331,6 +331,35 @@ class BudgetItem {
   double get lineTotal => quantity * unitPrice;
 }
 
+class BudgetHistoryLineItem {
+  final String name;
+  final int quantity;
+  final double unitPrice;
+
+  BudgetHistoryLineItem({
+    required this.name,
+    this.quantity = 1,
+    this.unitPrice = 0,
+  });
+
+  double get lineTotal => quantity * unitPrice;
+}
+
+class BudgetHistoryEntry {
+  final String id;
+  final DateTime clearedAt;
+  final List<BudgetHistoryLineItem> items;
+
+  BudgetHistoryEntry({
+    required this.id,
+    required this.clearedAt,
+    required this.items,
+  });
+
+  double get totalAmount =>
+      items.fold(0.0, (sum, i) => sum + i.lineTotal);
+}
+
 // ─── App Settings ─────────────────────────────────────────────────────────────
 
 class AppSettings {

@@ -20,6 +20,7 @@ import '../services/purchase_service.dart';
 import 'pro_upgrade_screen.dart';
 import 'shelf_order_screen.dart';
 import 'category_manage_screen.dart';
+import 'spending_history_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   final AppSettings settings;
@@ -49,6 +50,8 @@ class SettingsScreen extends StatefulWidget {
   final Future<void> Function(AppData data) onImportBackup;
   final Future<bool> Function() requestNotificationPermission;
   final PurchaseService purchaseService;
+  final List<BudgetHistoryEntry> budgetHistory;
+  final void Function(String id) onDeleteBudgetHistoryEntry;
 
   const SettingsScreen({
     super.key,
@@ -72,6 +75,8 @@ class SettingsScreen extends StatefulWidget {
     required this.onImportBackup,
     required this.requestNotificationPermission,
     required this.purchaseService,
+    required this.budgetHistory,
+    required this.onDeleteBudgetHistoryEntry,
   });
 
   @override
@@ -176,6 +181,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildSection(l.sectionData, [
                 _navRow(l.backupExport, onTap: _exportBackup),
                 _navRow(l.importRestore, onTap: _importBackup),
+                _navRow(l.spendingHistory, onTap: _openSpendingHistory),
               ]),
             ],
             if (kDebugMode) ...[
@@ -465,6 +471,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         onAddCode: widget.onAddShelfCode,
         onDeleteCode: widget.onDeleteShelfCode,
         onRenameCode: widget.onRenameShelfCode,
+      ),
+    ));
+  }
+
+  void _openSpendingHistory() {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => SpendingHistoryScreen(
+        budgetHistory: widget.budgetHistory,
+        onDeleteEntry: widget.onDeleteBudgetHistoryEntry,
       ),
     ));
   }
