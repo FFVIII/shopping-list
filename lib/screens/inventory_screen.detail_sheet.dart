@@ -274,7 +274,7 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                     padding: const EdgeInsets.only(left: 5),
                     child: TextField(
                       controller: _shelfCtrl,
-                      maxLength: 10,
+                      maxLength: 20,
                       style: const TextStyle(fontSize: 15),
                       decoration: _dec(l.shelfCodeFieldLabel),
                       onChanged: (v) {

@@ -119,7 +119,7 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
               Expanded(
                 child: TextField(
                   controller: _shelfCtrl,
-                  maxLength: 10,
+                  maxLength: 20,
                   style: const TextStyle(fontSize: 15),
                   decoration: _fieldDecoration(l.shelfCodeFieldLabel),
                 ),
