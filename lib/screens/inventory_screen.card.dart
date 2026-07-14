@@ -11,6 +11,10 @@ class _InventoryCard extends StatelessWidget {
   final bool batchMode;
   final bool selected;
   final VoidCallback? onHandleTap;
+  // The shelf code is redundant with the section header when grouped by
+  // aisle — hide it there, but keep it when grouped by category (or
+  // ungrouped), where it's the only indication of the item's shelf.
+  final bool showShelfCode;
 
   const _InventoryCard({
     super.key,
@@ -22,6 +26,7 @@ class _InventoryCard extends StatelessWidget {
     this.batchMode = false,
     this.selected = false,
     this.onHandleTap,
+    this.showShelfCode = true,
   });
 
   @override
@@ -120,48 +125,40 @@ class _InventoryCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            Text(
+                              dn,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
                             Row(
-                              crossAxisAlignment: CrossAxisAlignment.baseline,
-                              textBaseline: TextBaseline.alphabetic,
                               children: [
+                                if (q.isNotEmpty) ...[
+                                  QuantityBadge(qty: q),
+                                  const SizedBox(width: 6),
+                                ],
                                 Flexible(
                                   child: Text(
-                                    dn,
+                                    l.lastBoughtLabel(
+                                        '${item.purchasedAt.month}/${item.purchasedAt.day}'),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.textPrimary,
+                                      fontSize: 11,
+                                      color: AppColors.textDisabled,
                                     ),
                                   ),
                                 ),
-                                if (q.isNotEmpty) ...[
-                                  const SizedBox(width: 6),
-                                  Flexible(
-                                    child: Text(
-                                      q,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.textMuted,
-                                      ),
-                                    ),
-                                  ),
-                                ],
                               ],
                             ),
-                            const SizedBox(height: 3),
-                            Text(
-                              l.lastBoughtLabel(
-                                  '${item.purchasedAt.month}/${item.purchasedAt.day}'),
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: AppColors.textDisabled,
-                              ),
-                            ),
-                            if (item.shelfCode != null && item.shelfCode!.isNotEmpty) ...[
+                            if (showShelfCode &&
+                                item.shelfCode != null &&
+                                item.shelfCode!.isNotEmpty) ...[
                               const SizedBox(height: 4),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),

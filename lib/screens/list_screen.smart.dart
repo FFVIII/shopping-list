@@ -162,6 +162,7 @@ extension _SmartModeState on _ListScreenState {
           key: Key('si_${item.id}'),
           item: item,
           zoneColor: zoneColor,
+          showShelfCode: !_byShelf,
           onToggle: () {
             HapticFeedback.lightImpact();
             widget.onToggleSmart(item.id);
@@ -267,6 +268,10 @@ class _SmartRow extends StatelessWidget {
   final bool tripSelected;
   final VoidCallback? onTripToggle;
   final VoidCallback? onHandleTap;
+  // The shelf code is redundant with the section header when grouped by
+  // aisle — hide it there, but keep it when grouped by category (or
+  // ungrouped), where it's the only indication of the item's shelf.
+  final bool showShelfCode;
 
   const _SmartRow({
     super.key,
@@ -282,6 +287,7 @@ class _SmartRow extends StatelessWidget {
     this.tripSelected = true,
     this.onTripToggle,
     this.onHandleTap,
+    this.showShelfCode = true,
   });
 
   @override
@@ -363,48 +369,38 @@ class _SmartRow extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
+                            Text(
+                              l.data(item.name),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
                             Row(
-                              crossAxisAlignment: CrossAxisAlignment.baseline,
-                              textBaseline: TextBaseline.alphabetic,
                               children: [
+                                if (qty.isNotEmpty) ...[
+                                  QuantityBadge(qty: qty),
+                                  const SizedBox(width: 6),
+                                ],
                                 Flexible(
                                   child: Text(
-                                    l.data(item.name),
+                                    l.days(item.estimatedDays ??
+                                        item.category.defaultDays),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.textPrimary,
+                                      fontSize: 11,
+                                      color: AppColors.textDisabled,
                                     ),
                                   ),
                                 ),
-                                if (qty.isNotEmpty) ...[
-                                  const SizedBox(width: 6),
-                                  Flexible(
-                                    child: Text(
-                                      qty,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.textMuted,
-                                      ),
-                                    ),
-                                  ),
-                                ],
                               ],
                             ),
-                            const SizedBox(height: 3),
-                            Text(
-                              l.days(
-                                  item.estimatedDays ?? item.category.defaultDays),
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: AppColors.textDisabled,
-                              ),
-                            ),
-                            if (code != null) ...[
+                            if (showShelfCode && code != null) ...[
                               const SizedBox(height: 5),
                               Container(
                                 padding: const EdgeInsets.symmetric(
