@@ -197,11 +197,10 @@ abstract class AppStrings {
 
   // ── Onboarding tutorial ──
   String get tutorialExampleItemName; // 固定示例商品名
-  String get quickStartTitle;
-  String get quickStartAllDone;
-  String get quickStartAddItem;
-  String get quickStartCompleteTrip;
-  String get quickStartViewInventory;
+  String get tutorialStepAddItem;
+  String get tutorialStepCompleteTrip;
+  String get tutorialStepViewInventory;
+  String get tutorialFinalMessage;
   String get tutorialGotIt;
   String get tutorialSkip;
 }
@@ -409,11 +408,11 @@ class ZhStrings extends AppStrings {
   @override String data(String canonical) => canonical; // zh is canonical
 
   @override String get tutorialExampleItemName => '鸡蛋（示例）';
-  @override String get quickStartTitle => '快速上手';
-  @override String get quickStartAllDone => '搞定！';
-  @override String get quickStartAddItem => '添加第一件商品';
-  @override String get quickStartCompleteTrip => '完成一次购物';
-  @override String get quickStartViewInventory => '查看库存';
+  @override String get tutorialStepAddItem => '点击 + 把示例商品加入清单';
+  @override String get tutorialStepCompleteTrip => '买完了？点这里完成本次购物';
+  @override String get tutorialStepViewInventory => '去库存看看刚刚买的东西吧';
+  @override String get tutorialFinalMessage =>
+      '以后库存快用完时，「提醒」页会自动提示你补货';
   @override String get tutorialGotIt => '知道了';
   @override String get tutorialSkip => '跳过';
 }
@@ -632,11 +631,11 @@ class EnStrings extends AppStrings {
   @override String data(String canonical) => _enData[canonical] ?? canonical;
 
   @override String get tutorialExampleItemName => 'Egg (example)';
-  @override String get quickStartTitle => 'Quick start';
-  @override String get quickStartAllDone => 'All done!';
-  @override String get quickStartAddItem => 'Add your first item';
-  @override String get quickStartCompleteTrip => 'Complete a shopping trip';
-  @override String get quickStartViewInventory => 'Check your inventory';
+  @override String get tutorialStepAddItem => 'Tap + to add the example item to your list';
+  @override String get tutorialStepCompleteTrip => 'Done shopping? Tap here to finish';
+  @override String get tutorialStepViewInventory => 'Check your inventory for what you just bought';
+  @override String get tutorialFinalMessage =>
+      'When stock runs low, the Alerts tab will remind you to restock';
   @override String get tutorialGotIt => 'Got it';
   @override String get tutorialSkip => 'Skip';
 }

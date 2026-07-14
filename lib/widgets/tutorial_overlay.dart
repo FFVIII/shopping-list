@@ -1,14 +1,16 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
 import '../services/tutorial_controller.dart';
 import '../services/tutorial_store.dart';
 import '../theme/app_colors.dart';
+import 'tutorial_target.dart';
 
-/// Renders the "quick start" checklist card for the first-run onboarding
-/// flow. A plain floating card — no dimming, no blocking taps, no tracking
-/// of other widgets' on-screen position — so the user can freely use the
-/// app while it's up. Wraps the app's Navigator output via
-/// `MaterialApp.builder` so the card stays on top of modal bottom sheets,
+/// Renders the coach-mark spotlight for the first-run onboarding tutorial: a
+/// hand-drawn oval outline circles the real on-screen target, a dashed arrow
+/// connects it to a text bubble, and four opaque bars dim + block everything
+/// outside the target. Wraps the app's Navigator output via
+/// `MaterialApp.builder` so the overlay stays on top of modal bottom sheets,
 /// which are pushed as routes on that same Navigator.
 class TutorialOverlay extends StatefulWidget {
   final Widget child;
@@ -19,10 +21,26 @@ class TutorialOverlay extends StatefulWidget {
 }
 
 class _TutorialOverlayState extends State<TutorialOverlay> {
+  static const Map<TutorialStep, List<String>> _candidateIds = {
+    TutorialStep.addItem: ['confirm_add_button', 'add_button'],
+    TutorialStep.completeTrip: ['confirm_trip_button', 'complete_trip_button'],
+    TutorialStep.viewInventory: ['inventory_tab'],
+  };
+
+  /// Vertical gap between the target and the tooltip bubble, and between
+  /// the target and the arrow's starting point.
+  static const double _bubbleGap = 28;
+
+  /// How much bigger the hand-drawn oval is than the real target rect.
+  static const double _ovalPadding = 10;
+
+  Rect? _targetRect;
+
   @override
   void initState() {
     super.initState();
     TutorialController.instance.addListener(_onControllerChanged);
+    _scheduleFrameCheck();
   }
 
   @override
@@ -32,7 +50,35 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
   }
 
   void _onControllerChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    setState(() {});
+    _scheduleFrameCheck();
+  }
+
+  void _scheduleFrameCheck() {
+    if (TutorialController.instance.step == TutorialStep.done) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final rect = _findTargetRect();
+      if (rect != _targetRect) {
+        setState(() => _targetRect = rect);
+      }
+      _scheduleFrameCheck();
+    });
+  }
+
+  Rect? _findTargetRect() {
+    final ids = _candidateIds[TutorialController.instance.step];
+    if (ids == null) return null;
+    for (final id in ids) {
+      final renderObject =
+          TutorialRegistry.keyFor(id).currentContext?.findRenderObject();
+      if (renderObject is RenderBox && renderObject.attached) {
+        final topLeft = renderObject.localToGlobal(Offset.zero);
+        return topLeft & renderObject.size;
+      }
+    }
+    return null;
   }
 
   @override
@@ -41,48 +87,221 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
     if (step == TutorialStep.done) return widget.child;
 
     final l = L10n.of(context);
-    final allDone = step == TutorialStep.finalMessage;
-    // addItem/completeTrip/viewInventory are indices 0/1/2; each step's
-    // index is how many of the 3 tasks are already checked off.
-    final checkedCount = allDone ? 3 : step.index;
+
+    if (step == TutorialStep.finalMessage) {
+      return Stack(children: [
+        widget.child,
+        Positioned.fill(
+          child: Container(
+            color: Colors.black.withValues(alpha: 0.55),
+            child: Center(
+              child: _TutorialCard(
+                text: l.tutorialFinalMessage,
+                buttonLabel: l.tutorialGotIt,
+                onPressed: TutorialController.instance.finish,
+              ),
+            ),
+          ),
+        ),
+      ]);
+    }
+
+    final rect = _targetRect;
+    if (rect == null) return widget.child;
+
+    final size = MediaQuery.of(context).size;
+    final tooltipBelow = rect.top < size.height / 2;
+    final stepText = switch (step) {
+      TutorialStep.addItem => l.tutorialStepAddItem,
+      TutorialStep.completeTrip => l.tutorialStepCompleteTrip,
+      TutorialStep.viewInventory => l.tutorialStepViewInventory,
+      _ => '',
+    };
+    const barColor = Colors.black54;
+
+    final oval = rect.inflate(_ovalPadding);
+    final anchorX = rect.center.dx.clamp(32.0, size.width - 32.0);
+    final arrowStart = Offset(
+      anchorX,
+      tooltipBelow ? rect.bottom + _bubbleGap : rect.top - _bubbleGap,
+    );
+    final arrowEnd = tooltipBelow ? oval.bottomCenter : oval.topCenter;
 
     return Stack(children: [
       widget.child,
+      // Four opaque bars around the target rect: they intercept taps so
+      // only the hole in the middle (the real widget underneath) is
+      // reachable, while everything else is dimmed and blocked.
+      Positioned(
+        left: 0,
+        top: 0,
+        right: 0,
+        height: rect.top,
+        child: Container(color: barColor),
+      ),
+      Positioned(
+        left: 0,
+        top: rect.bottom,
+        right: 0,
+        bottom: 0,
+        child: Container(color: barColor),
+      ),
+      Positioned(
+        left: 0,
+        top: rect.top,
+        width: rect.left,
+        height: rect.height,
+        child: Container(color: barColor),
+      ),
+      Positioned(
+        left: rect.right,
+        top: rect.top,
+        right: 0,
+        height: rect.height,
+        child: Container(color: barColor),
+      ),
+      Positioned.fill(
+        child: IgnorePointer(
+          child: CustomPaint(painter: _HandDrawnOvalPainter(oval)),
+        ),
+      ),
+      Positioned.fill(
+        child: IgnorePointer(
+          child: CustomPaint(
+            painter: _DashedArrowPainter(start: arrowStart, end: arrowEnd),
+          ),
+        ),
+      ),
       Positioned(
         left: 16,
         right: 16,
-        bottom: MediaQuery.of(context).padding.bottom + 76,
-        child: _QuickStartCard(
-          title: allDone ? l.quickStartAllDone : l.quickStartTitle,
-          items: [
-            l.quickStartAddItem,
-            l.quickStartCompleteTrip,
-            l.quickStartViewInventory,
-          ],
-          checkedCount: checkedCount,
-          actionLabel: allDone ? l.tutorialGotIt : l.tutorialSkip,
-          onAction: allDone
-              ? TutorialController.instance.finish
-              : TutorialController.instance.skip,
+        top: tooltipBelow ? rect.bottom + _bubbleGap : null,
+        bottom: tooltipBelow ? null : size.height - rect.top + _bubbleGap,
+        child: _TutorialBubble(
+          text: stepText,
+          skipLabel: l.tutorialSkip,
+          onSkip: TutorialController.instance.skip,
         ),
       ),
     ]);
   }
 }
 
-class _QuickStartCard extends StatelessWidget {
-  final String title;
-  final List<String> items;
-  final int checkedCount;
-  final String actionLabel;
-  final VoidCallback onAction;
+/// Hand-drawn-style oval outline around a tutorial target. Two overlapping
+/// strokes — one plain, one slightly offset and rotated — approximate the
+/// look of someone circling the target twice with a pen.
+class _HandDrawnOvalPainter extends CustomPainter {
+  final Rect oval;
+  const _HandDrawnOvalPainter(this.oval);
 
-  const _QuickStartCard({
-    required this.title,
-    required this.items,
-    required this.checkedCount,
-    required this.actionLabel,
-    required this.onAction,
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppColors.brand
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawOval(oval, paint);
+
+    canvas.save();
+    canvas.translate(oval.center.dx, oval.center.dy);
+    canvas.rotate(0.05);
+    canvas.translate(-oval.center.dx, -oval.center.dy);
+    canvas.drawOval(oval.translate(2, -2).deflate(1.5), paint);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _HandDrawnOvalPainter oldDelegate) =>
+      oldDelegate.oval != oval;
+}
+
+/// Dashed curved arrow connecting the tooltip bubble to the hand-drawn oval,
+/// with a small filled triangular arrowhead at [end].
+class _DashedArrowPainter extends CustomPainter {
+  final Offset start;
+  final Offset end;
+  const _DashedArrowPainter({required this.start, required this.end});
+
+  static const double _dashLength = 6;
+  static const double _gapLength = 5;
+  static const double _arrowSize = 8;
+  static const double _bowAmount = 30;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppColors.brand
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
+
+    final mid = Offset((start.dx + end.dx) / 2, (start.dy + end.dy) / 2);
+    final bowSign = end.dx >= start.dx ? 1.0 : -1.0;
+    final control = mid + Offset(_bowAmount * bowSign, 0);
+
+    final path = Path()
+      ..moveTo(start.dx, start.dy)
+      ..quadraticBezierTo(control.dx, control.dy, end.dx, end.dy);
+
+    _drawDashed(canvas, path, paint);
+    _drawArrowHead(canvas, path, paint);
+  }
+
+  void _drawDashed(Canvas canvas, Path path, Paint paint) {
+    for (final metric in path.computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        final next = (distance + _dashLength).clamp(0.0, metric.length);
+        canvas.drawPath(metric.extractPath(distance, next), paint);
+        distance = next + _gapLength;
+      }
+    }
+  }
+
+  void _drawArrowHead(Canvas canvas, Path path, Paint paint) {
+    final metrics = path.computeMetrics().toList();
+    if (metrics.isEmpty) return;
+    final metric = metrics.last;
+    final tangent = metric.getTangentForOffset(metric.length);
+    if (tangent == null) return;
+
+    final tip = tangent.position;
+    final angle = tangent.angle;
+    final p1 = tip -
+        Offset(math.cos(angle - 0.5), math.sin(angle - 0.5)) * _arrowSize;
+    final p2 = tip -
+        Offset(math.cos(angle + 0.5), math.sin(angle + 0.5)) * _arrowSize;
+
+    final fillPaint = Paint()
+      ..color = AppColors.brand
+      ..style = PaintingStyle.fill;
+
+    canvas.drawPath(
+      Path()
+        ..moveTo(tip.dx, tip.dy)
+        ..lineTo(p1.dx, p1.dy)
+        ..lineTo(p2.dx, p2.dy)
+        ..close(),
+      fillPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedArrowPainter oldDelegate) =>
+      oldDelegate.start != start || oldDelegate.end != end;
+}
+
+class _TutorialBubble extends StatelessWidget {
+  final String text;
+  final String skipLabel;
+  final VoidCallback onSkip;
+
+  const _TutorialBubble({
+    required this.text,
+    required this.skipLabel,
+    required this.onSkip,
   });
 
   @override
@@ -90,58 +309,42 @@ class _QuickStartCard extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+        padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 20,
-              offset: const Offset(0, 6),
+              color: Colors.black.withValues(alpha: 0.25),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
+            Expanded(
+              child: Text(
+                text,
+                style: const TextStyle(
+                  fontSize: 14,
+                  height: 1.4,
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w500,
                 ),
-                GestureDetector(
-                  onTap: onAction,
-                  behavior: HitTestBehavior.opaque,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.fieldBg,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      actionLabel,
-                      style: const TextStyle(
-                          fontSize: 12, color: AppColors.textMuted),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-            const SizedBox(height: 10),
-            for (var i = 0; i < items.length; i++) ...[
-              if (i > 0) const SizedBox(height: 8),
-              _QuickStartRow(label: items[i], checked: i < checkedCount),
-            ],
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: onSkip,
+              behavior: HitTestBehavior.opaque,
+              child: Text(
+                skipLabel,
+                style:
+                    const TextStyle(fontSize: 13, color: AppColors.textMuted),
+              ),
+            ),
           ],
         ),
       ),
@@ -149,34 +352,57 @@ class _QuickStartCard extends StatelessWidget {
   }
 }
 
-class _QuickStartRow extends StatelessWidget {
-  final String label;
-  final bool checked;
+class _TutorialCard extends StatelessWidget {
+  final String text;
+  final String buttonLabel;
+  final VoidCallback onPressed;
 
-  const _QuickStartRow({required this.label, required this.checked});
+  const _TutorialCard({
+    required this.text,
+    required this.buttonLabel,
+    required this.onPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(
-          checked ? Icons.check_circle_rounded : Icons.circle_outlined,
-          size: 18,
-          color: checked ? AppColors.brand : AppColors.textDisabled,
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: checked ? AppColors.textDisabled : AppColors.textPrimary,
-              decoration: checked ? TextDecoration.lineThrough : null,
-              decorationColor: AppColors.textDisabled,
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 32),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            text,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+                fontSize: 15, height: 1.5, color: AppColors.textPrimary),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 46,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.brand,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+                elevation: 0,
+              ),
+              onPressed: onPressed,
+              child: Text(
+                buttonLabel,
+                style:
+                    const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
