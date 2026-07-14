@@ -59,6 +59,8 @@ Future<void> _pumpList(
   void Function(List<String> ids)? onBatchMarkBought,
   VoidCallback? onCompleteSimple,
   void Function(List<String> ids)? onCompleteSmart,
+  void Function(List<BudgetItem> snapshot)? onRecordBudgetPurchase,
+  void Function(List<String> ids)? onBatchDeleteBudget,
   TextScaler textScaler = TextScaler.noScaling,
 }) async {
   tester.view.physicalSize = const Size(1290, 2796);
@@ -94,10 +96,11 @@ Future<void> _pumpList(
             onEditBudget: (_, _, _, _) {},
             onDeleteBudget: (_) {},
             onReorderBudget: (_) {},
+            onRecordBudgetPurchase: onRecordBudgetPurchase ?? (_) {},
             onBatchDeleteSimple: onBatchDeleteSimple ?? (_) {},
             onBatchDeleteSmart: (_) {},
             onBatchMarkBought: onBatchMarkBought ?? (_) {},
-            onBatchDeleteBudget: (_) {},
+            onBatchDeleteBudget: onBatchDeleteBudget ?? (_) {},
             smartModeRequest: 0,
             shelfCodeOrder: const [],
           ),
@@ -290,6 +293,30 @@ void main() {
 
     expect(find.text('牛奶'), findsOneWidget);
     expect(find.text('鸡蛋'), findsOneWidget);
+  });
+
+  testWidgets(
+      'confirming Clear Budget records the snapshot before batch-deleting',
+      (tester) async {
+    final recorded = <BudgetItem>[];
+    final deletedIds = <String>[];
+    await _pumpList(
+      tester,
+      budgetItems: [_budget('b1', '牛奶')],
+      onRecordBudgetPurchase: recorded.addAll,
+      onBatchDeleteBudget: deletedIds.addAll,
+    );
+
+    // Switch to budget mode and trigger the clear-budget confirm dialog.
+    await tester.tap(find.text(ZhStrings().budgetMode));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(ZhStrings().clearBudget));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(ZhStrings().delete));
+    await tester.pumpAndSettle();
+
+    expect(recorded.single.id, 'b1');
+    expect(deletedIds, ['b1']);
   });
 
   // ── Dynamic Type / text scaling ──────────────────────────────────────────

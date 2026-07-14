@@ -68,6 +68,7 @@ class ListScreen extends StatefulWidget {
       onEditBudget;
   final void Function(String id) onDeleteBudget;
   final void Function(List<String> orderedIds) onReorderBudget;
+  final void Function(List<BudgetItem> snapshot) onRecordBudgetPurchase;
   // Batch operations
   final void Function(List<String> ids) onBatchDeleteSimple;
   final void Function(List<String> ids) onBatchDeleteSmart;
@@ -102,6 +103,7 @@ class ListScreen extends StatefulWidget {
     required this.onEditBudget,
     required this.onDeleteBudget,
     required this.onReorderBudget,
+    required this.onRecordBudgetPurchase,
     required this.onBatchDeleteSimple,
     required this.onBatchDeleteSmart,
     required this.onBatchMarkBought,
@@ -350,6 +352,7 @@ class _ListScreenState extends State<ListScreen> {
       ),
     );
     if (ok != true) return;
+    widget.onRecordBudgetPurchase(widget.budgetItems);
     widget.onBatchDeleteBudget(widget.budgetItems.map((i) => i.id).toList());
   }
 
