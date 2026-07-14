@@ -101,8 +101,12 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
       ]);
     }
 
-    final rect = _targetRect;
-    if (rect == null) return widget.child;
+    final targetRect = _targetRect;
+    if (targetRect == null) return widget.child;
+    // Widen the spotlight hole slightly past the target's exact bounds so a
+    // highlighted button's own drop shadow isn't clipped by the dimming bars
+    // sitting right at its edge.
+    final rect = targetRect.inflate(6);
 
     final size = MediaQuery.of(context).size;
     final tooltipBelow = rect.top < size.height / 2;
