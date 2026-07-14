@@ -229,7 +229,12 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
                       ),
                       TextField(
                         controller: _qtyCtrl,
-                        autofocus: true,
+                        // Skip autofocus while the tutorial is running: the
+                        // user should follow the tutorial's prescribed
+                        // sequence rather than jump ahead into a field the
+                        // current step hasn't pointed at yet.
+                        autofocus:
+                            TutorialController.instance.step == TutorialStep.done,
                         keyboardType: TextInputType.number,
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly
