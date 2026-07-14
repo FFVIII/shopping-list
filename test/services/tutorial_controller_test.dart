@@ -29,13 +29,16 @@ void main() {
   });
 
   test(
-      'onItemAdded advances addItem -> completeTrip only for the example item',
-      () async {
+      'onItemAdded advances addItem -> itemAdded -> completeTrip only for '
+      'the example item', () async {
     TutorialController.instance.step = TutorialStep.addItem;
     TutorialController.instance.onItemAdded('香蕉');
     expect(TutorialController.instance.step, TutorialStep.addItem);
     TutorialController.instance
         .onItemAdded(TutorialController.exampleItemNameZh);
+    // Briefly circles the newly-added item before auto-advancing.
+    expect(TutorialController.instance.step, TutorialStep.itemAdded);
+    await Future.delayed(const Duration(seconds: 3));
     expect(TutorialController.instance.step, TutorialStep.completeTrip);
   });
 

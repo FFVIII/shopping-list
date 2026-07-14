@@ -186,6 +186,7 @@ abstract class AppStrings {
   // ── Onboarding tutorial ──
   String get tutorialExampleItemName; // 固定示例商品名
   String get tutorialStepAddItem;
+  String get tutorialStepItemAdded;
   String get tutorialStepCompleteTrip;
   String get tutorialStepViewInventory;
   String get tutorialFinalMessage;
@@ -384,6 +385,7 @@ class ZhStrings extends AppStrings {
 
   @override String get tutorialExampleItemName => '鸡蛋（示例）';
   @override String get tutorialStepAddItem => '点击 + 把示例商品加入清单';
+  @override String get tutorialStepItemAdded => '很好！示例商品已经加入清单';
   @override String get tutorialStepCompleteTrip => '买完了？点这里完成本次购物';
   @override String get tutorialStepViewInventory => '去库存看看刚刚买的东西吧';
   @override String get tutorialFinalMessage =>
@@ -594,6 +596,7 @@ class EnStrings extends AppStrings {
 
   @override String get tutorialExampleItemName => 'Egg (example)';
   @override String get tutorialStepAddItem => 'Tap + to add the example item to your list';
+  @override String get tutorialStepItemAdded => 'Nice! The example item has been added';
   @override String get tutorialStepCompleteTrip => 'Done shopping? Tap here to finish';
   @override String get tutorialStepViewInventory => 'Check your inventory for what you just bought';
   @override String get tutorialFinalMessage =>

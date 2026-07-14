@@ -106,6 +106,13 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
       _matchedTargetId = null;
       return TutorialRectRegistry.rectFor('example_inventory_item');
     }
+    if (TutorialController.instance.step == TutorialStep.itemAdded) {
+      // Same reasoning as above: the Plan list is also a
+      // ReorderableListView, so the newly-added example item reports its
+      // rect rather than carrying a GlobalKey.
+      _matchedTargetId = null;
+      return TutorialRectRegistry.rectFor('example_smart_item');
+    }
     final ids = _candidateIds[TutorialController.instance.step];
     if (ids == null) {
       _matchedTargetId = null;
@@ -164,6 +171,7 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
     final tooltipBelow = rect.top < size.height / 2;
     final stepText = switch (step) {
       TutorialStep.addItem => l.tutorialStepAddItem,
+      TutorialStep.itemAdded => l.tutorialStepItemAdded,
       TutorialStep.completeTrip => l.tutorialStepCompleteTrip,
       TutorialStep.viewInventory => l.tutorialStepViewInventory,
       TutorialStep.finalMessage => l.tutorialFinalMessage,

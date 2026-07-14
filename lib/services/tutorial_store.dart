@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// docs/superpowers/specs/2026-07-02-interactive-onboarding-tutorial-design.md.
 enum TutorialStep {
   addItem,
+  itemAdded,
   completeTrip,
   viewInventory,
   finalMessage,

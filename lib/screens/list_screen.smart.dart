@@ -158,8 +158,10 @@ extension _SmartModeState on _ListScreenState {
         }
         final item = entry.item!;
         final zoneColor = item.category.color;
-        return _SmartRow(
-          key: Key('si_${item.id}'),
+        final isTutorialExampleItem =
+            TutorialController.instance.isExampleItemName(item.name);
+        final row = _SmartRow(
+          key: isTutorialExampleItem ? null : Key('si_${item.id}'),
           item: item,
           zoneColor: zoneColor,
           showShelfCode: !_byShelf,
@@ -182,6 +184,13 @@ extension _SmartModeState on _ListScreenState {
               ? () => _toggleSmartSelection(item.id)
               : () => _enterSmartBatchWithItem(item.id),
         );
+        return isTutorialExampleItem
+            ? TutorialRectReporter(
+                key: Key('si_${item.id}'),
+                id: 'example_smart_item',
+                child: row,
+              )
+            : row;
       },
       onReorderItem: (old, newIdx) => _onSmartReorder(old, newIdx, flat),
       proxyDecorator: (child, index, animation) => Material(
