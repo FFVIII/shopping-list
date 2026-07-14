@@ -5,6 +5,7 @@ import 'package:shopping_list/l10n/app_strings.dart';
 import 'package:shopping_list/l10n/l10n.dart';
 import 'package:shopping_list/models/item.dart';
 import 'package:shopping_list/screens/list_screen.dart';
+import 'package:shopping_list/services/purchase_service.dart';
 import 'package:shopping_list/widgets/drag_handle.dart';
 
 // Characterization tests for ListScreen's default (simple) mode. The screen
@@ -326,6 +327,82 @@ void main() {
 
     expect(recorded.single.id, 'b1');
     expect(deletedIds, ['b1']);
+  });
+
+  // Regression test for the Pro-gating fix in `main.dart`: the "Spending
+  // History" *viewer* on the Settings screen is Pro-gated
+  // (`if (widget.purchaseService.isPro) ...`), but until this fix,
+  // `_AppShellState` wired `onRecordBudgetPurchase` straight to
+  // `_shoppingNotifier.recordBudgetPurchase` with no Pro check at all — so a
+  // free user's Budget clears were still recorded to Hive (and later, backup
+  // exports), just invisibly. This test mirrors the exact closure `main.dart`
+  // now passes as `onRecordBudgetPurchase`:
+  //
+  //   onRecordBudgetPurchase: (snapshot) {
+  //     if (_purchaseService.isPro) {
+  //       _shoppingNotifier.recordBudgetPurchase(snapshot);
+  //     }
+  //   },
+  //
+  // using a real `PurchaseService` (which defaults to `isPro == false`) in
+  // place of `_shoppingNotifier.recordBudgetPurchase`, so it exercises the
+  // real gating logic without needing the full `main.dart` app tree (which
+  // pulls in Hive, platform channels, and the first-run tutorial overlay).
+  testWidgets(
+      'free user (isPro == false): clearing Budget does not record history',
+      (tester) async {
+    final purchaseService = PurchaseService();
+    expect(purchaseService.isPro, isFalse);
+    final recorded = <BudgetItem>[];
+    final deletedIds = <String>[];
+
+    await _pumpList(
+      tester,
+      budgetItems: [_budget('b1', '牛奶')],
+      onRecordBudgetPurchase: (snapshot) {
+        if (purchaseService.isPro) {
+          recorded.addAll(snapshot);
+        }
+      },
+      onBatchDeleteBudget: (ids) => deletedIds.addAll(ids),
+    );
+
+    await tester.tap(find.text(ZhStrings().budgetMode));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(ZhStrings().clearBudget));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(ZhStrings().delete));
+    await tester.pumpAndSettle();
+
+    // The clear itself still happens (batch-delete is not Pro-gated)...
+    expect(deletedIds, ['b1']);
+    // ...but nothing was recorded to history for the free user.
+    expect(recorded, isEmpty);
+  });
+
+  testWidgets('Pro user (isPro == true): clearing Budget records history',
+      (tester) async {
+    final purchaseService = PurchaseService()..isPro = true;
+    final recorded = <BudgetItem>[];
+
+    await _pumpList(
+      tester,
+      budgetItems: [_budget('b1', '牛奶')],
+      onRecordBudgetPurchase: (snapshot) {
+        if (purchaseService.isPro) {
+          recorded.addAll(snapshot);
+        }
+      },
+    );
+
+    await tester.tap(find.text(ZhStrings().budgetMode));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(ZhStrings().clearBudget));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(ZhStrings().delete));
+    await tester.pumpAndSettle();
+
+    expect(recorded.single.id, 'b1');
   });
 
   // ── Dynamic Type / text scaling ──────────────────────────────────────────
