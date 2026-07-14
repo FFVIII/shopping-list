@@ -45,7 +45,7 @@ Build and submit a new build to App Store review
 [bundle exec] fastlane ios screenshots
 ```
 
-Capture App Store screenshots (en-US) for iPhone 16 Plus and iPad Pro 13-inch
+Capture App Store screenshots (en-US) for iPad Pro 13-inch
 
 ----
 
