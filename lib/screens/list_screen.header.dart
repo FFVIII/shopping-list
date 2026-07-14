@@ -246,6 +246,13 @@ extension _HeaderAndAddBarState on _ListScreenState {
                 decoration: BoxDecoration(
                   color: AppColors.brand,
                   borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.brand.withValues(alpha: 0.35),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: const Icon(Icons.add_rounded,
                     color: Colors.white, size: 24),

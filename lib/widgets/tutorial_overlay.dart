@@ -156,6 +156,12 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
           text: stepText,
           skipLabel: l.tutorialSkip,
           onSkip: TutorialController.instance.skip,
+          stepNumber: step.index + 1,
+          totalSteps: _candidateIds.length,
+          // Point the arrow at the target's horizontal center, clamped so
+          // it never slips off the edge of the (near full-width) bubble.
+          arrowDx: (rect.center.dx - 16).clamp(24.0, size.width - 16 * 2 - 24),
+          pointUp: tooltipBelow,
         ),
       ),
     ]);
@@ -166,59 +172,132 @@ class _TutorialBubble extends StatelessWidget {
   final String text;
   final String skipLabel;
   final VoidCallback onSkip;
+  final int stepNumber;
+  final int totalSteps;
+  final double arrowDx;
+  final bool pointUp;
 
   const _TutorialBubble({
     required this.text,
     required this.skipLabel,
     required this.onSkip,
+    required this.stepNumber,
+    required this.totalSteps,
+    required this.arrowDx,
+    required this.pointUp,
   });
+
+  static const _arrowWidth = 16.0;
+  static const _arrowHeight = 8.0;
 
   @override
   Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.25),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Text(
-                text,
-                style: const TextStyle(
-                  fontSize: 14,
-                  height: 1.4,
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w500,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 6),
                 ),
-              ),
+              ],
             ),
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: onSkip,
-              behavior: HitTestBehavior.opaque,
-              child: Text(
-                skipLabel,
-                style:
-                    const TextStyle(fontSize: 13, color: AppColors.textMuted),
-              ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    text,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      height: 1.4,
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '$stepNumber/$totalSteps',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textDisabled,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    GestureDetector(
+                      onTap: onSkip,
+                      behavior: HitTestBehavior.opaque,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.fieldBg,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          skipLabel,
+                          style: const TextStyle(
+                              fontSize: 12, color: AppColors.textMuted),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          Positioned(
+            left: arrowDx - _arrowWidth / 2,
+            top: pointUp ? -_arrowHeight + 1 : null,
+            bottom: pointUp ? null : -_arrowHeight + 1,
+            child: CustomPaint(
+              size: const Size(_arrowWidth, _arrowHeight),
+              painter: _BubbleArrowPainter(pointUp: pointUp),
+            ),
+          ),
+        ],
       ),
     );
   }
+}
+
+class _BubbleArrowPainter extends CustomPainter {
+  final bool pointUp;
+  const _BubbleArrowPainter({required this.pointUp});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = Colors.white;
+    final path = Path();
+    if (pointUp) {
+      path.moveTo(0, size.height);
+      path.lineTo(size.width / 2, 0);
+      path.lineTo(size.width, size.height);
+    } else {
+      path.moveTo(0, 0);
+      path.lineTo(size.width / 2, size.height);
+      path.lineTo(size.width, 0);
+    }
+    path.close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _BubbleArrowPainter oldDelegate) =>
+      oldDelegate.pointUp != pointUp;
 }
 
 class _TutorialCard extends StatelessWidget {
