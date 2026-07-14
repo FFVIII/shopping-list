@@ -28,18 +28,29 @@ void main() {
     expect(TutorialController.instance.step, TutorialStep.completeTrip);
   });
 
-  test(
-      'onItemAdded advances addItem -> itemAdded -> completeTrip only for '
-      'the example item', () async {
+  test('onItemAdded advances addItem -> itemAdded only for the example item',
+      () async {
     TutorialController.instance.step = TutorialStep.addItem;
     TutorialController.instance.onItemAdded('香蕉');
     expect(TutorialController.instance.step, TutorialStep.addItem);
     TutorialController.instance
         .onItemAdded(TutorialController.exampleItemNameZh);
-    // Briefly circles the newly-added item before auto-advancing.
+    // Circles the newly-added item; waits for an explicit "Continue" tap
+    // rather than advancing on its own.
     expect(TutorialController.instance.step, TutorialStep.itemAdded);
-    await Future.delayed(const Duration(seconds: 3));
+  });
+
+  test('advanceFromItemAdded moves itemAdded -> completeTrip', () async {
+    TutorialController.instance.step = TutorialStep.itemAdded;
+    TutorialController.instance.advanceFromItemAdded();
     expect(TutorialController.instance.step, TutorialStep.completeTrip);
+  });
+
+  test('advanceFromItemAdded is a no-op outside the itemAdded step',
+      () async {
+    TutorialController.instance.step = TutorialStep.addItem;
+    TutorialController.instance.advanceFromItemAdded();
+    expect(TutorialController.instance.step, TutorialStep.addItem);
   });
 
   test('onTripCompleted advances completeTrip -> viewInventory', () async {

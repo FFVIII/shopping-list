@@ -191,6 +191,7 @@ abstract class AppStrings {
   String get tutorialStepViewInventory;
   String get tutorialFinalMessage;
   String get tutorialGotIt;
+  String get tutorialContinue;
   String get tutorialSkip;
 }
 
@@ -391,6 +392,7 @@ class ZhStrings extends AppStrings {
   @override String get tutorialFinalMessage =>
       '以后库存快用完时，「提醒」页会自动提示你补货';
   @override String get tutorialGotIt => '知道了';
+  @override String get tutorialContinue => '继续';
   @override String get tutorialSkip => '跳过';
 }
 
@@ -602,6 +604,7 @@ class EnStrings extends AppStrings {
   @override String get tutorialFinalMessage =>
       'When stock runs low, the Alerts tab will remind you to restock';
   @override String get tutorialGotIt => 'Got it';
+  @override String get tutorialContinue => 'Continue';
   @override String get tutorialSkip => 'Skip';
 }
 
