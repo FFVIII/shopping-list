@@ -25,7 +25,6 @@ import 'storage/app_repository.dart';
 import 'storage/backup.dart';
 import 'widgets/days_selector.dart';
 import 'widgets/toast.dart';
-import 'widgets/tutorial_target.dart';
 
 part 'main.widgets.dart';
 

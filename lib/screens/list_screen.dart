@@ -10,7 +10,6 @@ import '../widgets/drag_handle.dart';
 import '../widgets/sort_toggle_button.dart';
 import '../widgets/batch_bar.dart';
 import '../widgets/toast.dart';
-import '../widgets/tutorial_target.dart';
 import '../services/tutorial_controller.dart';
 import '../services/tutorial_store.dart';
 
@@ -468,26 +467,23 @@ class _ListScreenState extends State<ListScreen> {
                   widget.simpleItems.any((i) => i.checked)))
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 160),
-              child: TutorialTarget(
-                id: 'complete_trip_button',
-                child: GestureDetector(
-                  onTap: _confirmCompleteTrip,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 7),
-                    decoration: BoxDecoration(
-                      color: _isSmart ? AppColors.brand : AppColors.danger,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        _isSmart ? l.addToInventoryButton : l.clearBudget,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
+              child: GestureDetector(
+                onTap: _confirmCompleteTrip,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: _isSmart ? AppColors.brand : AppColors.danger,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      _isSmart ? l.addToInventoryButton : l.clearBudget,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -626,27 +622,24 @@ class _ListScreenState extends State<ListScreen> {
             ),
           ),
           const SizedBox(width: 10),
-          TutorialTarget(
-            id: 'add_button',
-            child: GestureDetector(
-              onTap: () => _submitAdd(context),
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.brand,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.brand.withValues(alpha: 0.35),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Icon(Icons.add_rounded,
-                    color: Colors.white, size: 24),
+          GestureDetector(
+            onTap: () => _submitAdd(context),
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppColors.brand,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.brand.withValues(alpha: 0.35),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
+              child: const Icon(Icons.add_rounded,
+                  color: Colors.white, size: 24),
             ),
           ),
         ],
