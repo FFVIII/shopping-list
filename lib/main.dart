@@ -10,6 +10,7 @@ import 'l10n/app_language.dart';
 import 'l10n/app_strings.dart';
 import 'l10n/l10n.dart';
 import 'l10n/language_store.dart';
+import 'services/navigation_store.dart';
 import 'services/tutorial_controller.dart';
 import 'widgets/tutorial_overlay.dart';
 import 'screens/list_screen.dart';
@@ -52,11 +53,18 @@ Future<void> main() async {
     debugPrint('Notification init failed, reminders disabled: $e');
   }
   final lang = await LanguageStore.load();
+  // Clamped defensively: a stale value from a future/rolled-back build
+  // shouldn't be able to index out of range.
+  final initialTab = (await NavigationStore.loadTab()).clamp(0, 3);
+  final initialListModeIndex =
+      (await NavigationStore.loadListMode()).clamp(0, ListMode.values.length - 1);
   runApp(ShoppingListApp(
     initialLanguage: lang,
     repository: repository,
     notifications: notifications,
     storageAvailable: storageAvailable,
+    initialTab: initialTab,
+    initialListModeIndex: initialListModeIndex,
   ));
 }
 
@@ -65,12 +73,16 @@ class ShoppingListApp extends StatefulWidget {
   final AppRepository repository;
   final NotificationService notifications;
   final bool storageAvailable;
+  final int initialTab;
+  final int initialListModeIndex;
   const ShoppingListApp({
     super.key,
     required this.initialLanguage,
     required this.repository,
     required this.notifications,
     this.storageAvailable = true,
+    this.initialTab = 0,
+    this.initialListModeIndex = 0,
   });
 
   @override
@@ -122,6 +134,8 @@ class _ShoppingListAppState extends State<ShoppingListApp> {
           repository: widget.repository,
           notifications: widget.notifications,
           storageInitFailed: !widget.storageAvailable,
+          initialTab: widget.initialTab,
+          initialListModeIndex: widget.initialListModeIndex,
         ),
       ),
     );
@@ -134,6 +148,8 @@ class AppShell extends StatefulWidget {
   final AppRepository repository;
   final NotificationService notifications;
   final bool storageInitFailed;
+  final int initialTab;
+  final int initialListModeIndex;
   const AppShell({
     super.key,
     required this.language,
@@ -141,6 +157,8 @@ class AppShell extends StatefulWidget {
     required this.repository,
     required this.notifications,
     this.storageInitFailed = false,
+    this.initialTab = 0,
+    this.initialListModeIndex = 0,
   });
 
   @override
@@ -148,7 +166,7 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
-  int _tab = 0;
+  late int _tab = widget.initialTab;
   int _smartModeRequest = 0;
   bool _loading = true;
   late bool _storageUnavailable = widget.storageInitFailed;
@@ -522,6 +540,7 @@ class _AppShellState extends State<AppShell> {
                 index: _tab,
                 children: [
                   ListScreen(
+                    initialMode: ListMode.values[widget.initialListModeIndex],
                     simpleItems: _shoppingNotifier.simple,
                     smartItems: _shoppingNotifier.smart,
                     categories: _categoriesNotifier.categories,
@@ -618,6 +637,7 @@ class _AppShellState extends State<AppShell> {
         onTap: (i) {
           setState(() => _tab = i);
           TutorialController.instance.onTabChanged(i);
+          unawaited(NavigationStore.saveTab(i));
         },
         reminderBadge: reminderCount,
       ),
