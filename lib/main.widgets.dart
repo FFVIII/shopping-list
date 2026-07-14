@@ -386,16 +386,13 @@ class _BottomNav extends StatelessWidget {
                 currentIndex: currentIndex,
                 onTap: onTap,
               ),
-              TutorialTarget(
-                id: 'inventory_tab',
-                child: _NavItem(
-                  icon: Icons.inventory_2_outlined,
-                  activeIcon: Icons.inventory_2_rounded,
-                  label: l.navInventory,
-                  index: 1,
-                  currentIndex: currentIndex,
-                  onTap: onTap,
-                ),
+              _NavItem(
+                icon: Icons.inventory_2_outlined,
+                activeIcon: Icons.inventory_2_rounded,
+                label: l.navInventory,
+                index: 1,
+                currentIndex: currentIndex,
+                onTap: onTap,
               ),
               _NavItem(
                 icon: Icons.notifications_outlined,
