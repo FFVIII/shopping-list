@@ -427,8 +427,12 @@ class _BudgetSheetState extends State<_BudgetSheet> {
                         autofocus: _namePrefilled,
                         keyboardType: const TextInputType.numberWithOptions(
                             decimal: true),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$'))
+                        ],
+                        maxLength: 8,
                         style: const TextStyle(fontSize: 15),
-                        decoration: _dec(l.currencySymbol),
+                        decoration: _dec(l.currencySymbol).copyWith(counterText: ''),
                         textInputAction: TextInputAction.next,
                         onChanged: (_) => setState(() {}),
                         onSubmitted: (_) => _qtyFocus.requestFocus(),
@@ -468,12 +472,16 @@ class _BudgetSheetState extends State<_BudgetSheet> {
                       fontSize: 13, color: AppColors.textMuted),
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  l.money(_qty * _price),
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.brand,
+                Flexible(
+                  child: Text(
+                    l.money(_qty * _price),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.brand,
+                    ),
                   ),
                 ),
               ],
