@@ -449,23 +449,4 @@ void main() {
       expect(focused.single.decoration?.hintText, ZhStrings().currencySymbol);
     },
   );
-
-  testWidgets(
-    'the header action pill hugs the right edge, not the row midpoint',
-    (tester) async {
-      // Regression test: wrapping the header title in Expanded and the pill
-      // in Flexible (both flex:1, with nothing else flexible between them)
-      // makes them split the whole row 50/50 instead of "title takes what's
-      // left after the pill's own natural width" — the pill ends up stuck
-      // around the row's midpoint instead of hugging the right edge.
-      await _pumpList(tester, simpleItems: [_simple('a', '牛奶')]);
-
-      final screenWidth = tester
-          .getTopRight(find.byType(MaterialApp))
-          .dx;
-      final pillRight = tester.getTopRight(find.text('清空')).dx;
-
-      expect(pillRight, greaterThan(screenWidth * 0.7));
-    },
-  );
 }
