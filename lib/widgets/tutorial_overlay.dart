@@ -8,8 +8,10 @@ import 'tutorial_target.dart';
 
 /// Renders the coach-mark spotlight for the first-run onboarding tutorial: a
 /// hand-drawn oval outline circles the real on-screen target, a dashed arrow
-/// connects it to a text bubble, and four opaque bars dim + block everything
-/// outside the target. Wraps the app's Navigator output via
+/// connects it to a text bubble, and a single full-screen dim layer covers
+/// everything — including the target itself, so there's no bright cutout to
+/// rely on. Taps still only pass through at the target (via invisible
+/// blockers elsewhere). Wraps the app's Navigator output via
 /// `MaterialApp.builder` so the overlay stays on top of modal bottom sheets,
 /// which are pushed as routes on that same Navigator.
 class TutorialOverlay extends StatefulWidget {
@@ -21,10 +23,16 @@ class TutorialOverlay extends StatefulWidget {
 }
 
 class _TutorialOverlayState extends State<TutorialOverlay> {
+  // No entry for TutorialStep.viewInventory on purpose: completing the trip
+  // already shows the app's own "trip completed" celebration toast, so
+  // spotlighting the Inventory tab at the same moment competes with it and
+  // reads as "you're already done" to a new user. Instead, render nothing
+  // during this step (see the `targetRect == null` fallback in build()) and
+  // let TutorialController.onTabChanged silently advance to finalMessage
+  // once the user navigates to Inventory on their own.
   static const Map<TutorialStep, List<String>> _candidateIds = {
     TutorialStep.addItem: ['confirm_add_button', 'add_button'],
     TutorialStep.completeTrip: ['confirm_trip_button', 'complete_trip_button'],
-    TutorialStep.viewInventory: ['inventory_tab'],
   };
 
   /// Vertical gap between the target and the tooltip bubble, and between
@@ -35,6 +43,10 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
   static const double _ovalPadding = 10;
 
   Rect? _targetRect;
+  /// The plan-list content area during the completeTrip step, kept visible
+  /// (excluded from the dim layer) so the user can still see the example
+  /// item they just added. Null on every other step.
+  Rect? _extraVisibleRect;
   bool _polling = false;
 
   @override
@@ -65,23 +77,66 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
       _polling = false;
       if (!mounted) return;
       final rect = _findTargetRect();
-      if (rect != _targetRect) {
-        setState(() => _targetRect = rect);
+      final extraRect = _findExtraVisibleRect();
+      if (rect != _targetRect || extraRect != _extraVisibleRect) {
+        setState(() {
+          _targetRect = rect;
+          _extraVisibleRect = extraRect;
+        });
       }
       _scheduleFrameCheck();
     });
   }
 
+  /// Which candidate id `_targetRect` actually resolved to, set by
+  /// `_findTargetRect`. Used by `_findExtraVisibleRect` to tell whether the
+  /// completeTrip step is still showing the header's "complete trip" pill
+  /// (sheet not open yet) or has moved on to the sheet's own confirm button
+  /// (sheet open) — the plan-list exemption below only makes sense in the
+  /// former case; once the sheet is open, it sits on top of the plan list
+  /// and punching a hole there would show through the sheet's own content
+  /// in a confusing, patchy way.
+  String? _matchedTargetId;
+
   Rect? _findTargetRect() {
+    if (TutorialController.instance.step == TutorialStep.finalMessage) {
+      // The inventory list uses a ReorderableListView, so its item can't
+      // safely carry a GlobalKey (see TutorialRectReporter's doc comment) —
+      // it reports its rect into TutorialRectRegistry instead.
+      _matchedTargetId = null;
+      return TutorialRectRegistry.rectFor('example_inventory_item');
+    }
     final ids = _candidateIds[TutorialController.instance.step];
-    if (ids == null) return null;
+    if (ids == null) {
+      _matchedTargetId = null;
+      return null;
+    }
     for (final id in ids) {
       final renderObject =
           TutorialRegistry.keyFor(id).currentContext?.findRenderObject();
       if (renderObject is RenderBox && renderObject.attached) {
         final topLeft = renderObject.localToGlobal(Offset.zero);
+        _matchedTargetId = id;
         return topLeft & renderObject.size;
       }
+    }
+    _matchedTargetId = null;
+    return null;
+  }
+
+  Rect? _findExtraVisibleRect() {
+    if (TutorialController.instance.step != TutorialStep.completeTrip) {
+      return null;
+    }
+    if (_matchedTargetId == 'confirm_trip_button') {
+      return null;
+    }
+    final renderObject = TutorialRegistry.keyFor('plan_list_area')
+        .currentContext
+        ?.findRenderObject();
+    if (renderObject is RenderBox && renderObject.attached) {
+      final topLeft = renderObject.localToGlobal(Offset.zero);
+      return topLeft & renderObject.size;
     }
     return null;
   }
@@ -92,24 +147,6 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
     if (step == TutorialStep.done) return widget.child;
 
     final l = L10n.of(context);
-
-    if (step == TutorialStep.finalMessage) {
-      return Stack(children: [
-        widget.child,
-        Positioned.fill(
-          child: Container(
-            color: Colors.black.withValues(alpha: 0.55),
-            child: Center(
-              child: _TutorialCard(
-                text: l.tutorialFinalMessage,
-                buttonLabel: l.tutorialGotIt,
-                onPressed: TutorialController.instance.finish,
-              ),
-            ),
-          ),
-        ),
-      ]);
-    }
 
     final targetRect = _targetRect;
     if (targetRect == null) return widget.child;
@@ -129,9 +166,10 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
       TutorialStep.addItem => l.tutorialStepAddItem,
       TutorialStep.completeTrip => l.tutorialStepCompleteTrip,
       TutorialStep.viewInventory => l.tutorialStepViewInventory,
-      // done and finalMessage both return earlier in build(), so this
-      // branch is unreachable by construction.
-      _ => '',
+      TutorialStep.finalMessage => l.tutorialFinalMessage,
+      // done already returns earlier in build(), so this branch is
+      // unreachable by construction.
+      TutorialStep.done => '',
     };
     const barColor = Colors.black54;
 
@@ -145,36 +183,58 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
 
     return Stack(children: [
       widget.child,
-      // Four opaque bars around the target rect: they intercept taps so
-      // only the hole in the middle (the real widget underneath) is
-      // reachable, while everything else is dimmed and blocked.
+      // Single full-screen dim layer covering everything, including the
+      // target itself — no bright cutout there (the oval/arrow/bubble are
+      // what indicate the target, not a brightness contrast). The one
+      // exception is `_extraVisibleRect` (the example item's row during
+      // completeTrip), kept visible so the user can still see it.
+      Positioned.fill(
+        child: IgnorePointer(
+          child: _extraVisibleRect == null
+              ? Container(color: barColor)
+              : CustomPaint(
+                  painter: _DimExceptPainter(
+                    visible: _extraVisibleRect!,
+                    color: barColor,
+                  ),
+                ),
+        ),
+      ),
+      // Invisible blockers matching the target rect: they intercept taps
+      // everywhere except `rect`, where taps pass through to the real
+      // widget underneath (so the target stays tappable even though it's
+      // visually dimmed like everything else). AbsorbPointer is what
+      // actually swallows the taps here — a plain colored/transparent box
+      // doesn't intercept hit-testing on its own (`hitTestSelf` defaults to
+      // false without a GestureDetector), so taps would otherwise fall
+      // straight through to the real app underneath.
       Positioned(
         left: 0,
         top: 0,
         right: 0,
         height: rect.top,
-        child: Container(color: barColor),
+        child: const AbsorbPointer(),
       ),
       Positioned(
         left: 0,
         top: rect.bottom,
         right: 0,
         bottom: 0,
-        child: Container(color: barColor),
+        child: const AbsorbPointer(),
       ),
       Positioned(
         left: 0,
         top: rect.top,
         width: rect.left,
         height: rect.height,
-        child: Container(color: barColor),
+        child: const AbsorbPointer(),
       ),
       Positioned(
         left: rect.right,
         top: rect.top,
         right: 0,
         height: rect.height,
-        child: Container(color: barColor),
+        child: const AbsorbPointer(),
       ),
       Positioned.fill(
         child: IgnorePointer(
@@ -195,12 +255,40 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
         bottom: tooltipBelow ? null : size.height - rect.top + _bubbleGap,
         child: _TutorialBubble(
           text: stepText,
-          skipLabel: l.tutorialSkip,
-          onSkip: TutorialController.instance.skip,
+          // The last step has no more "next" step to skip to — it's just
+          // acknowledging the message, so it gets "Got it"/finish instead
+          // of "Skip"/skip.
+          skipLabel: step == TutorialStep.finalMessage
+              ? l.tutorialGotIt
+              : l.tutorialSkip,
+          onSkip: step == TutorialStep.finalMessage
+              ? TutorialController.instance.finish
+              : TutorialController.instance.skip,
         ),
       ),
     ]);
   }
+}
+
+/// Fills the entire overlay with [color] except for a precise rectangular
+/// [visible] area, using an even-odd fill rule so coverage is always exact.
+class _DimExceptPainter extends CustomPainter {
+  final Rect visible;
+  final Color color;
+  const _DimExceptPainter({required this.visible, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path()
+      ..fillType = PathFillType.evenOdd
+      ..addRect(Offset.zero & size)
+      ..addRect(visible);
+    canvas.drawPath(path, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(covariant _DimExceptPainter oldDelegate) =>
+      oldDelegate.visible != visible || oldDelegate.color != color;
 }
 
 /// Hand-drawn-style oval outline around a tutorial target. Two overlapping
@@ -368,57 +456,3 @@ class _TutorialBubble extends StatelessWidget {
   }
 }
 
-class _TutorialCard extends StatelessWidget {
-  final String text;
-  final String buttonLabel;
-  final VoidCallback onPressed;
-
-  const _TutorialCard({
-    required this.text,
-    required this.buttonLabel,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 32),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            text,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-                fontSize: 15, height: 1.5, color: AppColors.textPrimary),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            height: 46,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brand,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-                elevation: 0,
-              ),
-              onPressed: onPressed,
-              child: Text(
-                buttonLabel,
-                style:
-                    const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

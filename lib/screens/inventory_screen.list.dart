@@ -138,8 +138,15 @@ extension _InvListBuilders on _InventoryScreenState {
           );
         }
         final item = entry.item!;
-        return _InventoryCard(
-          key: Key('invc_${item.id}'),
+        // Tutorial's finalMessage step circles this specific card. A
+        // GlobalKey (TutorialTarget) isn't safe here since
+        // ReorderableListView can transiently duplicate a card's subtree
+        // during its drag/reorder animation — TutorialRectReporter reports
+        // its rect without needing element identity, so it's safe.
+        final isTutorialExampleItem =
+            TutorialController.instance.isExampleItemName(item.name);
+        final card = _InventoryCard(
+          key: isTutorialExampleItem ? null : Key('invc_${item.id}'),
           item: item,
           thresholdDays: widget.thresholdDays,
           onTap: _batchMode
@@ -170,6 +177,13 @@ extension _InvListBuilders on _InventoryScreenState {
             }
           }),
         );
+        return isTutorialExampleItem
+            ? TutorialRectReporter(
+                key: Key('invc_${item.id}'),
+                id: 'example_inventory_item',
+                child: card,
+              )
+            : card;
       },
       onReorderItem: (oldIndex, newIndex) =>
           _onInvReorder(oldIndex, newIndex, flat),
