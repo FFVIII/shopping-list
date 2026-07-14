@@ -35,6 +35,7 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
   static const double _ovalPadding = 10;
 
   Rect? _targetRect;
+  bool _polling = false;
 
   @override
   void initState() {
@@ -56,8 +57,12 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
   }
 
   void _scheduleFrameCheck() {
-    if (TutorialController.instance.step == TutorialStep.done) return;
+    if (_polling || TutorialController.instance.step == TutorialStep.done) {
+      return;
+    }
+    _polling = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _polling = false;
       if (!mounted) return;
       final rect = _findTargetRect();
       if (rect != _targetRect) {
@@ -110,8 +115,14 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
     if (targetRect == null) return widget.child;
 
     final size = MediaQuery.of(context).size;
-    final rect = targetRect.intersect(Offset.zero & size);
-    if (rect.width <= 0 || rect.height <= 0) return widget.child;
+    final clampedRect = targetRect.intersect(Offset.zero & size);
+    if (clampedRect.width <= 0 || clampedRect.height <= 0) {
+      return widget.child;
+    }
+    // Widen the un-dimmed hole past the target's exact bounds so the dimming
+    // bars don't clip a shadow (e.g. the add button's BoxShadow) that paints
+    // outside the target's own layout box.
+    final rect = clampedRect.inflate(6);
 
     final tooltipBelow = rect.top < size.height / 2;
     final stepText = switch (step) {
