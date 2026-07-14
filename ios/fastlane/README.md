@@ -39,13 +39,13 @@ Build and upload a new beta build to TestFlight
 
 Build and submit a new build to App Store review
 
-### ios verify_auth
+### ios screenshots
 
 ```sh
-[bundle exec] fastlane ios verify_auth
+[bundle exec] fastlane ios screenshots
 ```
 
-TEMP: verify App Store Connect API key auth only
+Capture App Store screenshots (en-US) for iPad Pro 13-inch
 
 ----
 
