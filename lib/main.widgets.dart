@@ -121,7 +121,7 @@ class _DaysSheetState extends State<_DaysSheet> {
             TextField(
               controller: _nameCtrl,
               style: const TextStyle(fontSize: 15),
-              maxLength: 10,
+              maxLength: 30,
               decoration: _dec('').copyWith(
                 counterStyle: const TextStyle(
                     fontSize: 10, color: AppColors.textDisabled),
@@ -143,8 +143,12 @@ class _DaysSheetState extends State<_DaysSheet> {
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly
                         ],
+                        maxLength: 10,
                         style: const TextStyle(fontSize: 15),
-                        decoration: _dec('1'),
+                        decoration: _dec('1').copyWith(
+                          counterStyle: const TextStyle(
+                              fontSize: 10, color: AppColors.textDisabled),
+                        ),
                       ),
                     ],
                   ),
@@ -158,8 +162,12 @@ class _DaysSheetState extends State<_DaysSheet> {
                       _fieldLabel(l.shelfCodeFieldLabel),
                       TextField(
                         controller: _shelfCtrl,
+                        maxLength: 20,
                         style: const TextStyle(fontSize: 15),
-                        decoration: _dec(''),
+                        decoration: _dec('').copyWith(
+                          counterStyle: const TextStyle(
+                              fontSize: 10, color: AppColors.textDisabled),
+                        ),
                       ),
                     ],
                   ),
