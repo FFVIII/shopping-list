@@ -115,20 +115,15 @@ void main() {
   test('decodes older backups that predate the SpendingHistory sheets', () {
     // Simulates a backup exported before this feature existed: every
     // required segment present, but no SpendingHistory/SpendingHistoryItems
-    // sheets at all.
+    // sheets at all. encodeBackupExcel always writes those two sheets (the
+    // `excel` package auto-creates a sheet on first access via `excel[name]`,
+    // even for an empty list), so to get a workbook that truly lacks them we
+    // decode the encoded bytes, delete the two sheets, and re-encode.
     final data = _sampleData();
-    final bytes = encodeBackupExcel(
-        AppData(
-          shoppingSimple: data.shoppingSimple,
-          shoppingSmart: data.shoppingSmart,
-          inventory: data.inventory,
-          budget: data.budget,
-          budgetHistory: const [], // nothing to encode either
-          categories: data.categories,
-          settings: data.settings,
-          shelfZones: data.shelfZones,
-          shelfCodeOrder: data.shelfCodeOrder,
-        ));
+    final excel = Excel.decodeBytes(encodeBackupExcel(data));
+    excel.delete('SpendingHistory');
+    excel.delete('SpendingHistoryItems');
+    final bytes = excel.encode()!;
 
     final decoded = decodeBackupExcel(bytes);
 
