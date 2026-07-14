@@ -1,7 +1,11 @@
+require "fileutils"
+
 default_platform(:ios)
 
 platform :ios do
   IPA_PATH = "../build/ios/ipa/shopping_list.ipa"
+  SCREENSHOT_DEVICES = ["iPad Pro 13-inch (M4)"]
+  SCREENSHOT_BUNDLE_ID = "com.ffviii.shoppinglist"
 
   def app_store_connect_key
     app_store_connect_api_key(
@@ -45,5 +49,68 @@ platform :ios do
       submit_for_review: false,
       force: true
     )
+  end
+
+  # Finds the UDID of a simulator Xcode will actually build/run "Runner" on.
+  # `xcrun simctl list devices available` includes UDIDs Xcode itself doesn't
+  # recognize as valid destinations for this project (stale entries from
+  # other/older Xcode installs) — asking xcodebuild directly avoids picking
+  # one of those and failing with "Could not build the application".
+  def simulator_udid(name)
+    workspace = File.expand_path("../Runner.xcworkspace", __dir__)
+    output = `xcodebuild -showdestinations -workspace #{workspace} -scheme Runner -quiet 2>&1`
+    line = output.lines.find do |l|
+      l.include?("platform:iOS Simulator") && l =~ /name:#{Regexp.escape(name)}\s*\}/
+    end
+    UI.user_error!("No buildable simulator destination named '#{name}' found via `xcodebuild -showdestinations`.") unless line
+    line.match(/id:([0-9A-F-]+)/)[1]
+  end
+
+  desc "Capture App Store screenshots (en-US) for iPhone 16 Plus and iPad Pro 13-inch"
+  lane :screenshots do
+    # Computed from the Fastfile's own location rather than the ambient cwd —
+    # fastlane's `sh` action doesn't reliably preserve a surrounding
+    # Dir.chdir for a later raw Process.spawn call in the same lane.
+    repo_root = File.expand_path("../..", __dir__)
+
+    Bundler.with_unbundled_env do
+      SCREENSHOT_DEVICES.each do |device_name|
+        udid = simulator_udid(device_name)
+        UI.message("Booting #{device_name} (#{udid})...")
+        sh("xcrun simctl boot #{udid}", log: false) rescue nil
+        sh("xcrun simctl bootstatus #{udid} -b")
+
+        log_path = "/tmp/fastlane_screenshots_#{udid}.log"
+        FileUtils.rm_f(log_path)
+        pid = Process.spawn(
+          { "LANG" => "en_US.UTF-8" },
+          "flutter test integration_test/screenshots_test.dart -d #{udid}",
+          chdir: repo_root,
+          out: log_path, err: log_path
+        )
+
+        ready = false
+        60.times do
+          if File.exist?(log_path) && File.read(log_path).include?("SCREENSHOTS_READY")
+            ready = true
+            break
+          end
+          sleep 3
+        end
+
+        unless ready
+          Process.kill("TERM", pid) rescue nil
+          UI.user_error!("Timed out waiting for screenshots on #{device_name}. See #{log_path}.")
+        end
+
+        container = sh("xcrun simctl get_app_container #{udid} #{SCREENSHOT_BUNDLE_ID} data", log: false).strip
+        dest = File.join(repo_root, "ios/fastlane/screenshots/en-US/#{device_name}")
+        FileUtils.mkdir_p(dest)
+        FileUtils.cp(Dir.glob("#{container}/Documents/screenshots/*.png"), dest)
+        UI.success("Captured screenshots for #{device_name} -> #{dest}")
+
+        Process.wait(pid)
+      end
+    end
   end
 end
