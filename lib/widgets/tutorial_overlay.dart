@@ -106,15 +106,20 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
       ]);
     }
 
-    final rect = _targetRect;
-    if (rect == null) return widget.child;
+    final targetRect = _targetRect;
+    if (targetRect == null) return widget.child;
 
     final size = MediaQuery.of(context).size;
+    final rect = targetRect.intersect(Offset.zero & size);
+    if (rect.width <= 0 || rect.height <= 0) return widget.child;
+
     final tooltipBelow = rect.top < size.height / 2;
     final stepText = switch (step) {
       TutorialStep.addItem => l.tutorialStepAddItem,
       TutorialStep.completeTrip => l.tutorialStepCompleteTrip,
       TutorialStep.viewInventory => l.tutorialStepViewInventory,
+      // done and finalMessage both return earlier in build(), so this
+      // branch is unreachable by construction.
       _ => '',
     };
     const barColor = Colors.black54;
