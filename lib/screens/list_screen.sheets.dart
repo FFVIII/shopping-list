@@ -229,7 +229,12 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
                       ),
                       TextField(
                         controller: _qtyCtrl,
-                        autofocus: true,
+                        // Skip autofocus while the tutorial is running: it
+                        // pops the number keyboard up immediately, which can
+                        // cover the "add to list" button the tutorial's
+                        // next spotlight step needs to circle.
+                        autofocus:
+                            TutorialController.instance.step == TutorialStep.done,
                         keyboardType: TextInputType.number,
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly

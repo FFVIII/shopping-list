@@ -8,6 +8,8 @@ import '../widgets/days_selector.dart';
 import '../widgets/drag_handle.dart';
 import '../widgets/sort_toggle_button.dart';
 import '../widgets/batch_bar.dart';
+import '../services/tutorial_controller.dart';
+import '../widgets/tutorial_target.dart';
 
 part 'inventory_screen.card.dart';
 part 'inventory_screen.detail_sheet.dart';

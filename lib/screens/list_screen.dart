@@ -370,15 +370,23 @@ class _ListScreenState extends State<ListScreen> {
             if (_isBudget && !_budgetBatchMode) _buildBudgetSortToggle(),
             const SizedBox(height: 4),
             Expanded(
-              child: _isBudget
-                  ? (widget.budgetItems.isEmpty
-                      ? _budgetEmptyState()
-                      : _buildBudgetList())
-                  : _activeItems.isEmpty
-                      ? _emptyState()
-                      : _isSmart
-                          ? _buildSmartList()
-                          : _buildSimpleList(),
+              // Wrapped so the tutorial's completeTrip step can keep this
+              // whole area visible (excluded from the dim overlay) instead
+              // of tracking one specific list row — a per-row GlobalKey
+              // isn't safe here since ReorderableListView can transiently
+              // duplicate a row's subtree during its drag/reorder animation.
+              child: TutorialTarget(
+                id: 'plan_list_area',
+                child: _isBudget
+                    ? (widget.budgetItems.isEmpty
+                        ? _budgetEmptyState()
+                        : _buildBudgetList())
+                    : _activeItems.isEmpty
+                        ? _emptyState()
+                        : _isSmart
+                            ? _buildSmartList()
+                            : _buildSimpleList(),
+              ),
             ),
             if (_isBudget && widget.budgetItems.isNotEmpty && !_budgetBatchMode)
               _buildBudgetTotalBar(),
