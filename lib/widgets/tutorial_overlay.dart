@@ -264,14 +264,22 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
         child: _TutorialBubble(
           text: stepText,
           // The last step has no more "next" step to skip to — it's just
-          // acknowledging the message, so it gets "Got it"/finish instead
-          // of "Skip"/skip.
-          skipLabel: step == TutorialStep.finalMessage
-              ? l.tutorialGotIt
-              : l.tutorialSkip,
-          onSkip: step == TutorialStep.finalMessage
-              ? TutorialController.instance.finish
-              : TutorialController.instance.skip,
+          // acknowledging the message, so it gets "Got it"/finish. The
+          // itemAdded step needs an explicit user tap to move on (rather
+          // than skipping the tutorial), since it isn't triggered by an
+          // app action the way every other step is. Everything else gets
+          // "Skip"/skip.
+          skipLabel: switch (step) {
+            TutorialStep.finalMessage => l.tutorialGotIt,
+            TutorialStep.itemAdded => l.tutorialContinue,
+            _ => l.tutorialSkip,
+          },
+          onSkip: switch (step) {
+            TutorialStep.finalMessage => TutorialController.instance.finish,
+            TutorialStep.itemAdded =>
+              TutorialController.instance.advanceFromItemAdded,
+            _ => TutorialController.instance.skip,
+          },
         ),
       ),
     ]);

@@ -45,20 +45,21 @@ class TutorialController extends ChangeNotifier {
         .catchError((e) => debugPrint('tutorial save failed: $e')));
   }
 
-  Timer? _itemAddedTimer;
-
   void onItemAdded(String name) {
     if (step == TutorialStep.addItem && isExampleItemName(name)) {
-      _setStep(TutorialStep.itemAdded);
-      // Briefly circle the item that was just created, then move on to
-      // circling the "complete trip" button — no tap needed to continue,
-      // since the item sits inside a ReorderableListView and isn't safely
+      // Circles the item that was just created; the overlay's bubble shows
+      // a "Continue" action (rather than the usual "Skip") that calls
+      // [advanceFromItemAdded] once the user is ready to move on to
+      // circling the "complete trip" button. No tap on the item itself,
+      // since it sits inside a ReorderableListView and isn't safely
       // tappable as a tutorial target (see TutorialRectReporter's doc).
-      _itemAddedTimer?.cancel();
-      _itemAddedTimer = Timer(const Duration(seconds: 2), () {
-        if (step == TutorialStep.itemAdded) _setStep(TutorialStep.completeTrip);
-      });
+      _setStep(TutorialStep.itemAdded);
     }
+  }
+
+  /// "Continue" button on the itemAdded step's bubble.
+  void advanceFromItemAdded() {
+    if (step == TutorialStep.itemAdded) _setStep(TutorialStep.completeTrip);
   }
 
   void onTripCompleted(Iterable<String> purchasedNames) {
@@ -77,20 +78,15 @@ class TutorialController extends ChangeNotifier {
   /// User manually deleted the example item before finishing: end silently.
   void onItemDeleted(String name) {
     if (step != TutorialStep.done && isExampleItemName(name)) {
-      _itemAddedTimer?.cancel();
       _setStep(TutorialStep.done);
     }
   }
 
   /// "Got it" button: normal completion, doesn't touch any data.
-  void finish() {
-    _itemAddedTimer?.cancel();
-    _setStep(TutorialStep.done);
-  }
+  void finish() => _setStep(TutorialStep.done);
 
   /// "Skip" button: clean up first, then end.
   void skip() {
-    _itemAddedTimer?.cancel();
     onSkipRequested?.call();
     _setStep(TutorialStep.done);
   }
