@@ -19,6 +19,16 @@ AppData _sampleData() {
     shoppingSmart: buildSampleShopping(categories),
     inventory: buildSampleInventory(categories),
     budget: buildSampleBudget(),
+    budgetHistory: [
+      BudgetHistoryEntry(
+        id: 'hist_1',
+        clearedAt: DateTime(2026, 7, 1, 8, 30),
+        items: [
+          BudgetHistoryLineItem(name: '牛奶', quantity: 2, unitPrice: 8.5),
+          BudgetHistoryLineItem(name: '鸡蛋', quantity: 1, unitPrice: 12.0),
+        ],
+      ),
+    ],
     categories: categories,
     settings: AppSettings(
       reminderThresholdDays: 3,
@@ -69,6 +79,12 @@ void main() {
     expect(decoded.shelfZones.map((z) => z.name),
         data.shelfZones.map((z) => z.name));
     expect(decoded.shelfCodeOrder, ['货架B1', '货架B2']);
+    expect(decoded.budgetHistory.length, 1);
+    expect(decoded.budgetHistory.single.id, 'hist_1');
+    expect(decoded.budgetHistory.single.items.length, 2);
+    expect(decoded.budgetHistory.single.items[0].name, '牛奶');
+    expect(decoded.budgetHistory.single.totalAmount,
+        data.budgetHistory.single.totalAmount);
   });
 
   test('rejects non-xlsx input', () {
@@ -94,5 +110,28 @@ void main() {
         () => decodeBackupExcel(
             _metaOnlyXlsx(format: kBackupFormat, version: 1)),
         throwsFormatException);
+  });
+
+  test('decodes older backups that predate the SpendingHistory sheets', () {
+    // Simulates a backup exported before this feature existed: every
+    // required segment present, but no SpendingHistory/SpendingHistoryItems
+    // sheets at all.
+    final data = _sampleData();
+    final bytes = encodeBackupExcel(
+        AppData(
+          shoppingSimple: data.shoppingSimple,
+          shoppingSmart: data.shoppingSmart,
+          inventory: data.inventory,
+          budget: data.budget,
+          budgetHistory: const [], // nothing to encode either
+          categories: data.categories,
+          settings: data.settings,
+          shelfZones: data.shelfZones,
+          shelfCodeOrder: data.shelfCodeOrder,
+        ));
+
+    final decoded = decodeBackupExcel(bytes);
+
+    expect(decoded.budgetHistory, isEmpty);
   });
 }

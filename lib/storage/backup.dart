@@ -21,6 +21,8 @@ const _inventoryColumns = [
   'purchasedAt', 'estimatedDays'
 ];
 const _budgetColumns = ['id', 'name', 'quantity', 'unitPrice'];
+const _historyColumns = ['id', 'clearedAt'];
+const _historyItemColumns = ['entryId', 'name', 'quantity', 'unitPrice'];
 const _settingsColumns = [
   'reminderThresholdDays', 'restockReminderEnabled', 'reminderHour',
   'reminderMinute'
@@ -81,6 +83,14 @@ List<Map<String, dynamic>> _readMapsSheet(Excel excel, String sheetName) {
   }).toList();
 }
 
+/// Like [_readMapsSheet], but returns `[]` instead of throwing when the
+/// sheet is absent — for segments added after the backup format shipped,
+/// so backups exported before they existed still import.
+List<Map<String, dynamic>> _readMapsSheetOptional(Excel excel, String sheetName) {
+  if (excel.tables[sheetName] == null) return const [];
+  return _readMapsSheet(excel, sheetName);
+}
+
 /// Full-app backup as an .xlsx workbook, one sheet per data segment (plus a
 /// `Meta` sheet with format/version/exportedAt). All segments reuse the
 /// primitive-only toMap encodings from hive_models.dart.
@@ -107,6 +117,20 @@ List<int> encodeBackupExcel(AppData data) {
       data.inventory.map((i) => i.toMap()).toList(), _inventoryColumns);
   _writeMapsSheet(excel, 'Budget',
       data.budget.map((i) => i.toMap()).toList(), _budgetColumns);
+  _writeMapsSheet(excel, 'SpendingHistory', [
+    for (final e in data.budgetHistory)
+      {'id': e.id, 'clearedAt': e.clearedAt.millisecondsSinceEpoch},
+  ], _historyColumns);
+  _writeMapsSheet(excel, 'SpendingHistoryItems', [
+    for (final e in data.budgetHistory)
+      for (final i in e.items)
+        {
+          'entryId': e.id,
+          'name': i.name,
+          'quantity': i.quantity,
+          'unitPrice': i.unitPrice,
+        },
+  ], _historyItemColumns);
   _writeMapsSheet(excel, 'Settings', [data.settings.toMap()], _settingsColumns);
   _writeMapsSheet(excel, 'ShelfZones',
       data.shelfZones.map((z) => z.toMap()).toList(), _shelfZonesColumns);
@@ -158,6 +182,25 @@ AppData decodeBackupExcel(List<int> bytes) {
             .map((m) => shoppingItemFromMap(m, categories))
             .toList();
 
+    final historyItemsByEntryId = <String, List<BudgetHistoryLineItem>>{};
+    for (final m in _readMapsSheetOptional(excel, 'SpendingHistoryItems')) {
+      historyItemsByEntryId
+          .putIfAbsent(m['entryId'] as String, () => [])
+          .add(BudgetHistoryLineItem(
+            name: m['name'] as String,
+            quantity: (m['quantity'] as num).toInt(),
+            unitPrice: (m['unitPrice'] as num).toDouble(),
+          ));
+    }
+    final budgetHistory = _readMapsSheetOptional(excel, 'SpendingHistory')
+        .map((m) => BudgetHistoryEntry(
+              id: m['id'] as String,
+              clearedAt:
+                  DateTime.fromMillisecondsSinceEpoch(m['clearedAt'] as int),
+              items: historyItemsByEntryId[m['id']] ?? const [],
+            ))
+        .toList();
+
     return AppData(
       shoppingSimple: shopping('ShoppingSimple'),
       shoppingSmart: shopping('ShoppingSmart'),
@@ -166,6 +209,7 @@ AppData decodeBackupExcel(List<int> bytes) {
           .toList(),
       budget:
           _readMapsSheet(excel, 'Budget').map(budgetItemFromMap).toList(),
+      budgetHistory: budgetHistory,
       categories: categories,
       settings: appSettingsFromMap(_readMapsSheet(excel, 'Settings').first),
       shelfZones: _readMapsSheet(excel, 'ShelfZones')
