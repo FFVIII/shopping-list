@@ -7,6 +7,11 @@ part of 'list_screen.dart';
 extension _ListToggles on _ListScreenState {
   // ── Mode toggles ─────────────────────────────────────────────────────────────
 
+  void _setMode(ListMode mode) {
+    setState(() => _mode = mode);
+    NavigationStore.saveListMode(mode.index);
+  }
+
   Widget _buildModeToggle() {
     final l = L10n.of(context);
     const modeCount = 3;
@@ -36,17 +41,17 @@ extension _ListToggles on _ListScreenState {
                   _SegmentBtn(
                     label: l.modeSimple,
                     selected: _mode == ListMode.simple,
-                    onTap: () => setState(() => _mode = ListMode.simple),
+                    onTap: () => _setMode(ListMode.simple),
                   ),
                   _SegmentBtn(
                     label: l.budgetMode,
                     selected: _mode == ListMode.budget,
-                    onTap: () => setState(() => _mode = ListMode.budget),
+                    onTap: () => _setMode(ListMode.budget),
                   ),
                   _SegmentBtn(
                     label: l.modeSmart,
                     selected: _mode == ListMode.smart,
-                    onTap: () => setState(() => _mode = ListMode.smart),
+                    onTap: () => _setMode(ListMode.smart),
                   ),
                 ],
               ),

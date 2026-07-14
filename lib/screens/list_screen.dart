@@ -12,6 +12,7 @@ import '../widgets/batch_bar.dart';
 import '../widgets/quantity_badge.dart';
 import '../widgets/toast.dart';
 import '../widgets/tutorial_target.dart';
+import '../services/navigation_store.dart';
 import '../services/tutorial_controller.dart';
 import '../services/tutorial_store.dart';
 
@@ -79,9 +80,13 @@ class ListScreen extends StatefulWidget {
   // Incremented each time an item is added from the reminder screen;
   // causes this screen to switch to smart mode so the new item is visible.
   final int smartModeRequest;
+  // Restored from NavigationStore so a full app restart reopens on the
+  // last-viewed mode instead of always Jot.
+  final ListMode initialMode;
 
   const ListScreen({
     super.key,
+    this.initialMode = ListMode.simple,
     required this.simpleItems,
     required this.smartItems,
     required this.categories,
@@ -115,7 +120,7 @@ class ListScreen extends StatefulWidget {
 }
 
 class _ListScreenState extends State<ListScreen> {
-  ListMode _mode = ListMode.simple;
+  late ListMode _mode = widget.initialMode;
   SmartGroupMode _smartGroup = SmartGroupMode.shelf;
   SortDir _smartGroupDir = SortDir.asc;
   bool get _byShelf => _smartGroup == SmartGroupMode.shelf;
