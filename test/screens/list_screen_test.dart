@@ -300,11 +300,18 @@ void main() {
       (tester) async {
     final recorded = <BudgetItem>[];
     final deletedIds = <String>[];
+    final calls = <String>[];
     await _pumpList(
       tester,
       budgetItems: [_budget('b1', '牛奶')],
-      onRecordBudgetPurchase: recorded.addAll,
-      onBatchDeleteBudget: deletedIds.addAll,
+      onRecordBudgetPurchase: (items) {
+        calls.add('record');
+        recorded.addAll(items);
+      },
+      onBatchDeleteBudget: (ids) {
+        calls.add('delete');
+        deletedIds.addAll(ids);
+      },
     );
 
     // Switch to budget mode and trigger the clear-budget confirm dialog.
@@ -314,6 +321,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text(ZhStrings().delete));
     await tester.pumpAndSettle();
+
+    expect(calls, ['record', 'delete']);
 
     expect(recorded.single.id, 'b1');
     expect(deletedIds, ['b1']);
