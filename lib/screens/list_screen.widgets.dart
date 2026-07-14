@@ -313,6 +313,7 @@ class _RenameSheetState extends State<_RenameSheet> {
           TextField(
             controller: _ctrl,
             autofocus: true,
+            maxLength: 30,
             style: const TextStyle(fontSize: 15),
             decoration: InputDecoration(
               filled: true,
@@ -324,6 +325,8 @@ class _RenameSheetState extends State<_RenameSheet> {
               contentPadding: const EdgeInsets.symmetric(
                   horizontal: 14, vertical: 12),
               isDense: true,
+              counterStyle: const TextStyle(
+                  fontSize: 10, color: AppColors.textDisabled),
             ),
             onSubmitted: (_) => _confirm(),
           ),

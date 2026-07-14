@@ -408,8 +408,11 @@ class _BudgetSheetState extends State<_BudgetSheet> {
             TextField(
               controller: _nameCtrl,
               autofocus: !_namePrefilled,
+              maxLength: 30,
               style: const TextStyle(fontSize: 15),
-              decoration: _dec(l.productNameHint),
+              decoration: _dec(l.productNameHint).copyWith(
+                  counterStyle: const TextStyle(
+                      fontSize: 10, color: AppColors.textDisabled)),
               textInputAction: TextInputAction.next,
               onSubmitted: (_) => _priceFocus.requestFocus(),
             ),
@@ -453,7 +456,7 @@ class _BudgetSheetState extends State<_BudgetSheet> {
                         focusNode: _qtyFocus,
                         keyboardType: TextInputType.number,
                         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        maxLength: 8,
+                        maxLength: 10,
                         style: const TextStyle(fontSize: 15),
                         decoration: _dec('1').copyWith(
                             counterStyle: const TextStyle(

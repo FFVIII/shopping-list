@@ -204,6 +204,7 @@ extension _HeaderAndAddBarState on _ListScreenState {
             child: TextField(
               controller: _nameCtrl,
               focusNode: _nameFocus,
+              maxLength: 30,
               style: const TextStyle(fontSize: 15),
               decoration: InputDecoration(
                 hintText: _isListening
@@ -222,6 +223,7 @@ extension _HeaderAndAddBarState on _ListScreenState {
                 contentPadding: const EdgeInsets.symmetric(
                     horizontal: 14, vertical: 12),
                 isDense: true,
+                counterText: '',
               ),
               onSubmitted: (value) {
                 // The keyboard's return key just means "close the
