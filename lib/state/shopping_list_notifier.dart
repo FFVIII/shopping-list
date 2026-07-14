@@ -18,11 +18,13 @@ class ShoppingListNotifier extends ChangeNotifier {
   List<ShoppingItem> simple = [];
   List<ShoppingItem> smart = [];
   List<BudgetItem> budget = [];
+  List<BudgetHistoryEntry> budgetHistory = [];
 
   void load(AppData data) {
     simple = data.shoppingSimple;
     smart = data.shoppingSmart;
     budget = data.budget;
+    budgetHistory = data.budgetHistory;
     notifyListeners();
   }
 
@@ -45,6 +47,13 @@ class ShoppingListNotifier extends ChangeNotifier {
     unawaited(_repo
         .saveBudget(budget)
         .catchError((e) => debugPrint('save budget failed: $e')));
+  }
+
+  void persistBudgetHistory() {
+    notifyListeners();
+    unawaited(_repo
+        .saveHistory(budgetHistory)
+        .catchError((e) => debugPrint('save budgetHistory failed: $e')));
   }
 
   // ── 简单模式 ──────────────────────────────────────────────────────────────
@@ -220,6 +229,33 @@ class ShoppingListNotifier extends ChangeNotifier {
     final idSet = ids.toSet();
     budget = budget.where((i) => !idSet.contains(i.id)).toList();
     persistBudget();
+  }
+
+  /// Snapshots [snapshot] (the budget items about to be cleared) into a new
+  /// history entry. Does not itself clear `budget` — the caller (list_screen's
+  /// clear-confirm flow) still calls `batchDeleteBudget` separately for that.
+  void recordBudgetPurchase(List<BudgetItem> snapshot) {
+    if (snapshot.isEmpty) return;
+    budgetHistory = [
+      BudgetHistoryEntry(
+        id: generateId('hist'),
+        clearedAt: DateTime.now(),
+        items: snapshot
+            .map((b) => BudgetHistoryLineItem(
+                  name: b.name,
+                  quantity: b.quantity,
+                  unitPrice: b.unitPrice,
+                ))
+            .toList(),
+      ),
+      ...budgetHistory,
+    ];
+    persistBudgetHistory();
+  }
+
+  void deleteBudgetHistoryEntry(String id) {
+    budgetHistory = budgetHistory.where((e) => e.id != id).toList();
+    persistBudgetHistory();
   }
 
   // ── 提醒联动（只影响清单）──────────────────────────────────────────────────
