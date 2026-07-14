@@ -89,7 +89,6 @@ abstract class AppStrings {
   String inventoryNoResults(String query);
   String get inventoryEmptySubtitle;
   String get inventoryEmptySubtitleQuery;
-  String get addManually;
   String get usedUp; // "已用完" / "Used up"
   String daysRemainingLong(int n); // "还剩约 N 天" / "About N days left"
   String daysShort(int n); // "N天"
@@ -289,7 +288,6 @@ class ZhStrings extends AppStrings {
   @override String inventoryNoResults(String q) => '没有找到「$q」';
   @override String get inventoryEmptySubtitle => '先从清单购买并记录到库存';
   @override String get inventoryEmptySubtitleQuery => '试试其他关键词';
-  @override String get addManually => '手动添加商品';
   @override String get usedUp => '已用完';
   @override String daysRemainingLong(int n) => '还剩约 $n 天';
   @override String daysShort(int n) => '$n天';
@@ -506,7 +504,6 @@ class EnStrings extends AppStrings {
   @override String inventoryNoResults(String q) => 'No results for "$q"';
   @override String get inventoryEmptySubtitle => 'Buy from your list and log it here';
   @override String get inventoryEmptySubtitleQuery => 'Try another keyword';
-  @override String get addManually => 'Add item manually';
   @override String get usedUp => 'Used up';
   @override String daysRemainingLong(int n) => 'About $n days left';
   @override String daysShort(int n) => '${n}d';

@@ -400,28 +400,6 @@ extension _InvListBuilders on _InventoryScreenState {
             style: const TextStyle(
                 fontSize: 13, color: AppColors.textDisabled),
           ),
-          if (_query.isEmpty) ...[
-            const SizedBox(height: 24),
-            GestureDetector(
-              onTap: _showAddSheet,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 20, vertical: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.brand,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Text(
-                  l.addManually,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );
