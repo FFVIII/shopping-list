@@ -239,7 +239,7 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly
                         ],
-                        maxLength: 8,
+                        maxLength: 10,
                         style: const TextStyle(fontSize: 15),
                         decoration: _fieldDecoration('1').copyWith(
                             counterStyle: const TextStyle(
@@ -491,8 +491,11 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
             TextField(
               controller: _nameCtrl,
               autofocus: true,
+              maxLength: 30,
               style: const TextStyle(fontSize: 15),
-              decoration: _fieldDecoration(''),
+              decoration: _fieldDecoration('').copyWith(
+                  counterStyle: const TextStyle(
+                      fontSize: 10, color: AppColors.textDisabled)),
               onSubmitted: (_) => _confirm(),
             ),
             _label(l.quantityFieldLabel),
@@ -500,7 +503,7 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
               controller: _qtyCtrl,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              maxLength: 8,
+              maxLength: 10,
               style: const TextStyle(fontSize: 15),
               decoration: _fieldDecoration('1').copyWith(
                   counterStyle: const TextStyle(

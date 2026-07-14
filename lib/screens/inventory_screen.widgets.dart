@@ -484,7 +484,7 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
             // ── Editable header ──
             TextField(
               controller: _nameCtrl,
-              maxLength: 10,
+              maxLength: 30,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
               decoration: _dec(l.productNameHint),
               onChanged: (v) {
@@ -504,7 +504,7 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly
                       ],
-                      maxLength: 8,
+                      maxLength: 10,
                       style: const TextStyle(fontSize: 15),
                       decoration: _dec(l.quantityFieldLabel),
                       onChanged: (v) {
@@ -715,7 +715,7 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
           TextField(
             controller: _nameCtrl,
             autofocus: true,
-            maxLength: 10,
+            maxLength: 30,
             style: const TextStyle(fontSize: 15),
             decoration: InputDecoration(
               hintText: l.productNameHint,
@@ -743,7 +743,7 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
                   controller: _qtyCtrl,
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  maxLength: 8,
+                  maxLength: 10,
                   style: const TextStyle(fontSize: 15),
                   decoration: _fieldDecoration(l.quantityFieldLabel),
                 ),

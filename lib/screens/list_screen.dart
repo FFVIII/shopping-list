@@ -603,6 +603,7 @@ class _ListScreenState extends State<ListScreen> {
             child: TextField(
               controller: _nameCtrl,
               focusNode: _nameFocus,
+              maxLength: 30,
               style: const TextStyle(fontSize: 15),
               decoration: InputDecoration(
                 hintText: _isListening
@@ -621,6 +622,7 @@ class _ListScreenState extends State<ListScreen> {
                 contentPadding: const EdgeInsets.symmetric(
                     horizontal: 14, vertical: 12),
                 isDense: true,
+                counterText: '',
               ),
               onSubmitted: (value) {
                 // The keyboard's return key just means "close the
