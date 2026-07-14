@@ -40,6 +40,7 @@ void main() {
     expect(entry.items.length, 2);
     expect(entry.items[0].name, '牛奶');
     expect(entry.totalAmount, 2 * 8.5 + 1 * 12.0);
+    expect(notifier.budget, isEmpty);
   });
 
   test('recordBudgetPurchase inserts the newest entry at the head of the list',
