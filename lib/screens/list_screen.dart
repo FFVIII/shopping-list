@@ -10,6 +10,7 @@ import '../widgets/drag_handle.dart';
 import '../widgets/sort_toggle_button.dart';
 import '../widgets/batch_bar.dart';
 import '../widgets/toast.dart';
+import '../widgets/tutorial_target.dart';
 import '../services/tutorial_controller.dart';
 import '../services/tutorial_store.dart';
 

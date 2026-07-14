@@ -24,6 +24,7 @@ import 'state/shopping_list_notifier.dart';
 import 'storage/app_repository.dart';
 import 'storage/backup.dart';
 import 'widgets/days_selector.dart';
+import 'widgets/tutorial_target.dart';
 import 'widgets/toast.dart';
 import 'services/purchase_service.dart';
 

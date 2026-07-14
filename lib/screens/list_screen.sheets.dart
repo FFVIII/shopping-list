@@ -105,23 +105,26 @@ class _CompleteTripSheetState extends State<_CompleteTripSheet> {
               ),
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brand,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-                elevation: 0,
-                minimumSize: const Size(double.infinity, 50),
-              ),
-              onPressed: () {
-                Navigator.pop(context);
-                widget.onConfirm(_selected.toList());
-              },
-              child: Text(
-                l.addToInventoryButton,
-                style: const TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.w600),
+            TutorialTarget(
+              id: 'confirm_trip_button',
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.brand,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                  minimumSize: const Size(double.infinity, 50),
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                  widget.onConfirm(_selected.toList());
+                },
+                child: Text(
+                  l.addToInventoryButton,
+                  style: const TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.w600),
+                ),
               ),
             ),
           ],
@@ -330,30 +333,33 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
               onChanged: (d) => setState(() => _days = d),
             ),
             const SizedBox(height: 12),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brand,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-                elevation: 0,
-                minimumSize: const Size(double.infinity, 48),
-              ),
-              onPressed: () {
-                final shelf = _shelfCtrl.text.trim();
-                Navigator.pop(context);
-                widget.onConfirm(
-                  _selectedCategory,
-                  _selectedZone,
-                  _qtyCtrl.text.trim(),
-                  shelf.isEmpty ? null : shelf,
-                  _days,
-                );
-              },
-              child: Text(
-                l.addToList,
-                style: const TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.w600),
+            TutorialTarget(
+              id: 'confirm_add_button',
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.brand,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                  minimumSize: const Size(double.infinity, 48),
+                ),
+                onPressed: () {
+                  final shelf = _shelfCtrl.text.trim();
+                  Navigator.pop(context);
+                  widget.onConfirm(
+                    _selectedCategory,
+                    _selectedZone,
+                    _qtyCtrl.text.trim(),
+                    shelf.isEmpty ? null : shelf,
+                    _days,
+                  );
+                },
+                child: Text(
+                  l.addToList,
+                  style: const TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.w600),
+                ),
               ),
             ),
           ],

@@ -76,25 +76,28 @@ extension _HeaderAndAddBarState on _ListScreenState {
               (!_isSmart &&
                   !_isBudget &&
                   widget.simpleItems.any((i) => i.checked)))
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 160),
-              child: GestureDetector(
-                onTap: _confirmCompleteTrip,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: _isSmart ? AppColors.brand : AppColors.danger,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      _isSmart ? l.addToInventoryButton : l.clearBudget,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
+            TutorialTarget(
+              id: 'complete_trip_button',
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 160),
+                child: GestureDetector(
+                  onTap: _confirmCompleteTrip,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: _isSmart ? AppColors.brand : AppColors.danger,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        _isSmart ? l.addToInventoryButton : l.clearBudget,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
@@ -233,24 +236,27 @@ extension _HeaderAndAddBarState on _ListScreenState {
             ),
           ),
           const SizedBox(width: 10),
-          GestureDetector(
-            onTap: () => _submitAdd(context),
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: AppColors.brand,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.brand.withValues(alpha: 0.35),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+          TutorialTarget(
+            id: 'add_button',
+            child: GestureDetector(
+              onTap: () => _submitAdd(context),
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.brand,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.brand.withValues(alpha: 0.35),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.add_rounded,
+                    color: Colors.white, size: 24),
               ),
-              child: const Icon(Icons.add_rounded,
-                  color: Colors.white, size: 24),
             ),
           ),
         ],
