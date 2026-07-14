@@ -47,6 +47,7 @@ class AppData {
   final List<ShoppingItem> shoppingSmart;
   final List<InventoryItem> inventory;
   final List<BudgetItem> budget;
+  final List<BudgetHistoryEntry> budgetHistory;
   final List<Category> categories;
   final AppSettings settings;
   final List<ShelfZone> shelfZones;
@@ -57,6 +58,7 @@ class AppData {
     required this.shoppingSmart,
     required this.inventory,
     required this.budget,
+    required this.budgetHistory,
     required this.categories,
     required this.settings,
     required this.shelfZones,
@@ -65,7 +67,7 @@ class AppData {
 }
 
 /// Single read/write entry point for all locally-persisted app data.
-/// Backed by 6 Hive boxes, each storing one logical collection under a
+/// Backed by 7 Hive boxes, each storing one logical collection under a
 /// fixed `'items'` (or named) key as a plain `Map`/`List` — no `TypeAdapter`
 /// registration needed since [hive_models.dart] reduces every model to
 /// primitives before it reaches Hive.
@@ -74,6 +76,7 @@ class AppRepository {
   late Box _shoppingSmartBox;
   late Box _inventoryBox;
   late Box _budgetBox;
+  late Box _budgetHistoryBox;
   late Box _categoriesBox;
   late Box _metaBox;
 
@@ -82,6 +85,7 @@ class AppRepository {
     _shoppingSmartBox = await Hive.openBox('shopping_smart');
     _inventoryBox = await Hive.openBox('inventory');
     _budgetBox = await Hive.openBox('budget');
+    _budgetHistoryBox = await Hive.openBox('budget_history');
     _categoriesBox = await Hive.openBox('categories');
     _metaBox = await Hive.openBox('app_meta');
   }
@@ -132,6 +136,12 @@ class AppRepository {
         .map(budgetItemFromMap)
         .toList();
 
+    final budgetHistory =
+        ((_budgetHistoryBox.get('items') as List?) ?? const [])
+            .cast<Map>()
+            .map(budgetHistoryEntryFromMap)
+            .toList();
+
     final settingsMap = _metaBox.get('settings') as Map?;
     final settings =
         settingsMap != null ? appSettingsFromMap(settingsMap) : AppSettings();
@@ -150,6 +160,7 @@ class AppRepository {
       shoppingSmart: shoppingSmart,
       inventory: inventory,
       budget: budget,
+      budgetHistory: budgetHistory,
       categories: categories,
       settings: settings,
       shelfZones: shelfZones,
@@ -183,6 +194,9 @@ class AppRepository {
   Future<void> saveBudget(List<BudgetItem> items) =>
       _budgetBox.put('items', items.map((i) => i.toMap()).toList());
 
+  Future<void> saveHistory(List<BudgetHistoryEntry> entries) =>
+      _budgetHistoryBox.put('items', entries.map((e) => e.toMap()).toList());
+
   Future<void> saveCategories(List<Category> categories) =>
       _categoriesBox.put('items', categories.map((c) => c.toMap()).toList());
 
@@ -211,6 +225,7 @@ class AppRepository {
     await saveShoppingSmart(data.shoppingSmart);
     await saveInventory(data.inventory);
     await saveBudget(data.budget);
+    await saveHistory(data.budgetHistory);
     await saveSettings(data.settings);
     await saveShelfZones(data.shelfZones);
     await saveShelfCodeOrder(data.shelfCodeOrder);
