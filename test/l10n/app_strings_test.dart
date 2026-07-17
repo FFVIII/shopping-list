@@ -16,10 +16,6 @@ void main() {
   test('parameterized strings interpolate', () {
     expect(zh.days(7), '7天');
     expect(en.days(7), '7 days');
-    expect(zh.recordToInventory(5), '记录到库存（5天）');
-    expect(en.recordToInventory(5), 'Save to inventory (5 days)');
-    expect(zh.boughtTitle('香蕉'), '「香蕉」买到了！');
-    expect(en.boughtTitle('Banana'), '"Banana" bought!');
   });
 
   test('default categories carry plain-text names (no l10n)', () {

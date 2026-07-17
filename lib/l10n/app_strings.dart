@@ -21,6 +21,7 @@ abstract class AppStrings {
   String completeTripMessage(int bought); // explains what completing does
   String get tripInventoryHint; // sheet hint about saving to inventory
   String get tripCompletedCelebration; // brief "all done!" shown after completing a trip
+  String get addedToInventoryCelebration; // brief "added to inventory!" shown after a Plan-list trip is saved to inventory
   String get cancel; // "取消" / "Cancel"
   String get smartHint; // smart-mode explanation banner
   String get modeSimple;
@@ -77,9 +78,7 @@ abstract class AppStrings {
   String get shelfCodeFieldHint; // example placeholder, e.g. "货架B1" / "Shelf B1"
 
   // ── Days sheet (main.dart) ──
-  String boughtTitle(String name);
   String days(int n); // "7天" / "7 days"
-  String recordToInventory(int n);
 
   // ── Inventory screen ──
   String get inventoryTitle;
@@ -222,6 +221,7 @@ class ZhStrings extends AppStrings {
   @override String get tripInventoryHint =>
       '购买后将保存到库存，取消勾选则不保存。';
   @override String get tripCompletedCelebration => '搞定！';
+  @override String get addedToInventoryCelebration => '已加入库存！';
   @override String get cancel => '取消';
   @override String get smartHint =>
       '圆圈选中=将存入库存；点「完成购物」完成本次采购。';
@@ -279,9 +279,7 @@ class ZhStrings extends AppStrings {
   @override String get shelfCodeFieldLabel => '货架码';
   @override String get shelfCodeFieldHint => '货架B1';
 
-  @override String boughtTitle(String name) => '「$name」买到了！';
   @override String days(int n) => '$n天';
-  @override String recordToInventory(int n) => '记录到库存（$n天）';
 
   @override String get inventoryTitle => '库存';
   @override String inventorySummary(int t, int r) => '$t件常备 · $r件需补货';
@@ -437,6 +435,7 @@ class EnStrings extends AppStrings {
   @override String get tripInventoryHint =>
       'Unchecked items won\'t be saved to inventory.';
   @override String get tripCompletedCelebration => 'All done!';
+  @override String get addedToInventoryCelebration => 'Added to inventory!';
   @override String get cancel => 'Cancel';
   @override String get smartHint =>
       'Circles mark items to save to inventory. Tap \'Done\' to finish shopping.';
@@ -497,9 +496,7 @@ class EnStrings extends AppStrings {
   @override String get shelfCodeFieldLabel => 'Shelf code';
   @override String get shelfCodeFieldHint => 'Shelf B1';
 
-  @override String boughtTitle(String name) => '"$name" bought!';
   @override String days(int n) => '$n days';
-  @override String recordToInventory(int n) => 'Save to inventory ($n days)';
 
   @override String get inventoryTitle => 'Inventory';
   @override String inventorySummary(int t, int r) => '$t stocked · $r to restock';
