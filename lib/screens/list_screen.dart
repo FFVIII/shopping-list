@@ -328,7 +328,7 @@ class _ListScreenState extends State<ListScreen> {
             if (mounted && selectedIds.isNotEmpty) {
               HapticFeedback.mediumImpact();
               showCompletionCelebration(
-                  context, L10n.of(context).tripCompletedCelebration);
+                  context, L10n.of(context).addedToInventoryCelebration);
             }
           },
         ),

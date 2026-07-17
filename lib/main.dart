@@ -26,7 +26,6 @@ import 'storage/app_repository.dart';
 import 'storage/backup.dart';
 import 'widgets/days_selector.dart';
 import 'widgets/tutorial_target.dart';
-import 'widgets/toast.dart';
 
 part 'main.widgets.dart';
 
@@ -450,14 +449,6 @@ class _AppShellState extends State<AppShell> {
     _inventoryNotifier.persistItems();
     _shoppingNotifier.persistSmart();
     TutorialController.instance.onTripCompleted(purchasedNames);
-    // Only a single purchased item has an unambiguous name to name-drop in
-    // the toast; a multi-item trip just relies on the list visibly emptying.
-    if (purchased.length == 1) {
-      final item = purchased.first;
-      final l = L10n.of(context);
-      final days = item.estimatedDays ?? item.category.defaultDays;
-      showAppToast(context, '${l.boughtTitle(l.data(item.name))} ${l.recordToInventory(days)}');
-    }
   }
 
   // ── 提醒：加入 / 移出清单（跨域：读库存，写清单 + smartModeRequest）───────
