@@ -41,8 +41,11 @@ class _CategoryChipPickerState extends State<CategoryChipPicker> {
     showQuickAddCategorySheet(
       context,
       onSubmit: (name, color) {
+        // Quick-add doesn't ask for a shelf zone, so borrow the curated
+        // "other" category's zone rather than an arbitrary list position —
+        // deterministic regardless of category ordering.
         final zone = _categories.isNotEmpty
-            ? _categories.last.shelfZone
+            ? _categories.fallback.shelfZone
             : widget.selected.shelfZone;
         final cat = widget.onAddCategory(name, color, zone, 7);
         setState(() => _categories = [..._categories, cat]);
