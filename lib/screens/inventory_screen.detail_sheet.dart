@@ -48,6 +48,9 @@ class _InventoryDetailSheet extends StatefulWidget {
   final VoidCallback onAddToList;
   final VoidCallback onDelete;
   final VoidCallback onSave;
+  final Category Function(
+      String name, Color color, String shelfZone, int defaultDays)
+      onAddCategory;
 
   const _InventoryDetailSheet({
     required this.item,
@@ -58,6 +61,7 @@ class _InventoryDetailSheet extends StatefulWidget {
     required this.onAddToList,
     required this.onDelete,
     required this.onSave,
+    required this.onAddCategory,
   });
 
   @override
@@ -288,36 +292,16 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
               ],
             ),
             _label(l.categoryLabel),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: widget.categories.map((cat) {
-                final sel = _draft.category == cat;
-                return GestureDetector(
-                  onTap: () => setState(() {
-                    _draft
-                      ..category = cat
-                      ..zone = cat.shelfZone
-                      ..dirty = true;
-                  }),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: sel ? cat.color : cat.bgColor,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      l.data(cat.name),
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: sel ? Colors.white : cat.color,
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
+            CategoryChipPicker(
+              categories: widget.categories,
+              selected: _draft.category,
+              onAddCategory: widget.onAddCategory,
+              onSelect: (cat) => setState(() {
+                _draft
+                  ..category = cat
+                  ..zone = cat.shelfZone
+                  ..dirty = true;
+              }),
             ),
             const SizedBox(height: 16),
             const Divider(height: 1, color: Color(0xFFF0F0EA)),

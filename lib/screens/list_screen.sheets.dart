@@ -140,11 +140,15 @@ class _SmartAddSheet extends StatefulWidget {
   final String name;
   final List<Category> categories;
   final void Function(Category category, String zone, String quantityLabel, String? shelfCode, int estimatedDays) onConfirm;
+  final Category Function(
+      String name, Color color, String shelfZone, int defaultDays)
+      onAddCategory;
 
   const _SmartAddSheet({
     required this.name,
     required this.categories,
     required this.onConfirm,
+    required this.onAddCategory,
   });
 
   @override
@@ -288,35 +292,15 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
               ),
             ),
             const SizedBox(height: 6),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: widget.categories.map((cat) {
-                final sel = _selectedCategory == cat;
-                return GestureDetector(
-                  onTap: () => setState(() {
-                    _selectedCategory = cat;
-                    _selectedZone = cat.shelfZone;
-                    _days = cat.defaultDays;
-                  }),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: sel ? cat.color : cat.bgColor,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      l.data(cat.name),
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: sel ? Colors.white : cat.color,
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
+            CategoryChipPicker(
+              categories: widget.categories,
+              selected: _selectedCategory,
+              onAddCategory: widget.onAddCategory,
+              onSelect: (cat) => setState(() {
+                _selectedCategory = cat;
+                _selectedZone = cat.shelfZone;
+                _days = cat.defaultDays;
+              }),
             ),
             const SizedBox(height: 14),
             Padding(
@@ -392,11 +376,15 @@ class _EditSmartSheet extends StatefulWidget {
     Category category,
     String shelfZone,
   ) onConfirm;
+  final Category Function(
+      String name, Color color, String shelfZone, int defaultDays)
+      onAddCategory;
 
   const _EditSmartSheet({
     required this.item,
     required this.categories,
     required this.onConfirm,
+    required this.onAddCategory,
   });
 
   @override
@@ -519,34 +507,14 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
                       fontSize: 10, color: AppColors.textDisabled)),
             ),
             _label(l.categoryLabel),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: widget.categories.map((cat) {
-                final sel = _category == cat;
-                return GestureDetector(
-                  onTap: () => setState(() {
-                    _category = cat;
-                    _zone = cat.shelfZone;
-                  }),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: sel ? cat.color : cat.bgColor,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      l.data(cat.name),
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: sel ? Colors.white : cat.color,
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
+            CategoryChipPicker(
+              categories: widget.categories,
+              selected: _category,
+              onAddCategory: widget.onAddCategory,
+              onSelect: (cat) => setState(() {
+                _category = cat;
+                _zone = cat.shelfZone;
+              }),
             ),
             const SizedBox(height: 20),
             ElevatedButton(

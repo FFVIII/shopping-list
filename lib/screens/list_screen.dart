@@ -12,6 +12,7 @@ import '../widgets/batch_bar.dart';
 import '../widgets/quantity_badge.dart';
 import '../widgets/toast.dart';
 import '../widgets/tutorial_target.dart';
+import '../widgets/category_chip_picker.dart';
 import '../services/navigation_store.dart';
 import '../services/tutorial_controller.dart';
 import '../services/tutorial_store.dart';
@@ -85,6 +86,9 @@ class ListScreen extends StatefulWidget {
   // Restored from NavigationStore so a full app restart reopens on the
   // last-viewed mode instead of always Jot.
   final ListMode initialMode;
+  final Category Function(
+      String name, Color color, String shelfZone, int defaultDays)
+      onAddCategory;
 
   const ListScreen({
     super.key,
@@ -116,6 +120,7 @@ class ListScreen extends StatefulWidget {
     required this.onBatchDeleteBudget,
     required this.smartModeRequest,
     required this.shelfCodeOrder,
+    required this.onAddCategory,
   });
 
   @override

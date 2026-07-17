@@ -11,6 +11,7 @@ import '../widgets/batch_bar.dart';
 import '../widgets/quantity_badge.dart';
 import '../services/tutorial_controller.dart';
 import '../widgets/tutorial_target.dart';
+import '../widgets/category_chip_picker.dart';
 
 part 'inventory_screen.card.dart';
 part 'inventory_screen.detail_sheet.dart';
@@ -51,6 +52,9 @@ class InventoryScreen extends StatefulWidget {
   // Custom shelf-code ordering from the Shelf Order screen. Used to sort
   // "by aisle" groups; empty = fall back to alphabetical.
   final List<String> shelfCodeOrder;
+  final Category Function(
+      String name, Color color, String shelfZone, int defaultDays)
+      onAddCategory;
 
   const InventoryScreen({
     super.key,
@@ -66,6 +70,7 @@ class InventoryScreen extends StatefulWidget {
     required this.onBatchDelete,
     required this.onBatchAddToRestock,
     required this.shelfCodeOrder,
+    required this.onAddCategory,
   });
 
   @override
@@ -227,6 +232,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
       builder: (ctx) => _AddInventorySheet(
         onAdd: widget.onAdd,
         categories: widget.categories,
+        onAddCategory: widget.onAddCategory,
       ),
     );
   }
@@ -261,6 +267,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
       builder: (ctx) => _InventoryDetailSheet(
         item: item,
         categories: widget.categories,
+        onAddCategory: widget.onAddCategory,
         thresholdDays: widget.thresholdDays,
         draft: draft,
         onRestock: (days) => widget.onRestock(item.id, days),

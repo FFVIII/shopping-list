@@ -5,8 +5,15 @@ part of 'inventory_screen.dart';
 class _AddInventorySheet extends StatefulWidget {
   final void Function(InventoryItem) onAdd;
   final List<Category> categories;
+  final Category Function(
+      String name, Color color, String shelfZone, int defaultDays)
+      onAddCategory;
 
-  const _AddInventorySheet({required this.onAdd, required this.categories});
+  const _AddInventorySheet({
+    required this.onAdd,
+    required this.categories,
+    required this.onAddCategory,
+  });
 
   @override
   State<_AddInventorySheet> createState() => _AddInventorySheetState();
@@ -136,32 +143,11 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
             ),
           ),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
-            children: widget.categories.map((cat) {
-              final sel = _category == cat;
-              return GestureDetector(
-                onTap: () => setState(() => _category = cat),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: sel ? cat.color : cat.bgColor,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    l.data(cat.name),
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: sel ? Colors.white : cat.color,
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
+          CategoryChipPicker(
+            categories: widget.categories,
+            selected: _category,
+            onAddCategory: widget.onAddCategory,
+            onSelect: (cat) => setState(() => _category = cat),
           ),
           const SizedBox(height: 16),
           Text(
