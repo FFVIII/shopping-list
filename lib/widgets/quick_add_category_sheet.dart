@@ -8,6 +8,7 @@ import '../l10n/l10n.dart';
 /// manage screen, which also asks for shelf zone and default days).
 void showQuickAddCategorySheet(
   BuildContext context, {
+  required List<String> existingNames,
   required void Function(String name, Color color) onSubmit,
 }) {
   showModalBottomSheet(
@@ -17,14 +18,21 @@ void showQuickAddCategorySheet(
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
-    builder: (_) => _QuickAddCategorySheet(onSubmit: onSubmit),
+    builder: (_) => _QuickAddCategorySheet(
+      existingNames: existingNames,
+      onSubmit: onSubmit,
+    ),
   );
 }
 
 class _QuickAddCategorySheet extends StatefulWidget {
+  final List<String> existingNames;
   final void Function(String name, Color color) onSubmit;
 
-  const _QuickAddCategorySheet({required this.onSubmit});
+  const _QuickAddCategorySheet({
+    required this.existingNames,
+    required this.onSubmit,
+  });
 
   @override
   State<_QuickAddCategorySheet> createState() =>
@@ -34,6 +42,7 @@ class _QuickAddCategorySheet extends StatefulWidget {
 class _QuickAddCategorySheetState extends State<_QuickAddCategorySheet> {
   late final TextEditingController _nameCtrl = TextEditingController();
   Color _color = Category.palette.first;
+  String? _errorText;
 
   @override
   void dispose() {
@@ -44,6 +53,12 @@ class _QuickAddCategorySheetState extends State<_QuickAddCategorySheet> {
   void _submit() {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) return;
+    final duplicate = widget.existingNames
+        .any((existing) => existing.toLowerCase() == name.toLowerCase());
+    if (duplicate) {
+      setState(() => _errorText = L10n.of(context).categoryNameDuplicate);
+      return;
+    }
     Navigator.pop(context);
     widget.onSubmit(name, _color);
   }
@@ -88,6 +103,7 @@ class _QuickAddCategorySheetState extends State<_QuickAddCategorySheet> {
               decoration: InputDecoration(
                 hintText: l.categoryNameLabel,
                 hintStyle: const TextStyle(color: AppColors.textDisabled),
+                errorText: _errorText,
                 filled: true,
                 fillColor: AppColors.fieldBg,
                 border: OutlineInputBorder(
@@ -100,6 +116,9 @@ class _QuickAddCategorySheetState extends State<_QuickAddCategorySheet> {
                     fontSize: 10, color: AppColors.textDisabled),
                 isDense: true,
               ),
+              onChanged: (_) {
+                if (_errorText != null) setState(() => _errorText = null);
+              },
               onSubmitted: (_) => _submit(),
             ),
             _label(l.categoryColorLabel),

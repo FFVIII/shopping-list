@@ -135,6 +135,9 @@ abstract class AppStrings {
   String get editCategoryTitle;
   String get categoryNameLabel;
   String get categoryColorLabel;
+  String get categoryNameDuplicate; // inline field error when the name already exists
+  String get categorySearchHint; // search box shown in the picker once there are many categories
+  String categoryLimitReachedToast(int max); // toast when quick-add hits the cap
   String get shelfZoneLabel;
   String get defaultDaysLabel;
   String get delete;
@@ -333,6 +336,9 @@ class ZhStrings extends AppStrings {
   @override String get editCategoryTitle => '编辑分类';
   @override String get categoryNameLabel => '分类名称';
   @override String get categoryColorLabel => '颜色';
+  @override String get categoryNameDuplicate => '该分类已存在';
+  @override String get categorySearchHint => '搜索分类';
+  @override String categoryLimitReachedToast(int max) => '最多创建 $max 个分类';
   @override String get shelfZoneLabel => '所属货架';
   @override String get defaultDaysLabel => '默认使用天数';
   @override String get delete => '删除';
@@ -550,6 +556,9 @@ class EnStrings extends AppStrings {
   @override String get editCategoryTitle => 'Edit category';
   @override String get categoryNameLabel => 'Name';
   @override String get categoryColorLabel => 'Color';
+  @override String get categoryNameDuplicate => 'That category already exists';
+  @override String get categorySearchHint => 'Search categories';
+  @override String categoryLimitReachedToast(int max) => 'You can have up to $max categories';
   @override String get shelfZoneLabel => 'Aisle';
   @override String get defaultDaysLabel => 'Default days';
   @override String get delete => 'Delete';
