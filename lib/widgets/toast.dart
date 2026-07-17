@@ -24,7 +24,9 @@ void showAppToast(BuildContext context, String message) {
     builder: (ctx) => Positioned(
       left: 0,
       right: 0,
-      bottom: MediaQuery.of(ctx).padding.bottom + 80,
+      bottom: MediaQuery.of(ctx).padding.bottom +
+          MediaQuery.of(ctx).viewInsets.bottom +
+          80,
       child: IgnorePointer(
         child: Center(child: _ToastCard(message: message)),
       ),
