@@ -34,12 +34,6 @@
     <string>本应用不访问相册，仅用于选择备份文件</string>
     <key>NSSpeechRecognitionUsageDescription</key>
     <string>需要语音识别权限，用于将语音转换为商品名称</string>
-    <key>NSCameraUsageDescription</key>
-    <string>需要您的同意才能访问相机，以便拍摄或扫描购物商品。</string>
-    <key>NSPhotoLibraryUsageDescription</key>
-    <string>需要您的同意才能访问相册，以便从手机上传购物凭证或商品图片。</string>
-    <key>NSLocationWhenInUseUsageDescription</key>
-    <string>用于确定您所在的时区，以便在正确的时间为您发送购物与库存提醒。</string>
     <key>UIApplicationSceneManifest</key>
     <dict>
         <key>UIApplicationSupportsMultipleScenes</key>
