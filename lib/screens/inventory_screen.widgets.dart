@@ -294,6 +294,9 @@ class _InventoryDetailSheet extends StatefulWidget {
   final VoidCallback onAddToList;
   final VoidCallback onDelete;
   final VoidCallback onSave;
+  final Category Function(
+      String name, Color color, String shelfZone, int defaultDays)
+      onAddCategory;
 
   const _InventoryDetailSheet({
     required this.item,
@@ -304,6 +307,7 @@ class _InventoryDetailSheet extends StatefulWidget {
     required this.onAddToList,
     required this.onDelete,
     required this.onSave,
+    required this.onAddCategory,
   });
 
   @override
@@ -534,36 +538,16 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
               ],
             ),
             _label(l.categoryLabel),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: widget.categories.map((cat) {
-                final sel = _draft.category == cat;
-                return GestureDetector(
-                  onTap: () => setState(() {
-                    _draft
-                      ..category = cat
-                      ..zone = cat.shelfZone
-                      ..dirty = true;
-                  }),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: sel ? cat.color : cat.bgColor,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      l.data(cat.name),
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: sel ? Colors.white : cat.color,
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
+            CategoryChipPicker(
+              categories: widget.categories,
+              selected: _draft.category,
+              onAddCategory: widget.onAddCategory,
+              onSelect: (cat) => setState(() {
+                _draft
+                  ..category = cat
+                  ..zone = cat.shelfZone
+                  ..dirty = true;
+              }),
             ),
             const SizedBox(height: 16),
             const Divider(height: 1, color: Color(0xFFF0F0EA)),
@@ -638,8 +622,15 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
 class _AddInventorySheet extends StatefulWidget {
   final void Function(InventoryItem) onAdd;
   final List<Category> categories;
+  final Category Function(
+      String name, Color color, String shelfZone, int defaultDays)
+      onAddCategory;
 
-  const _AddInventorySheet({required this.onAdd, required this.categories});
+  const _AddInventorySheet({
+    required this.onAdd,
+    required this.categories,
+    required this.onAddCategory,
+  });
 
   @override
   State<_AddInventorySheet> createState() => _AddInventorySheetState();
@@ -769,32 +760,11 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
             ),
           ),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
-            children: widget.categories.map((cat) {
-              final sel = _category == cat;
-              return GestureDetector(
-                onTap: () => setState(() => _category = cat),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: sel ? cat.color : cat.bgColor,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    l.data(cat.name),
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: sel ? Colors.white : cat.color,
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
+          CategoryChipPicker(
+            categories: widget.categories,
+            selected: _category,
+            onAddCategory: widget.onAddCategory,
+            onSelect: (cat) => setState(() => _category = cat),
           ),
           const SizedBox(height: 16),
           Text(

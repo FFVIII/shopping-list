@@ -40,17 +40,6 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
   bool _batchMode = false;
   final Set<String> _selected = {};
 
-  static const List<Color> _palette = [
-    Color(0xFF4CAF50),
-    Color(0xFF2196F3),
-    Color(0xFFE53935),
-    Color(0xFFFF9800),
-    Color(0xFF7B1FA2),
-    Color(0xFF8D6E63),
-    Color(0xFF0288D1),
-    Color(0xFF78909C),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -69,7 +58,7 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
       builder: (_) => _CategoryEditSheet(
         initial: cat,
         shelfZones: widget.shelfZones,
-        palette: _palette,
+        palette: Category.palette,
         onSubmit: (name, color, zone, days) {
           widget.onEdit(cat.id, name, color, zone, days);
           setState(() => _categories = List<Category>.from(_categories));
@@ -89,7 +78,7 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
       builder: (_) => _CategoryEditSheet(
         initial: null,
         shelfZones: widget.shelfZones,
-        palette: _palette,
+        palette: Category.palette,
         onSubmit: (name, color, zone, days) {
           final cat = widget.onAdd(name, color, zone, days);
           setState(() => _categories = [..._categories, cat]);

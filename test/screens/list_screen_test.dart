@@ -100,6 +100,7 @@ Future<void> _pumpList(
             onBatchDeleteBudget: (_) {},
             smartModeRequest: 0,
             shelfCodeOrder: const [],
+            onAddCategory: (_, _, _, _) => _category('new'),
           ),
         ),
       ),

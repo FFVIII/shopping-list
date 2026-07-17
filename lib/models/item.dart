@@ -33,6 +33,18 @@ class Category {
 
   /// Light tint of `color` to use as a chip background.
   static Color tintOf(Color color) => Color.lerp(color, Colors.white, 0.85)!;
+
+  /// Shared swatch choices for the category color picker.
+  static const List<Color> palette = [
+    Color(0xFF4CAF50),
+    Color(0xFF2196F3),
+    Color(0xFFE53935),
+    Color(0xFFFF9800),
+    Color(0xFF7B1FA2),
+    Color(0xFF8D6E63),
+    Color(0xFF0288D1),
+    Color(0xFF78909C),
+  ];
 }
 
 /// Fallback category id — always present, never deleted.

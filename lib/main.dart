@@ -561,6 +561,7 @@ class _AppShellState extends State<AppShell> {
                     onBatchDeleteBudget: _shoppingNotifier.batchDeleteBudget,
                     smartModeRequest: _smartModeRequest,
                     shelfCodeOrder: shelfCodeOrder,
+                    onAddCategory: _categoriesNotifier.addCategory,
                   ),
                   InventoryScreen(
                     items: _inventoryNotifier.items,
@@ -575,6 +576,7 @@ class _AppShellState extends State<AppShell> {
                     onBatchDelete: _inventoryNotifier.batchDelete,
                     onBatchAddToRestock: _shoppingNotifier.batchAddToRestock,
                     shelfCodeOrder: shelfCodeOrder,
+                    onAddCategory: _categoriesNotifier.addCategory,
                   ),
                   ReminderScreen(
                     inventoryItems: _inventoryNotifier.items,
