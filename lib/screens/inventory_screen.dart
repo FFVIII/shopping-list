@@ -54,6 +54,7 @@ class InventoryScreen extends StatefulWidget {
   final Category Function(
       String name, Color color, String shelfZone, int defaultDays)
       onAddCategory;
+  final void Function(String id) onDeleteCategory;
 
   const InventoryScreen({
     super.key,
@@ -70,6 +71,7 @@ class InventoryScreen extends StatefulWidget {
     required this.onBatchAddToRestock,
     required this.shelfCodeOrder,
     required this.onAddCategory,
+    required this.onDeleteCategory,
   });
 
   @override
@@ -232,6 +234,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
         onAdd: widget.onAdd,
         categories: widget.categories,
         onAddCategory: widget.onAddCategory,
+        onDeleteCategory: widget.onDeleteCategory,
       ),
     );
   }
@@ -267,6 +270,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
         item: item,
         categories: widget.categories,
         onAddCategory: widget.onAddCategory,
+        onDeleteCategory: widget.onDeleteCategory,
         thresholdDays: widget.thresholdDays,
         draft: draft,
         onRestock: (days) => widget.onRestock(item.id, days),

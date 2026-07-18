@@ -88,6 +88,7 @@ class ListScreen extends StatefulWidget {
   final Category Function(
       String name, Color color, String shelfZone, int defaultDays)
       onAddCategory;
+  final void Function(String id) onDeleteCategory;
 
   const ListScreen({
     super.key,
@@ -119,6 +120,7 @@ class ListScreen extends StatefulWidget {
     required this.smartModeRequest,
     required this.shelfCodeOrder,
     required this.onAddCategory,
+    required this.onDeleteCategory,
   });
 
   @override
@@ -689,6 +691,7 @@ class _ListScreenState extends State<ListScreen> {
               item: item,
               categories: widget.categories,
               onAddCategory: widget.onAddCategory,
+              onDeleteCategory: widget.onDeleteCategory,
               onConfirm: (name, quantity, shelfCode, category, zone) {
                 widget.onEditSmart(
                     item.id, name, quantity, shelfCode, category, zone);
@@ -741,6 +744,7 @@ class _ListScreenState extends State<ListScreen> {
         name: name,
         categories: widget.categories,
         onAddCategory: widget.onAddCategory,
+        onDeleteCategory: widget.onDeleteCategory,
         onConfirm: (category, zone, quantityLabel, shelfCode, estimatedDays) {
           widget.onAddSmart(name, quantityLabel, shelfCode, estimatedDays, category, zone);
           _nameCtrl.clear();

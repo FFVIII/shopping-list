@@ -8,7 +8,8 @@ import 'toast.dart';
 /// Category selector used by the Plan/Inventory add and edit sheets: a Wrap
 /// of chips plus a trailing "+" chip that creates a new category inline
 /// (via [showQuickAddCategorySheet]) and selects it immediately, without
-/// leaving the current sheet.
+/// leaving the current sheet. Each chip (except the fallback "other"
+/// category, which can't be deleted) has a small "x" for quick removal.
 class CategoryChipPicker extends StatefulWidget {
   final List<Category> categories;
   final Category selected;
@@ -16,6 +17,7 @@ class CategoryChipPicker extends StatefulWidget {
   final Category Function(
       String name, Color color, String shelfZone, int defaultDays)
       onAddCategory;
+  final void Function(String id) onDeleteCategory;
 
   const CategoryChipPicker({
     super.key,
@@ -23,6 +25,7 @@ class CategoryChipPicker extends StatefulWidget {
     required this.selected,
     required this.onSelect,
     required this.onAddCategory,
+    required this.onDeleteCategory,
   });
 
   @override
@@ -76,6 +79,32 @@ class _CategoryChipPickerState extends State<CategoryChipPicker> {
     );
   }
 
+  // Removes the chip immediately (with an undo window), matching the
+  // swipe-to-delete pattern used elsewhere for items. If the deleted
+  // category was selected, selection falls back to "other" until/unless
+  // the delete is undone.
+  void _deleteCategory(Category cat) {
+    final l = L10n.of(context);
+    final index = _categories.indexOf(cat);
+    final wasSelected = widget.selected == cat;
+    setState(() => _categories = _categories.where((c) => c != cat).toList());
+    if (wasSelected) widget.onSelect(_categories.fallback);
+    showUndoToast(
+      context,
+      message: l.itemDeletedToast(l.data(cat.name)),
+      actionLabel: l.undo,
+      onAction: () {
+        if (!mounted) return;
+        setState(() {
+          final restoreAt = index.clamp(0, _categories.length);
+          _categories = [..._categories]..insert(restoreAt, cat);
+        });
+        if (wasSelected) widget.onSelect(cat);
+      },
+      onTimeout: () => widget.onDeleteCategory(cat.id),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = L10n.of(context);
@@ -120,22 +149,37 @@ class _CategoryChipPickerState extends State<CategoryChipPicker> {
           children: [
             ...visible.map((cat) {
               final sel = widget.selected == cat;
+              final deletable = cat.id != kFallbackCategoryId;
+              final fg = sel ? Colors.white : cat.color;
               return GestureDetector(
                 onTap: () => widget.onSelect(cat),
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: EdgeInsets.only(
+                      left: 14, right: deletable ? 8 : 14, top: 8, bottom: 8),
                   decoration: BoxDecoration(
                     color: sel ? cat.color : cat.bgColor,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text(
-                    l.data(cat.name),
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: sel ? Colors.white : cat.color,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        l.data(cat.name),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: fg,
+                        ),
+                      ),
+                      if (deletable) ...[
+                        const SizedBox(width: 4),
+                        GestureDetector(
+                          onTap: () => _deleteCategory(cat),
+                          child: Icon(Icons.close_rounded,
+                              size: 14, color: fg.withValues(alpha: 0.7)),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               );
