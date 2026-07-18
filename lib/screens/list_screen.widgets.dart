@@ -271,11 +271,23 @@ class _RenameSheet extends StatefulWidget {
 
 class _RenameSheetState extends State<_RenameSheet> {
   late final TextEditingController _ctrl;
+  bool _textInitialized = false;
+  late String _display;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = TextEditingController(text: widget.initialName);
+    _ctrl = TextEditingController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_textInitialized) {
+      _display = canonicalDisplay(L10n.of(context), widget.initialName);
+      _ctrl.text = _display;
+      _textInitialized = true;
+    }
   }
 
   @override
@@ -285,8 +297,9 @@ class _RenameSheetState extends State<_RenameSheet> {
   }
 
   void _confirm() {
-    final name = _ctrl.text.trim();
-    if (name.isEmpty) return;
+    final typed = _ctrl.text.trim();
+    if (typed.isEmpty) return;
+    final name = resolveCanonicalEdit(typed, _display, widget.initialName);
     Navigator.pop(context);
     widget.onConfirm(name);
   }

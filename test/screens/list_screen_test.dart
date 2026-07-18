@@ -504,7 +504,7 @@ void main() {
       await tester.pump();
 
       expect(completedIds, ['a']);
-      expect(find.text(ZhStrings().tripCompletedCelebration), findsOneWidget);
+      expect(find.text(ZhStrings().addedToInventoryCelebration), findsOneWidget);
     },
   );
 
@@ -539,7 +539,7 @@ void main() {
 
       await tester.tap(saveButton);
       await tester.pump();
-      expect(find.text(ZhStrings().tripCompletedCelebration), findsOneWidget);
+      expect(find.text(ZhStrings().addedToInventoryCelebration), findsOneWidget);
     },
   );
 

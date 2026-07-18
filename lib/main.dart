@@ -10,6 +10,7 @@ import 'l10n/app_language.dart';
 import 'l10n/app_strings.dart';
 import 'l10n/l10n.dart';
 import 'l10n/language_store.dart';
+import 'l10n/canonical_edit.dart';
 import 'services/navigation_store.dart';
 import 'services/tutorial_controller.dart';
 import 'widgets/tutorial_overlay.dart';

@@ -75,16 +75,34 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
   late int _selectedDays;
   bool _resetPending = false;
   bool _addedToList = false;
+  bool _textsInitialized = false;
 
   _DetailDraft get _draft => widget.draft;
 
   @override
   void initState() {
     super.initState();
-    _nameCtrl = TextEditingController(text: _draft.name);
-    _qtyCtrl = TextEditingController(text: _draft.quantity);
-    _shelfCtrl = TextEditingController(text: _draft.shelfCode);
+    _nameCtrl = TextEditingController();
+    _qtyCtrl = TextEditingController();
+    _shelfCtrl = TextEditingController();
     _selectedDays = widget.item.estimatedDays;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_textsInitialized) {
+      // Draft fields stay canonical (raw) — only the displayed text is
+      // translated. Programmatic controller.text assignment doesn't fire
+      // TextField.onChanged, so this can't itself mark the draft dirty;
+      // the explicit reset below is just a defensive belt-and-suspenders.
+      final l = L10n.of(context);
+      _nameCtrl.text = canonicalDisplay(l, _draft.name);
+      _qtyCtrl.text = canonicalDisplay(l, _draft.quantity);
+      _shelfCtrl.text = canonicalDisplay(l, _draft.shelfCode);
+      _draft.dirty = false;
+      _textsInitialized = true;
+    }
   }
 
   @override

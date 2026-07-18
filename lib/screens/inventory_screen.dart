@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../theme/app_colors.dart';
 import '../models/item.dart';
 import '../l10n/l10n.dart';
+import '../l10n/canonical_edit.dart';
 import '../widgets/toast.dart';
 import '../widgets/days_selector.dart';
 import '../widgets/drag_handle.dart';
