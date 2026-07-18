@@ -61,7 +61,6 @@ Future<void> _pumpInventory(
             onBatchAddToRestock: (_) {},
             shelfCodeOrder: const [],
             onAddCategory: (_, _, _, _) => _category('new'),
-            onDeleteCategory: (_) {},
           ),
         ),
       ),

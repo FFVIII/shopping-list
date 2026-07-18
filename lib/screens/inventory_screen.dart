@@ -13,6 +13,7 @@ import '../widgets/quantity_badge.dart';
 import '../services/tutorial_controller.dart';
 import '../widgets/tutorial_target.dart';
 import '../widgets/category_chip_picker.dart';
+import '../widgets/category_picker_field.dart';
 import '../widgets/shelf_code_picker.dart';
 
 part 'inventory_screen.widgets.dart';
@@ -55,7 +56,6 @@ class InventoryScreen extends StatefulWidget {
   final Category Function(
       String name, Color color, String shelfZone, int defaultDays)
       onAddCategory;
-  final void Function(String id) onDeleteCategory;
 
   const InventoryScreen({
     super.key,
@@ -72,7 +72,6 @@ class InventoryScreen extends StatefulWidget {
     required this.onBatchAddToRestock,
     required this.shelfCodeOrder,
     required this.onAddCategory,
-    required this.onDeleteCategory,
   });
 
   @override
@@ -236,7 +235,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
         categories: widget.categories,
         shelfCodeOrder: widget.shelfCodeOrder,
         onAddCategory: widget.onAddCategory,
-        onDeleteCategory: widget.onDeleteCategory,
       ),
     );
   }
@@ -273,7 +271,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
         categories: widget.categories,
         shelfCodeOrder: widget.shelfCodeOrder,
         onAddCategory: widget.onAddCategory,
-        onDeleteCategory: widget.onDeleteCategory,
         thresholdDays: widget.thresholdDays,
         draft: draft,
         onRestock: (days) => widget.onRestock(item.id, days),

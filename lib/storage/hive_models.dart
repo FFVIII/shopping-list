@@ -37,6 +37,7 @@ extension ShoppingItemHiveX on ShoppingItem {
         'checked': checked,
         'addedToInventory': addedToInventory,
         'sourceInventoryId': sourceInventoryId,
+        'unitPrice': unitPrice,
       };
 }
 
@@ -53,6 +54,7 @@ ShoppingItem shoppingItemFromMap(Map map, List<Category> categories) =>
       checked: map['checked'] as bool? ?? false,
       addedToInventory: map['addedToInventory'] as bool? ?? false,
       sourceInventoryId: map['sourceInventoryId'] as String?,
+      unitPrice: (map['unitPrice'] as num?)?.toDouble(),
     );
 
 // ─── InventoryItem ────────────────────────────────────────────────────────────

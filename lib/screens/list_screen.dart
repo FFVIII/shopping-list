@@ -14,6 +14,7 @@ import '../widgets/quantity_badge.dart';
 import '../widgets/toast.dart';
 import '../widgets/tutorial_target.dart';
 import '../widgets/category_chip_picker.dart';
+import '../widgets/category_picker_field.dart';
 import '../widgets/shelf_code_picker.dart';
 import '../services/navigation_store.dart';
 import '../services/tutorial_controller.dart';
@@ -43,7 +44,7 @@ class ListScreen extends StatefulWidget {
   // Smart mode: triggers "how many days?" sheet → inventory
   final void Function(String id) onToggleSmart;
   final void Function(String name) onAddSimple;
-  final void Function(String name, String quantityLabel, String? shelfCode, int estimatedDays, Category category, String shelfZone) onAddSmart;
+  final void Function(String name, String quantityLabel, String? shelfCode, int estimatedDays, Category category, String shelfZone, {double? unitPrice}) onAddSmart;
   final void Function(String id) onDeleteSimple;
   final void Function(String id) onDeleteSmart;
   final VoidCallback onCompleteSimple;
@@ -63,8 +64,9 @@ class ListScreen extends StatefulWidget {
     String quantityLabel,
     String? shelfCode,
     Category category,
-    String shelfZone,
-  ) onEditSmart;
+    String shelfZone, {
+    double? unitPrice,
+  }) onEditSmart;
   // Budget mode (记账)
   final List<BudgetItem> budgetItems;
   final void Function(String name, int quantity, double unitPrice) onAddBudget;
@@ -89,7 +91,6 @@ class ListScreen extends StatefulWidget {
   final Category Function(
       String name, Color color, String shelfZone, int defaultDays)
       onAddCategory;
-  final void Function(String id) onDeleteCategory;
 
   const ListScreen({
     super.key,
@@ -121,7 +122,6 @@ class ListScreen extends StatefulWidget {
     required this.smartModeRequest,
     required this.shelfCodeOrder,
     required this.onAddCategory,
-    required this.onDeleteCategory,
   });
 
   @override
@@ -322,6 +322,12 @@ class _ListScreenState extends State<ListScreen> {
           items: widget.smartItems,
           initialSelected: Set<String>.from(_tripSelected),
           onConfirm: (selectedIds) {
+            // Captured before onCompleteSmart, which removes purchased items
+            // from widget.smartItems.
+            final priced = widget.smartItems
+                .where((i) =>
+                    selectedIds.contains(i.id) && i.unitPrice != null)
+                .toList();
             setState(() {
               _tripSelected
                 ..clear()
@@ -334,11 +340,43 @@ class _ListScreenState extends State<ListScreen> {
               showCompletionCelebration(
                   context, L10n.of(context).addedToInventoryCelebration);
             }
+            if (priced.isNotEmpty) _offerBudgetSync(priced);
           },
         ),
       );
     } else {
       _confirmCompleteSimple();
+    }
+  }
+
+  // Priced Plan items aren't automatically double-entered into Budget —
+  // ask once per trip instead, covering every priced item bought this time.
+  Future<void> _offerBudgetSync(List<ShoppingItem> priced) async {
+    final l = L10n.of(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.syncToBudgetTitle),
+        content: Text(l.syncToBudgetMessage(priced.length)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.syncToBudgetConfirm),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    for (final item in priced) {
+      widget.onAddBudget(
+        item.name,
+        int.tryParse(item.quantityLabel) ?? 1,
+        item.unitPrice!,
+      );
     }
   }
 
@@ -693,10 +731,10 @@ class _ListScreenState extends State<ListScreen> {
               categories: widget.categories,
               shelfCodeOrder: widget.shelfCodeOrder,
               onAddCategory: widget.onAddCategory,
-              onDeleteCategory: widget.onDeleteCategory,
-              onConfirm: (name, quantity, shelfCode, category, zone) {
+              onConfirm: (name, quantity, shelfCode, category, zone, unitPrice) {
                 widget.onEditSmart(
-                    item.id, name, quantity, shelfCode, category, zone);
+                    item.id, name, quantity, shelfCode, category, zone,
+                    unitPrice: unitPrice);
               },
             )
           : _RenameSheet(
@@ -747,9 +785,9 @@ class _ListScreenState extends State<ListScreen> {
         categories: widget.categories,
         shelfCodeOrder: widget.shelfCodeOrder,
         onAddCategory: widget.onAddCategory,
-        onDeleteCategory: widget.onDeleteCategory,
-        onConfirm: (category, zone, quantityLabel, shelfCode, estimatedDays) {
-          widget.onAddSmart(name, quantityLabel, shelfCode, estimatedDays, category, zone);
+        onConfirm: (category, zone, quantityLabel, shelfCode, estimatedDays, unitPrice) {
+          widget.onAddSmart(name, quantityLabel, shelfCode, estimatedDays, category, zone,
+              unitPrice: unitPrice);
           _nameCtrl.clear();
         },
       ),

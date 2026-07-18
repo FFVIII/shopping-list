@@ -140,11 +140,10 @@ class _SmartAddSheet extends StatefulWidget {
   final String name;
   final List<Category> categories;
   final List<String> shelfCodeOrder;
-  final void Function(Category category, String zone, String quantityLabel, String? shelfCode, int estimatedDays) onConfirm;
+  final void Function(Category category, String zone, String quantityLabel, String? shelfCode, int estimatedDays, double? unitPrice) onConfirm;
   final Category Function(
       String name, Color color, String shelfZone, int defaultDays)
       onAddCategory;
-  final void Function(String id) onDeleteCategory;
 
   const _SmartAddSheet({
     required this.name,
@@ -152,7 +151,6 @@ class _SmartAddSheet extends StatefulWidget {
     required this.shelfCodeOrder,
     required this.onConfirm,
     required this.onAddCategory,
-    required this.onDeleteCategory,
   });
 
   @override
@@ -164,6 +162,7 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
   late String _selectedZone;
   late final TextEditingController _qtyCtrl;
   late final TextEditingController _shelfCtrl;
+  late final TextEditingController _priceCtrl;
   late int _days;
 
   @override
@@ -174,12 +173,14 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
     _days = _selectedCategory.defaultDays;
     _qtyCtrl = TextEditingController();
     _shelfCtrl = TextEditingController();
+    _priceCtrl = TextEditingController();
   }
 
   @override
   void dispose() {
     _qtyCtrl.dispose();
     _shelfCtrl.dispose();
+    _priceCtrl.dispose();
     super.dispose();
   }
 
@@ -258,14 +259,13 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  flex: 2,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Padding(
                         padding: const EdgeInsets.only(bottom: 6),
                         child: Text(
-                          l.shelfCodeFieldLabel,
+                          l.unitPriceFieldLabel,
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -274,31 +274,56 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
                         ),
                       ),
                       TextField(
-                        controller: _shelfCtrl,
-                        maxLength: 20,
+                        controller: _priceCtrl,
+                        keyboardType:
+                            const TextInputType.numberWithOptions(decimal: true),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                              RegExp(r'^\d*\.?\d*$')),
+                        ],
+                        maxLength: 8,
                         style: const TextStyle(fontSize: 15),
-                        decoration: _fieldDecoration(l.shelfCodeFieldHint).copyWith(
+                        decoration: _fieldDecoration(l.currencySymbol).copyWith(
                             counterStyle: const TextStyle(
-                                fontSize: 10, color: AppColors.textDisabled),
-                            suffixIcon: widget.shelfCodeOrder.isEmpty
-                                ? null
-                                : IconButton(
-                                    icon: const Icon(Icons.list_alt_rounded,
-                                        size: 20,
-                                        color: AppColors.textSecondary),
-                                    onPressed: () async {
-                                      final picked = await pickShelfCode(
-                                          context, widget.shelfCodeOrder);
-                                      if (picked != null) {
-                                        setState(() => _shelfCtrl.text = picked);
-                                      }
-                                    },
-                                  )),
+                                fontSize: 10, color: AppColors.textDisabled)),
                       ),
                     ],
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 14),
+            Text(
+              l.shelfCodeFieldLabel,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _shelfCtrl,
+              maxLength: 20,
+              style: const TextStyle(fontSize: 15),
+              decoration: _fieldDecoration(l.shelfCodeFieldHint).copyWith(
+                  counterStyle: const TextStyle(
+                      fontSize: 10, color: AppColors.textDisabled),
+                  suffixIcon: widget.shelfCodeOrder.isEmpty
+                      ? null
+                      : Builder(
+                          builder: (iconContext) => IconButton(
+                            icon: const Icon(Icons.list_alt_rounded,
+                                size: 20, color: AppColors.textSecondary),
+                            onPressed: () async {
+                              final picked = await pickShelfCode(
+                                  iconContext, widget.shelfCodeOrder);
+                              if (picked != null) {
+                                setState(() => _shelfCtrl.text = picked);
+                              }
+                            },
+                          ),
+                        )),
             ),
             const SizedBox(height: 14),
             Text(
@@ -314,7 +339,6 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
               categories: widget.categories,
               selected: _selectedCategory,
               onAddCategory: widget.onAddCategory,
-              onDeleteCategory: widget.onDeleteCategory,
               onSelect: (cat) => setState(() {
                 _selectedCategory = cat;
                 _selectedZone = cat.shelfZone;
@@ -360,6 +384,7 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
                 ),
                 onPressed: () {
                   final shelf = _shelfCtrl.text.trim();
+                  final price = double.tryParse(_priceCtrl.text.trim());
                   Navigator.pop(context);
                   widget.onConfirm(
                     _selectedCategory,
@@ -367,6 +392,7 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
                     _qtyCtrl.text.trim(),
                     shelf.isEmpty ? null : shelf,
                     _days,
+                    price,
                   );
                 },
                 child: Text(
@@ -394,11 +420,11 @@ class _EditSmartSheet extends StatefulWidget {
     String? shelfCode,
     Category category,
     String shelfZone,
+    double? unitPrice,
   ) onConfirm;
   final Category Function(
       String name, Color color, String shelfZone, int defaultDays)
       onAddCategory;
-  final void Function(String id) onDeleteCategory;
   final List<String> shelfCodeOrder;
 
   const _EditSmartSheet({
@@ -406,7 +432,6 @@ class _EditSmartSheet extends StatefulWidget {
     required this.categories,
     required this.onConfirm,
     required this.onAddCategory,
-    required this.onDeleteCategory,
     required this.shelfCodeOrder,
   });
 
@@ -418,6 +443,7 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
   late final TextEditingController _nameCtrl;
   late final TextEditingController _qtyCtrl;
   late final TextEditingController _shelfCtrl;
+  late final TextEditingController _priceCtrl;
   late Category _category;
   late String _zone;
 
@@ -435,9 +461,16 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
     _nameCtrl = TextEditingController();
     _qtyCtrl = TextEditingController();
     _shelfCtrl = TextEditingController();
+    _priceCtrl = TextEditingController(
+        text: widget.item.unitPrice == null
+            ? ''
+            : _trimNum(widget.item.unitPrice!));
     _category = widget.item.category;
     _zone = widget.item.shelfZone;
   }
+
+  static String _trimNum(double v) =>
+      v == v.roundToDouble() ? v.toInt().toString() : v.toString();
 
   @override
   void didChangeDependencies() {
@@ -459,6 +492,7 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
     _nameCtrl.dispose();
     _qtyCtrl.dispose();
     _shelfCtrl.dispose();
+    _priceCtrl.dispose();
     super.dispose();
   }
 
@@ -471,6 +505,7 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
         typedShelf, _shelfDisplay, widget.item.shelfCode ?? '');
     final qty = resolveCanonicalEdit(
         _qtyCtrl.text.trim(), _qtyDisplay, widget.item.quantityLabel);
+    final price = double.tryParse(_priceCtrl.text.trim());
     Navigator.pop(context);
     widget.onConfirm(
       name,
@@ -478,6 +513,7 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
       shelf.isEmpty ? null : shelf,
       _category,
       _zone,
+      price,
     );
   }
 
@@ -522,64 +558,134 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              l.editItem,
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  l.editItem,
+                  style: const TextStyle(
+                      fontSize: 17, fontWeight: FontWeight.w700),
+                ),
+                CategoryPickerField(
+                  categories: widget.categories,
+                  selected: _category,
+                  onAddCategory: widget.onAddCategory,
+                  onChanged: (cat) => setState(() {
+                    _category = cat;
+                    _zone = cat.shelfZone;
+                  }),
+                ),
+              ],
             ),
             const SizedBox(height: 14),
-            TextField(
-              controller: _nameCtrl,
-              autofocus: true,
-              maxLength: 30,
-              style: const TextStyle(fontSize: 15),
-              decoration: _fieldDecoration('').copyWith(
-                  counterStyle: const TextStyle(
-                      fontSize: 10, color: AppColors.textDisabled)),
-              onSubmitted: (_) => _confirm(),
+            // ── Name + Qty row ───────────────────────────────────────────
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _label(l.productNameHint),
+                      TextField(
+                        controller: _nameCtrl,
+                        autofocus: true,
+                        maxLength: 30,
+                        style: const TextStyle(fontSize: 15),
+                        decoration: _fieldDecoration('').copyWith(
+                            counterStyle: const TextStyle(
+                                fontSize: 10, color: AppColors.textDisabled)),
+                        onSubmitted: (_) => _confirm(),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _label(l.quantityFieldLabel),
+                      TextField(
+                        controller: _qtyCtrl,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        maxLength: 10,
+                        style: const TextStyle(fontSize: 15),
+                        decoration: _fieldDecoration('1').copyWith(
+                            counterStyle: const TextStyle(
+                                fontSize: 10, color: AppColors.textDisabled)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            _label(l.quantityFieldLabel),
-            TextField(
-              controller: _qtyCtrl,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              maxLength: 10,
-              style: const TextStyle(fontSize: 15),
-              decoration: _fieldDecoration('1').copyWith(
-                  counterStyle: const TextStyle(
-                      fontSize: 10, color: AppColors.textDisabled)),
-            ),
-            _label(l.shelfCodeFieldLabel),
-            TextField(
-              controller: _shelfCtrl,
-              maxLength: 20,
-              style: const TextStyle(fontSize: 15),
-              decoration: _fieldDecoration('').copyWith(
-                  counterStyle: const TextStyle(
-                      fontSize: 10, color: AppColors.textDisabled),
-                  suffixIcon: widget.shelfCodeOrder.isEmpty
-                      ? null
-                      : IconButton(
-                          icon: const Icon(Icons.list_alt_rounded,
-                              size: 20, color: AppColors.textSecondary),
-                          onPressed: () async {
-                            final picked = await pickShelfCode(
-                                context, widget.shelfCodeOrder);
-                            if (picked != null) {
-                              setState(() => _shelfCtrl.text = picked);
-                            }
-                          },
-                        )),
-            ),
-            _label(l.categoryLabel),
-            CategoryChipPicker(
-              categories: widget.categories,
-              selected: _category,
-              onAddCategory: widget.onAddCategory,
-              onDeleteCategory: widget.onDeleteCategory,
-              onSelect: (cat) => setState(() {
-                _category = cat;
-                _zone = cat.shelfZone;
-              }),
+            // ── Shelf code + Price row ────────────────────────────────────
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _label(l.shelfCodeFieldLabel),
+                      TextField(
+                        controller: _shelfCtrl,
+                        maxLength: 20,
+                        style: const TextStyle(fontSize: 15),
+                        decoration: _fieldDecoration('').copyWith(
+                            counterStyle: const TextStyle(
+                                fontSize: 10, color: AppColors.textDisabled),
+                            suffixIcon: widget.shelfCodeOrder.isEmpty
+                                ? null
+                                : Builder(
+                                    builder: (iconContext) => IconButton(
+                                      icon: const Icon(Icons.list_alt_rounded,
+                                          size: 20,
+                                          color: AppColors.textSecondary),
+                                      onPressed: () async {
+                                        final picked = await pickShelfCode(
+                                            iconContext, widget.shelfCodeOrder);
+                                        if (picked != null) {
+                                          setState(
+                                              () => _shelfCtrl.text = picked);
+                                        }
+                                      },
+                                    ),
+                                  )),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _label(l.unitPriceFieldLabel),
+                      TextField(
+                        controller: _priceCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                              RegExp(r'^\d*\.?\d*$')),
+                        ],
+                        maxLength: 8,
+                        style: const TextStyle(fontSize: 15),
+                        decoration: _fieldDecoration(l.currencySymbol).copyWith(
+                            counterStyle: const TextStyle(
+                                fontSize: 10, color: AppColors.textDisabled)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 20),
             ElevatedButton(
