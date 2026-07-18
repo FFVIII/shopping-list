@@ -21,12 +21,10 @@ void showAppToast(BuildContext context, String message) {
   _activeToast = null;
 
   final entry = OverlayEntry(
-    builder: (ctx) => Positioned(
-      left: 0,
-      right: 0,
-      bottom: MediaQuery.of(ctx).padding.bottom +
-          MediaQuery.of(ctx).viewInsets.bottom +
-          80,
+    // Dead center, same as the undo toast below — a bottom-anchored toast
+    // ends up hidden behind the keyboard whenever one is up, no matter how
+    // much viewInsets padding is added.
+    builder: (ctx) => Positioned.fill(
       child: IgnorePointer(
         child: Center(child: _ToastCard(message: message)),
       ),
