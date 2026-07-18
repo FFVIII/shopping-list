@@ -14,6 +14,7 @@ import '../widgets/quantity_badge.dart';
 import '../widgets/toast.dart';
 import '../widgets/tutorial_target.dart';
 import '../widgets/category_chip_picker.dart';
+import '../widgets/shelf_code_picker.dart';
 import '../services/navigation_store.dart';
 import '../services/tutorial_controller.dart';
 import '../services/tutorial_store.dart';

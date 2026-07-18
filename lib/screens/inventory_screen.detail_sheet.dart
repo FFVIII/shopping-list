@@ -52,6 +52,7 @@ class _InventoryDetailSheet extends StatefulWidget {
       String name, Color color, String shelfZone, int defaultDays)
       onAddCategory;
   final void Function(String id) onDeleteCategory;
+  final List<String> shelfCodeOrder;
 
   const _InventoryDetailSheet({
     required this.item,
@@ -64,6 +65,7 @@ class _InventoryDetailSheet extends StatefulWidget {
     required this.onSave,
     required this.onAddCategory,
     required this.onDeleteCategory,
+    required this.shelfCodeOrder,
   });
 
   @override
@@ -300,7 +302,28 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                       controller: _shelfCtrl,
                       maxLength: 20,
                       style: const TextStyle(fontSize: 15),
-                      decoration: _dec(l.shelfCodeFieldLabel),
+                      decoration: _dec(l.shelfCodeFieldLabel).copyWith(
+                          suffixIcon: widget.shelfCodeOrder.isEmpty
+                              ? null
+                              : IconButton(
+                                  icon: const Icon(Icons.list_alt_rounded,
+                                      size: 20,
+                                      color: AppColors.textSecondary),
+                                  onPressed: () async {
+                                    final picked = await pickShelfCode(
+                                        context, widget.shelfCodeOrder);
+                                    if (picked == null) return;
+                                    // Programmatic controller.text writes
+                                    // don't fire onChanged, so the draft
+                                    // needs updating explicitly here too.
+                                    setState(() {
+                                      _shelfCtrl.text = picked;
+                                      _draft
+                                        ..shelfCode = picked
+                                        ..dirty = true;
+                                    });
+                                  },
+                                )),
                       onChanged: (v) {
                         _draft
                           ..shelfCode = v

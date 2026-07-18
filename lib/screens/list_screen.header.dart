@@ -278,6 +278,7 @@ extension _HeaderAndAddBarState on _ListScreenState {
           ? _EditSmartSheet(
               item: item,
               categories: widget.categories,
+              shelfCodeOrder: widget.shelfCodeOrder,
               onAddCategory: widget.onAddCategory,
               onDeleteCategory: widget.onDeleteCategory,
               onConfirm: (name, quantity, shelfCode, category, zone) {
@@ -331,6 +332,7 @@ extension _HeaderAndAddBarState on _ListScreenState {
       builder: (ctx) => _SmartAddSheet(
         name: name,
         categories: widget.categories,
+        shelfCodeOrder: widget.shelfCodeOrder,
         onAddCategory: widget.onAddCategory,
         onDeleteCategory: widget.onDeleteCategory,
         onConfirm: (category, zone, quantityLabel, shelfCode, estimatedDays) {

@@ -139,6 +139,7 @@ class _CompleteTripSheetState extends State<_CompleteTripSheet> {
 class _SmartAddSheet extends StatefulWidget {
   final String name;
   final List<Category> categories;
+  final List<String> shelfCodeOrder;
   final void Function(Category category, String zone, String quantityLabel, String? shelfCode, int estimatedDays) onConfirm;
   final Category Function(
       String name, Color color, String shelfZone, int defaultDays)
@@ -148,6 +149,7 @@ class _SmartAddSheet extends StatefulWidget {
   const _SmartAddSheet({
     required this.name,
     required this.categories,
+    required this.shelfCodeOrder,
     required this.onConfirm,
     required this.onAddCategory,
     required this.onDeleteCategory,
@@ -277,7 +279,21 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
                         style: const TextStyle(fontSize: 15),
                         decoration: _fieldDecoration(l.shelfCodeFieldHint).copyWith(
                             counterStyle: const TextStyle(
-                                fontSize: 10, color: AppColors.textDisabled)),
+                                fontSize: 10, color: AppColors.textDisabled),
+                            suffixIcon: widget.shelfCodeOrder.isEmpty
+                                ? null
+                                : IconButton(
+                                    icon: const Icon(Icons.list_alt_rounded,
+                                        size: 20,
+                                        color: AppColors.textSecondary),
+                                    onPressed: () async {
+                                      final picked = await pickShelfCode(
+                                          context, widget.shelfCodeOrder);
+                                      if (picked != null) {
+                                        setState(() => _shelfCtrl.text = picked);
+                                      }
+                                    },
+                                  )),
                       ),
                     ],
                   ),
@@ -383,6 +399,7 @@ class _EditSmartSheet extends StatefulWidget {
       String name, Color color, String shelfZone, int defaultDays)
       onAddCategory;
   final void Function(String id) onDeleteCategory;
+  final List<String> shelfCodeOrder;
 
   const _EditSmartSheet({
     required this.item,
@@ -390,6 +407,7 @@ class _EditSmartSheet extends StatefulWidget {
     required this.onConfirm,
     required this.onAddCategory,
     required this.onDeleteCategory,
+    required this.shelfCodeOrder,
   });
 
   @override
@@ -537,7 +555,20 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
               style: const TextStyle(fontSize: 15),
               decoration: _fieldDecoration('').copyWith(
                   counterStyle: const TextStyle(
-                      fontSize: 10, color: AppColors.textDisabled)),
+                      fontSize: 10, color: AppColors.textDisabled),
+                  suffixIcon: widget.shelfCodeOrder.isEmpty
+                      ? null
+                      : IconButton(
+                          icon: const Icon(Icons.list_alt_rounded,
+                              size: 20, color: AppColors.textSecondary),
+                          onPressed: () async {
+                            final picked = await pickShelfCode(
+                                context, widget.shelfCodeOrder);
+                            if (picked != null) {
+                              setState(() => _shelfCtrl.text = picked);
+                            }
+                          },
+                        )),
             ),
             _label(l.categoryLabel),
             CategoryChipPicker(

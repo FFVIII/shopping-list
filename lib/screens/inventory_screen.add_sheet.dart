@@ -5,6 +5,7 @@ part of 'inventory_screen.dart';
 class _AddInventorySheet extends StatefulWidget {
   final void Function(InventoryItem) onAdd;
   final List<Category> categories;
+  final List<String> shelfCodeOrder;
   final Category Function(
       String name, Color color, String shelfZone, int defaultDays)
       onAddCategory;
@@ -13,6 +14,7 @@ class _AddInventorySheet extends StatefulWidget {
   const _AddInventorySheet({
     required this.onAdd,
     required this.categories,
+    required this.shelfCodeOrder,
     required this.onAddCategory,
     required this.onDeleteCategory,
   });
@@ -130,7 +132,20 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
                   controller: _shelfCtrl,
                   maxLength: 20,
                   style: const TextStyle(fontSize: 15),
-                  decoration: _fieldDecoration(l.shelfCodeFieldLabel),
+                  decoration: _fieldDecoration(l.shelfCodeFieldLabel).copyWith(
+                      suffixIcon: widget.shelfCodeOrder.isEmpty
+                          ? null
+                          : IconButton(
+                              icon: const Icon(Icons.list_alt_rounded,
+                                  size: 20, color: AppColors.textSecondary),
+                              onPressed: () async {
+                                final picked = await pickShelfCode(
+                                    context, widget.shelfCodeOrder);
+                                if (picked != null) {
+                                  setState(() => _shelfCtrl.text = picked);
+                                }
+                              },
+                            )),
                 ),
               ),
             ],
