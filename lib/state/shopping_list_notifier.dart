@@ -107,7 +107,8 @@ class ShoppingListNotifier extends ChangeNotifier {
   // ── 智能模式 ──────────────────────────────────────────────────────────────
 
   void addSmart(String name, String quantityLabel, String? shelfCode,
-      int estimatedDays, Category category, String shelfZone) {
+      int estimatedDays, Category category, String shelfZone,
+      {double? unitPrice}) {
     smart.add(ShoppingItem(
       id: generateId('u'),
       name: name,
@@ -116,6 +117,7 @@ class ShoppingListNotifier extends ChangeNotifier {
       shelfZone: shelfZone,
       shelfCode: shelfCode,
       estimatedDays: estimatedDays,
+      unitPrice: unitPrice,
     ));
     persistSmart();
     TutorialController.instance.onItemAdded(name);
@@ -146,7 +148,8 @@ class ShoppingListNotifier extends ChangeNotifier {
   }
 
   void editSmartItem(String id, String name, String quantityLabel,
-      String? shelfCode, Category category, String shelfZone) {
+      String? shelfCode, Category category, String shelfZone,
+      {double? unitPrice}) {
     final idx = smart.indexWhere((i) => i.id == id);
     if (idx == -1) return;
     smart[idx]
@@ -154,7 +157,8 @@ class ShoppingListNotifier extends ChangeNotifier {
       ..quantityLabel = quantityLabel
       ..shelfCode = shelfCode
       ..category = category
-      ..shelfZone = shelfZone;
+      ..shelfZone = shelfZone
+      ..unitPrice = unitPrice;
     persistSmart();
   }
 

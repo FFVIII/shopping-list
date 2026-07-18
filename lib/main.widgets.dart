@@ -7,6 +7,9 @@ class _DaysSheet extends StatefulWidget {
   final int initialDays;
   final List<Category> categories;
   final List<String> shelfCodeOrder;
+  final Category Function(
+      String name, Color color, String shelfZone, int defaultDays)
+      onAddCategory;
   final void Function(
     int days,
     String name,
@@ -21,6 +24,7 @@ class _DaysSheet extends StatefulWidget {
     required this.initialDays,
     required this.categories,
     required this.shelfCodeOrder,
+    required this.onAddCategory,
     required this.onConfirm,
   });
 
@@ -146,22 +150,29 @@ class _DaysSheetState extends State<_DaysSheet> {
               style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 14),
-            _fieldLabel(l.productNameHint),
-            // ── Name field ────────────────────────────────────────────────
-            TextField(
-              controller: _nameCtrl,
-              style: const TextStyle(fontSize: 15),
-              maxLength: 30,
-              decoration: _dec('').copyWith(
-                counterStyle: const TextStyle(
-                    fontSize: 10, color: AppColors.textDisabled),
-              ),
-            ),
-            const SizedBox(height: 14),
-            // ── Qty + Shelf row ───────────────────────────────────────────
+            // ── Name + Qty row ───────────────────────────────────────────
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _fieldLabel(l.productNameHint),
+                      TextField(
+                        controller: _nameCtrl,
+                        style: const TextStyle(fontSize: 15),
+                        maxLength: 30,
+                        decoration: _dec('').copyWith(
+                          counterStyle: const TextStyle(
+                              fontSize: 10, color: AppColors.textDisabled),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -183,9 +194,14 @@ class _DaysSheetState extends State<_DaysSheet> {
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
+              ],
+            ),
+            const SizedBox(height: 14),
+            // ── Shelf code + Category row ─────────────────────────────────
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Expanded(
-                  flex: 2,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -199,56 +215,45 @@ class _DaysSheetState extends State<_DaysSheet> {
                               fontSize: 10, color: AppColors.textDisabled),
                           suffixIcon: widget.shelfCodeOrder.isEmpty
                               ? null
-                              : IconButton(
-                                  icon: const Icon(Icons.list_alt_rounded,
-                                      size: 20,
-                                      color: AppColors.textSecondary),
-                                  onPressed: () async {
-                                    final picked = await pickShelfCode(
-                                        context, widget.shelfCodeOrder);
-                                    if (picked != null) {
-                                      setState(() => _shelfCtrl.text = picked);
-                                    }
-                                  },
+                              : Builder(
+                                  builder: (iconContext) => IconButton(
+                                    icon: const Icon(Icons.list_alt_rounded,
+                                        size: 20,
+                                        color: AppColors.textSecondary),
+                                    onPressed: () async {
+                                      final picked = await pickShelfCode(
+                                          iconContext, widget.shelfCodeOrder);
+                                      if (picked != null) {
+                                        setState(
+                                            () => _shelfCtrl.text = picked);
+                                      }
+                                    },
+                                  ),
                                 ),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            // ── Category chips ────────────────────────────────────────────
-            _fieldLabel(l.categoryLabel),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: widget.categories.map((cat) {
-                final sel = _category == cat;
-                return GestureDetector(
-                  onTap: () => setState(() {
-                    _category = cat;
-                    _zone = cat.shelfZone;
-                  }),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: sel ? cat.color : cat.bgColor,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      l.data(cat.name),
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: sel ? Colors.white : cat.color,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _fieldLabel(l.categoryLabel),
+                      CategoryPickerField(
+                        categories: widget.categories,
+                        selected: _category,
+                        onAddCategory: widget.onAddCategory,
+                        onChanged: (cat) => setState(() {
+                          _category = cat;
+                          _zone = cat.shelfZone;
+                        }),
                       ),
-                    ),
+                    ],
                   ),
-                );
-              }).toList(),
+                ),
+              ],
             ),
             const SizedBox(height: 14),
             // ── Days section ──────────────────────────────────────────────

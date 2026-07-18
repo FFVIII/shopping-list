@@ -210,6 +210,10 @@ class ShoppingItem {
   // typed items (via the add bar) have no source, so they still fall back
   // to name matching.
   String? sourceInventoryId;
+  // Optional — only set if the user chose to price this item. When the trip
+  // is completed, any priced items trigger an offer to record them in
+  // Budget too, instead of always double-entering the same purchase.
+  double? unitPrice;
 
   ShoppingItem({
     required this.id,
@@ -222,6 +226,7 @@ class ShoppingItem {
     this.checked = false,
     this.addedToInventory = false,
     this.sourceInventoryId,
+    this.unitPrice,
   });
 }
 

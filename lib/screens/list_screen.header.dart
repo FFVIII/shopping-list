@@ -280,10 +280,10 @@ extension _HeaderAndAddBarState on _ListScreenState {
               categories: widget.categories,
               shelfCodeOrder: widget.shelfCodeOrder,
               onAddCategory: widget.onAddCategory,
-              onDeleteCategory: widget.onDeleteCategory,
-              onConfirm: (name, quantity, shelfCode, category, zone) {
+              onConfirm: (name, quantity, shelfCode, category, zone, unitPrice) {
                 widget.onEditSmart(
-                    item.id, name, quantity, shelfCode, category, zone);
+                    item.id, name, quantity, shelfCode, category, zone,
+                    unitPrice: unitPrice);
               },
             )
           : _RenameSheet(
@@ -334,9 +334,9 @@ extension _HeaderAndAddBarState on _ListScreenState {
         categories: widget.categories,
         shelfCodeOrder: widget.shelfCodeOrder,
         onAddCategory: widget.onAddCategory,
-        onDeleteCategory: widget.onDeleteCategory,
-        onConfirm: (category, zone, quantityLabel, shelfCode, estimatedDays) {
-          widget.onAddSmart(name, quantityLabel, shelfCode, estimatedDays, category, zone);
+        onConfirm: (category, zone, quantityLabel, shelfCode, estimatedDays, unitPrice) {
+          widget.onAddSmart(name, quantityLabel, shelfCode, estimatedDays, category, zone,
+              unitPrice: unitPrice);
           _nameCtrl.clear();
         },
       ),

@@ -22,6 +22,9 @@ abstract class AppStrings {
   String get tripInventoryHint; // sheet hint about saving to inventory
   String get tripCompletedCelebration; // brief "all done!" shown after completing a trip
   String get addedToInventoryCelebration; // brief "added to inventory!" shown after a Plan-list trip is saved to inventory
+  String get syncToBudgetTitle; // "记一笔账？" / "Add to Budget?"
+  String syncToBudgetMessage(int count); // explains which purchased items would be recorded
+  String get syncToBudgetConfirm; // "记账" / "Add"
   String get cancel; // "取消" / "Cancel"
   String get smartHint; // smart-mode explanation banner
   String get modeSimple;
@@ -225,6 +228,9 @@ class ZhStrings extends AppStrings {
       '购买后将保存到库存，取消勾选则不保存。';
   @override String get tripCompletedCelebration => '搞定！';
   @override String get addedToInventoryCelebration => '已加入库存！';
+  @override String get syncToBudgetTitle => '记一笔账？';
+  @override String syncToBudgetMessage(int count) => '把这 $count 件填了价格的商品同步记到账本里？';
+  @override String get syncToBudgetConfirm => '记账';
   @override String get cancel => '取消';
   @override String get smartHint =>
       '圆圈选中=将存入库存；点「完成购物」完成本次采购。';
@@ -442,6 +448,10 @@ class EnStrings extends AppStrings {
       'Unchecked items won\'t be saved to inventory.';
   @override String get tripCompletedCelebration => 'All done!';
   @override String get addedToInventoryCelebration => 'Added to inventory!';
+  @override String get syncToBudgetTitle => 'Add to Budget?';
+  @override String syncToBudgetMessage(int count) =>
+      'Record the $count priced item(s) from this trip in Budget too?';
+  @override String get syncToBudgetConfirm => 'Add';
   @override String get cancel => 'Cancel';
   @override String get smartHint =>
       'Circles mark items to save to inventory. Tap \'Done\' to finish shopping.';

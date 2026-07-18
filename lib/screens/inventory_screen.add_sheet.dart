@@ -9,14 +9,12 @@ class _AddInventorySheet extends StatefulWidget {
   final Category Function(
       String name, Color color, String shelfZone, int defaultDays)
       onAddCategory;
-  final void Function(String id) onDeleteCategory;
 
   const _AddInventorySheet({
     required this.onAdd,
     required this.categories,
     required this.shelfCodeOrder,
     required this.onAddCategory,
-    required this.onDeleteCategory,
   });
 
   @override
@@ -135,16 +133,18 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
                   decoration: _fieldDecoration(l.shelfCodeFieldLabel).copyWith(
                       suffixIcon: widget.shelfCodeOrder.isEmpty
                           ? null
-                          : IconButton(
-                              icon: const Icon(Icons.list_alt_rounded,
-                                  size: 20, color: AppColors.textSecondary),
-                              onPressed: () async {
-                                final picked = await pickShelfCode(
-                                    context, widget.shelfCodeOrder);
-                                if (picked != null) {
-                                  setState(() => _shelfCtrl.text = picked);
-                                }
-                              },
+                          : Builder(
+                              builder: (iconContext) => IconButton(
+                                icon: const Icon(Icons.list_alt_rounded,
+                                    size: 20, color: AppColors.textSecondary),
+                                onPressed: () async {
+                                  final picked = await pickShelfCode(
+                                      iconContext, widget.shelfCodeOrder);
+                                  if (picked != null) {
+                                    setState(() => _shelfCtrl.text = picked);
+                                  }
+                                },
+                              ),
                             )),
                 ),
               ),
@@ -164,7 +164,6 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
             categories: widget.categories,
             selected: _category,
             onAddCategory: widget.onAddCategory,
-            onDeleteCategory: widget.onDeleteCategory,
             onSelect: (cat) => setState(() => _category = cat),
           ),
           const SizedBox(height: 16),

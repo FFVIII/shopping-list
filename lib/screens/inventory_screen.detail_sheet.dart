@@ -51,7 +51,6 @@ class _InventoryDetailSheet extends StatefulWidget {
   final Category Function(
       String name, Color color, String shelfZone, int defaultDays)
       onAddCategory;
-  final void Function(String id) onDeleteCategory;
   final List<String> shelfCodeOrder;
 
   const _InventoryDetailSheet({
@@ -64,7 +63,6 @@ class _InventoryDetailSheet extends StatefulWidget {
     required this.onDelete,
     required this.onSave,
     required this.onAddCategory,
-    required this.onDeleteCategory,
     required this.shelfCodeOrder,
   });
 
@@ -262,56 +260,63 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
             ),
             const SizedBox(height: 12),
             // ── Editable header ──
-            TextField(
-              controller: _nameCtrl,
-              maxLength: 30,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-              decoration: _dec(l.productNameHint),
-              onChanged: (v) {
-                _draft
-                  ..name = v
-                  ..dirty = true;
-              },
-            ),
+            // ── Name + Qty row ───────────────────────────────────────────
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 5),
-                    child: TextField(
-                      controller: _qtyCtrl,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly
-                      ],
-                      maxLength: 10,
-                      style: const TextStyle(fontSize: 15),
-                      decoration: _dec(l.quantityFieldLabel),
-                      onChanged: (v) {
-                        _draft
-                          ..quantity = v
-                          ..dirty = true;
-                      },
-                    ),
+                  flex: 2,
+                  child: TextField(
+                    controller: _nameCtrl,
+                    maxLength: 30,
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w700),
+                    decoration: _dec(l.productNameHint),
+                    onChanged: (v) {
+                      _draft
+                        ..name = v
+                        ..dirty = true;
+                    },
                   ),
                 ),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 5),
-                    child: TextField(
-                      controller: _shelfCtrl,
-                      maxLength: 20,
-                      style: const TextStyle(fontSize: 15),
-                      decoration: _dec(l.shelfCodeFieldLabel).copyWith(
-                          suffixIcon: widget.shelfCodeOrder.isEmpty
-                              ? null
-                              : IconButton(
+                  child: TextField(
+                    controller: _qtyCtrl,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    maxLength: 10,
+                    style: const TextStyle(fontSize: 15),
+                    decoration: _dec(l.quantityFieldLabel),
+                    onChanged: (v) {
+                      _draft
+                        ..quantity = v
+                        ..dirty = true;
+                    },
+                  ),
+                ),
+              ],
+            ),
+            // ── Shelf code + Category row ─────────────────────────────────
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _shelfCtrl,
+                    maxLength: 20,
+                    style: const TextStyle(fontSize: 15),
+                    decoration: _dec(l.shelfCodeFieldLabel).copyWith(
+                        suffixIcon: widget.shelfCodeOrder.isEmpty
+                            ? null
+                            : Builder(
+                                builder: (iconContext) => IconButton(
                                   icon: const Icon(Icons.list_alt_rounded,
                                       size: 20,
                                       color: AppColors.textSecondary),
                                   onPressed: () async {
                                     final picked = await pickShelfCode(
-                                        context, widget.shelfCodeOrder);
+                                        iconContext, widget.shelfCodeOrder);
                                     if (picked == null) return;
                                     // Programmatic controller.text writes
                                     // don't fire onChanged, so the draft
@@ -323,29 +328,36 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                                         ..dirty = true;
                                     });
                                   },
-                                )),
-                      onChanged: (v) {
-                        _draft
-                          ..shelfCode = v
-                          ..dirty = true;
-                      },
-                    ),
+                                ),
+                              )),
+                    onChanged: (v) {
+                      _draft
+                        ..shelfCode = v
+                        ..dirty = true;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _label(l.categoryLabel),
+                      CategoryPickerField(
+                        categories: widget.categories,
+                        selected: _draft.category,
+                        onAddCategory: widget.onAddCategory,
+                        onChanged: (cat) => setState(() {
+                          _draft
+                            ..category = cat
+                            ..zone = cat.shelfZone
+                            ..dirty = true;
+                        }),
+                      ),
+                    ],
                   ),
                 ),
               ],
-            ),
-            _label(l.categoryLabel),
-            CategoryChipPicker(
-              categories: widget.categories,
-              selected: _draft.category,
-              onAddCategory: widget.onAddCategory,
-              onDeleteCategory: widget.onDeleteCategory,
-              onSelect: (cat) => setState(() {
-                _draft
-                  ..category = cat
-                  ..zone = cat.shelfZone
-                  ..dirty = true;
-              }),
             ),
             const SizedBox(height: 16),
             const Divider(height: 1, color: Color(0xFFF0F0EA)),
