@@ -324,29 +324,51 @@ class _CategoryEditSheet extends StatefulWidget {
 
 class _CategoryEditSheetState extends State<_CategoryEditSheet> {
   late final TextEditingController _nameCtrl;
+  late final TextEditingController _daysCtrl;
   late Color _color;
   late String _zone;
   late int _days;
+  // The localized display text the name field started with — if the user
+  // leaves it untouched, we save back the original canonical name instead
+  // of the translated display string, so a built-in category (keyed in
+  // Chinese, translated via l.data()) doesn't get permanently overwritten
+  // with its English display text.
+  String? _initialDisplayName;
 
   @override
   void initState() {
     super.initState();
     final init = widget.initial;
-    _nameCtrl = TextEditingController(text: init?.name ?? '');
+    _nameCtrl = TextEditingController();
     _color = init?.color ?? widget.palette.first;
     _zone = init?.shelfZone ?? widget.shelfZones.first.name;
     _days = init?.defaultDays ?? 7;
+    _daysCtrl = TextEditingController(text: '$_days');
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_initialDisplayName == null) {
+      final init = widget.initial;
+      _initialDisplayName = init == null ? '' : L10n.of(context).data(init.name);
+      _nameCtrl.text = _initialDisplayName!;
+    }
   }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _daysCtrl.dispose();
     super.dispose();
   }
 
   void _submit() {
-    final name = _nameCtrl.text.trim();
-    if (name.isEmpty) return;
+    final typed = _nameCtrl.text.trim();
+    if (typed.isEmpty) return;
+    final init = widget.initial;
+    final name =
+        (init != null && typed == _initialDisplayName) ? init.name : typed;
     Navigator.pop(context);
     widget.onSubmit(name, _color, _zone, _days);
   }
@@ -383,25 +405,80 @@ class _CategoryEditSheetState extends State<_CategoryEditSheet> {
               style:
                   const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
             ),
-            _label(l.categoryNameLabel),
-            TextField(
-              controller: _nameCtrl,
-              autofocus: true,
-              style: const TextStyle(fontSize: 15),
-              decoration: InputDecoration(
-                hintText: l.categoryNameLabel,
-                hintStyle: const TextStyle(color: AppColors.textDisabled),
-                filled: true,
-                fillColor: AppColors.fieldBg,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _label(l.categoryNameLabel),
+                      TextField(
+                        controller: _nameCtrl,
+                        autofocus: true,
+                        maxLength: 30,
+                        style: const TextStyle(fontSize: 15),
+                        decoration: InputDecoration(
+                          hintText: l.categoryNameLabel,
+                          hintStyle:
+                              const TextStyle(color: AppColors.textDisabled),
+                          filled: true,
+                          fillColor: AppColors.fieldBg,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          counterStyle: const TextStyle(
+                              fontSize: 10, color: AppColors.textDisabled),
+                          isDense: true,
+                        ),
+                        onSubmitted: (_) => _submit(),
+                      ),
+                    ],
+                  ),
                 ),
-                contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 12),
-                isDense: true,
-              ),
-              onSubmitted: (_) => _submit(),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _label(l.defaultDaysLabel),
+                      TextField(
+                        controller: _daysCtrl,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        maxLength: 4,
+                        style: const TextStyle(fontSize: 15),
+                        decoration: InputDecoration(
+                          hintText: '7',
+                          hintStyle:
+                              const TextStyle(color: AppColors.textDisabled),
+                          suffixText: l.dayUnit,
+                          filled: true,
+                          fillColor: AppColors.fieldBg,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          counterText: '',
+                          isDense: true,
+                        ),
+                        onChanged: (v) {
+                          final n = int.tryParse(v.trim());
+                          if (n != null && n > 0) _days = n;
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             _label(l.categoryColorLabel),
             Wrap(
@@ -428,43 +505,6 @@ class _CategoryEditSheetState extends State<_CategoryEditSheet> {
                   ),
                 );
               }).toList(),
-            ),
-            _label(l.defaultDaysLabel),
-            Row(
-              children: [
-                Expanded(
-                  child: SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      activeTrackColor: AppColors.brand,
-                      inactiveTrackColor: AppColors.divider,
-                      thumbColor: AppColors.brand,
-                      overlayColor: AppColors.brand.withValues(alpha: 0.15),
-                      trackHeight: 3,
-                      thumbShape: const RoundSliderThumbShape(
-                          enabledThumbRadius: 10),
-                    ),
-                    child: Slider(
-                      value: _days.toDouble().clamp(1, 60),
-                      min: 1,
-                      max: 60,
-                      divisions: 59,
-                      onChanged: (v) => setState(() => _days = v.round()),
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 48,
-                  child: Text(
-                    l.days(_days),
-                    textAlign: TextAlign.right,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.brand,
-                    ),
-                  ),
-                ),
-              ],
             ),
             const SizedBox(height: 20),
             ElevatedButton(
