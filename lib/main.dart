@@ -324,8 +324,10 @@ class _AppShellState extends State<AppShell> {
 
   // ── 货架：重排顺序 → 同步重排清单/库存（跨域）───────────────────────────────
 
-  // Ordered shelf codes: user-defined order first, then any unseen codes from
-  // current smart items or inventory items appended alphabetically.
+  // Ordered shelf codes: the saved order first (including codes the user
+  // added ahead of assigning them to any item — dropping those here would
+  // make "add a shelf code" pointless), then any unseen codes from current
+  // smart items or inventory items appended alphabetically.
   List<String> get _orderedShelfCodes {
     final all = {
       ..._shoppingNotifier.smart
@@ -335,9 +337,9 @@ class _AppShellState extends State<AppShell> {
           .where((i) => i.shelfCode != null && i.shelfCode!.trim().isNotEmpty)
           .map((i) => i.shelfCode!.trim()),
     };
-    final known = _categoriesNotifier.shelfCodeOrder.where(all.contains).toList();
-    final unseen = (all.difference(known.toSet()).toList()..sort());
-    return [...known, ...unseen];
+    final saved = _categoriesNotifier.shelfCodeOrder;
+    final unseen = (all.difference(saved.toSet()).toList()..sort());
+    return [...saved, ...unseen];
   }
 
   void _reorderShelfCodes(int oldIndex, int newIndex) {
