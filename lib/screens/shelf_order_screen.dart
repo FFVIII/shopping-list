@@ -4,6 +4,7 @@ import '../theme/app_colors.dart';
 import '../widgets/drag_handle.dart';
 import '../widgets/sort_toggle_button.dart';
 import '../l10n/l10n.dart';
+import '../l10n/canonical_edit.dart';
 import '../widgets/batch_bar.dart';
 
 class ShelfOrderScreen extends StatefulWidget {
@@ -285,7 +286,7 @@ class _ShelfOrderScreenState extends State<ShelfOrderScreen> {
                                     ),
                                   Expanded(
                                     child: Text(
-                                      code,
+                                      l.data(code),
                                       style: const TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w500,
@@ -329,11 +330,23 @@ class _RenameShelfCodeSheet extends StatefulWidget {
 
 class _RenameShelfCodeSheetState extends State<_RenameShelfCodeSheet> {
   late final TextEditingController _ctrl;
+  bool _textInitialized = false;
+  late String _display;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = TextEditingController(text: widget.initial);
+    _ctrl = TextEditingController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_textInitialized) {
+      _display = canonicalDisplay(L10n.of(context), widget.initial);
+      _ctrl.text = _display;
+      _textInitialized = true;
+    }
   }
 
   @override
@@ -343,8 +356,9 @@ class _RenameShelfCodeSheetState extends State<_RenameShelfCodeSheet> {
   }
 
   void _submit() {
-    final code = _ctrl.text.trim();
-    if (code.isEmpty) return;
+    final typed = _ctrl.text.trim();
+    if (typed.isEmpty) return;
+    final code = resolveCanonicalEdit(typed, _display, widget.initial);
     Navigator.pop(context);
     widget.onSubmit(code);
   }

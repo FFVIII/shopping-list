@@ -398,14 +398,37 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
   late Category _category;
   late String _zone;
 
+  // See lib/l10n/canonical_edit.dart: seeded items store canonical Chinese
+  // text, so the fields are pre-filled with the translated display text and
+  // resolved back to the raw value on submit if left untouched.
+  bool _textsInitialized = false;
+  late String _nameDisplay;
+  late String _qtyDisplay;
+  late String _shelfDisplay;
+
   @override
   void initState() {
     super.initState();
-    _nameCtrl = TextEditingController(text: widget.item.name);
-    _qtyCtrl = TextEditingController(text: widget.item.quantityLabel);
-    _shelfCtrl = TextEditingController(text: widget.item.shelfCode ?? '');
+    _nameCtrl = TextEditingController();
+    _qtyCtrl = TextEditingController();
+    _shelfCtrl = TextEditingController();
     _category = widget.item.category;
     _zone = widget.item.shelfZone;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_textsInitialized) {
+      final l = L10n.of(context);
+      _nameDisplay = canonicalDisplay(l, widget.item.name);
+      _qtyDisplay = canonicalDisplay(l, widget.item.quantityLabel);
+      _shelfDisplay = canonicalDisplay(l, widget.item.shelfCode ?? '');
+      _nameCtrl.text = _nameDisplay;
+      _qtyCtrl.text = _qtyDisplay;
+      _shelfCtrl.text = _shelfDisplay;
+      _textsInitialized = true;
+    }
   }
 
   @override
@@ -417,13 +440,18 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
   }
 
   void _confirm() {
-    final name = _nameCtrl.text.trim();
-    if (name.isEmpty) return;
-    final shelf = _shelfCtrl.text.trim();
+    final typedName = _nameCtrl.text.trim();
+    if (typedName.isEmpty) return;
+    final name = resolveCanonicalEdit(typedName, _nameDisplay, widget.item.name);
+    final typedShelf = _shelfCtrl.text.trim();
+    final shelf = resolveCanonicalEdit(
+        typedShelf, _shelfDisplay, widget.item.shelfCode ?? '');
+    final qty = resolveCanonicalEdit(
+        _qtyCtrl.text.trim(), _qtyDisplay, widget.item.quantityLabel);
     Navigator.pop(context);
     widget.onConfirm(
       name,
-      _qtyCtrl.text.trim(),
+      qty,
       shelf.isEmpty ? null : shelf,
       _category,
       _zone,

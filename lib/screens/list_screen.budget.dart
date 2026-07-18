@@ -309,15 +309,34 @@ class _BudgetSheetState extends State<_BudgetSheet> {
   final _priceFocus = FocusNode();
   final _qtyFocus = FocusNode();
 
+  // See lib/l10n/canonical_edit.dart. Only set when editing an existing
+  // (possibly canonical, e.g. seeded sample) item — a fresh add's
+  // initialName is always raw user-typed text already.
+  bool _textInitialized = false;
+  String? _nameDisplay;
+
   @override
   void initState() {
     super.initState();
-    _nameCtrl =
-        TextEditingController(text: widget.item?.name ?? widget.initialName);
+    _nameCtrl = TextEditingController(
+        text: widget.item == null ? widget.initialName : '');
     _qtyCtrl =
         TextEditingController(text: '${widget.item?.quantity ?? 1}');
     _priceCtrl = TextEditingController(
         text: widget.item == null ? '' : _trimNum(widget.item!.unitPrice));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_textInitialized) {
+      final item = widget.item;
+      if (item != null) {
+        _nameDisplay = canonicalDisplay(L10n.of(context), item.name);
+        _nameCtrl.text = _nameDisplay!;
+      }
+      _textInitialized = true;
+    }
   }
 
   static String _trimNum(double v) =>
@@ -349,11 +368,14 @@ class _BudgetSheetState extends State<_BudgetSheet> {
   double get _price => double.tryParse(_priceCtrl.text.trim()) ?? 0;
 
   void _confirm() {
-    final name = _nameCtrl.text.trim();
-    if (name.isEmpty) {
+    final typed = _nameCtrl.text.trim();
+    if (typed.isEmpty) {
       showAppToast(context, L10n.of(context).addItemNameRequired);
       return;
     }
+    final item = widget.item;
+    final name =
+        (item != null && typed == _nameDisplay) ? item.name : typed;
     Navigator.pop(context);
     widget.onConfirm(name, _qty, _price);
   }

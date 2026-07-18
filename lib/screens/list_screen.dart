@@ -5,6 +5,7 @@ import 'package:speech_to_text/speech_to_text.dart';
 import '../models/item.dart';
 import '../l10n/app_strings.dart';
 import '../l10n/l10n.dart';
+import '../l10n/canonical_edit.dart';
 import '../widgets/days_selector.dart';
 import '../widgets/drag_handle.dart';
 import '../widgets/sort_toggle_button.dart';
