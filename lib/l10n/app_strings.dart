@@ -388,7 +388,7 @@ class ZhStrings extends AppStrings {
   @override String get importSuccessToast => '已恢复备份';
   @override String get exportFailedToast => '导出失败';
   @override String get storageUnavailableBanner => '存储初始化失败，当前的修改不会被保存';
-  @override String get appFooter => '购物清单 v1.1.0';
+  @override String get appFooter => '购物清单 v2.0.0';
   @override String get language => '语言';
   @override String get languageSystem => '跟随系统';
   @override String get languageZh => '中文';
@@ -614,7 +614,7 @@ class EnStrings extends AppStrings {
   @override String get exportFailedToast => 'Export failed';
   @override String get storageUnavailableBanner =>
       'Storage failed to start — your changes won\'t be saved';
-  @override String get appFooter => 'Shopping List v1.1.0';
+  @override String get appFooter => 'Shopping List v2.0.0';
   @override String get language => 'Language';
   @override String get languageSystem => 'Follow system';
   @override String get languageZh => '中文';
