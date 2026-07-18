@@ -6,6 +6,7 @@ class _DaysSheet extends StatefulWidget {
   final ShoppingItem item;
   final int initialDays;
   final List<Category> categories;
+  final List<String> shelfCodeOrder;
   final void Function(
     int days,
     String name,
@@ -19,6 +20,7 @@ class _DaysSheet extends StatefulWidget {
     required this.item,
     required this.initialDays,
     required this.categories,
+    required this.shelfCodeOrder,
     required this.onConfirm,
   });
 
@@ -195,6 +197,20 @@ class _DaysSheetState extends State<_DaysSheet> {
                         decoration: _dec('').copyWith(
                           counterStyle: const TextStyle(
                               fontSize: 10, color: AppColors.textDisabled),
+                          suffixIcon: widget.shelfCodeOrder.isEmpty
+                              ? null
+                              : IconButton(
+                                  icon: const Icon(Icons.list_alt_rounded,
+                                      size: 20,
+                                      color: AppColors.textSecondary),
+                                  onPressed: () async {
+                                    final picked = await pickShelfCode(
+                                        context, widget.shelfCodeOrder);
+                                    if (picked != null) {
+                                      setState(() => _shelfCtrl.text = picked);
+                                    }
+                                  },
+                                ),
                         ),
                       ),
                     ],

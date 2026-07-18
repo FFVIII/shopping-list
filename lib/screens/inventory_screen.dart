@@ -13,6 +13,7 @@ import '../widgets/quantity_badge.dart';
 import '../services/tutorial_controller.dart';
 import '../widgets/tutorial_target.dart';
 import '../widgets/category_chip_picker.dart';
+import '../widgets/shelf_code_picker.dart';
 
 part 'inventory_screen.widgets.dart';
 part 'inventory_screen.list.dart';
@@ -233,6 +234,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
       builder: (ctx) => _AddInventorySheet(
         onAdd: widget.onAdd,
         categories: widget.categories,
+        shelfCodeOrder: widget.shelfCodeOrder,
         onAddCategory: widget.onAddCategory,
         onDeleteCategory: widget.onDeleteCategory,
       ),
@@ -269,6 +271,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
       builder: (ctx) => _InventoryDetailSheet(
         item: item,
         categories: widget.categories,
+        shelfCodeOrder: widget.shelfCodeOrder,
         onAddCategory: widget.onAddCategory,
         onDeleteCategory: widget.onDeleteCategory,
         thresholdDays: widget.thresholdDays,

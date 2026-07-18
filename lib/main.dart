@@ -11,6 +11,7 @@ import 'l10n/app_strings.dart';
 import 'l10n/l10n.dart';
 import 'l10n/language_store.dart';
 import 'l10n/canonical_edit.dart';
+import 'widgets/shelf_code_picker.dart';
 import 'services/navigation_store.dart';
 import 'services/tutorial_controller.dart';
 import 'widgets/tutorial_overlay.dart';
@@ -407,6 +408,7 @@ class _AppShellState extends State<AppShell> {
         item: item,
         initialDays: item.estimatedDays ?? item.category.defaultDays,
         categories: _categoriesNotifier.categories,
+        shelfCodeOrder: _orderedShelfCodes,
         onConfirm: (days, name, quantity, shelfCode, category, zone) =>
             _shoppingNotifier.updateSmartItemFields(
           item.id,

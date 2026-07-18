@@ -298,6 +298,7 @@ class _InventoryDetailSheet extends StatefulWidget {
       String name, Color color, String shelfZone, int defaultDays)
       onAddCategory;
   final void Function(String id) onDeleteCategory;
+  final List<String> shelfCodeOrder;
 
   const _InventoryDetailSheet({
     required this.item,
@@ -310,6 +311,7 @@ class _InventoryDetailSheet extends StatefulWidget {
     required this.onSave,
     required this.onAddCategory,
     required this.onDeleteCategory,
+    required this.shelfCodeOrder,
   });
 
   @override
@@ -546,7 +548,28 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                       controller: _shelfCtrl,
                       maxLength: 20,
                       style: const TextStyle(fontSize: 15),
-                      decoration: _dec(l.shelfCodeFieldLabel),
+                      decoration: _dec(l.shelfCodeFieldLabel).copyWith(
+                          suffixIcon: widget.shelfCodeOrder.isEmpty
+                              ? null
+                              : IconButton(
+                                  icon: const Icon(Icons.list_alt_rounded,
+                                      size: 20,
+                                      color: AppColors.textSecondary),
+                                  onPressed: () async {
+                                    final picked = await pickShelfCode(
+                                        context, widget.shelfCodeOrder);
+                                    if (picked == null) return;
+                                    // Programmatic controller.text writes
+                                    // don't fire onChanged, so the draft
+                                    // needs updating explicitly here too.
+                                    setState(() {
+                                      _shelfCtrl.text = picked;
+                                      _draft
+                                        ..shelfCode = picked
+                                        ..dirty = true;
+                                    });
+                                  },
+                                )),
                       onChanged: (v) {
                         _draft
                           ..shelfCode = v
@@ -643,6 +666,7 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
 class _AddInventorySheet extends StatefulWidget {
   final void Function(InventoryItem) onAdd;
   final List<Category> categories;
+  final List<String> shelfCodeOrder;
   final Category Function(
       String name, Color color, String shelfZone, int defaultDays)
       onAddCategory;
@@ -651,6 +675,7 @@ class _AddInventorySheet extends StatefulWidget {
   const _AddInventorySheet({
     required this.onAdd,
     required this.categories,
+    required this.shelfCodeOrder,
     required this.onAddCategory,
     required this.onDeleteCategory,
   });
@@ -768,7 +793,20 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
                   controller: _shelfCtrl,
                   maxLength: 20,
                   style: const TextStyle(fontSize: 15),
-                  decoration: _fieldDecoration(l.shelfCodeFieldLabel),
+                  decoration: _fieldDecoration(l.shelfCodeFieldLabel).copyWith(
+                      suffixIcon: widget.shelfCodeOrder.isEmpty
+                          ? null
+                          : IconButton(
+                              icon: const Icon(Icons.list_alt_rounded,
+                                  size: 20, color: AppColors.textSecondary),
+                              onPressed: () async {
+                                final picked = await pickShelfCode(
+                                    context, widget.shelfCodeOrder);
+                                if (picked != null) {
+                                  setState(() => _shelfCtrl.text = picked);
+                                }
+                              },
+                            )),
                 ),
               ),
             ],
