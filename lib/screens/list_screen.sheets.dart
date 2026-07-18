@@ -143,12 +143,14 @@ class _SmartAddSheet extends StatefulWidget {
   final Category Function(
       String name, Color color, String shelfZone, int defaultDays)
       onAddCategory;
+  final void Function(String id) onDeleteCategory;
 
   const _SmartAddSheet({
     required this.name,
     required this.categories,
     required this.onConfirm,
     required this.onAddCategory,
+    required this.onDeleteCategory,
   });
 
   @override
@@ -296,6 +298,7 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
               categories: widget.categories,
               selected: _selectedCategory,
               onAddCategory: widget.onAddCategory,
+              onDeleteCategory: widget.onDeleteCategory,
               onSelect: (cat) => setState(() {
                 _selectedCategory = cat;
                 _selectedZone = cat.shelfZone;
@@ -379,12 +382,14 @@ class _EditSmartSheet extends StatefulWidget {
   final Category Function(
       String name, Color color, String shelfZone, int defaultDays)
       onAddCategory;
+  final void Function(String id) onDeleteCategory;
 
   const _EditSmartSheet({
     required this.item,
     required this.categories,
     required this.onConfirm,
     required this.onAddCategory,
+    required this.onDeleteCategory,
   });
 
   @override
@@ -539,6 +544,7 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
               categories: widget.categories,
               selected: _category,
               onAddCategory: widget.onAddCategory,
+              onDeleteCategory: widget.onDeleteCategory,
               onSelect: (cat) => setState(() {
                 _category = cat;
                 _zone = cat.shelfZone;

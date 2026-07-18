@@ -105,6 +105,7 @@ Future<void> _pumpList(
             smartModeRequest: 0,
             shelfCodeOrder: const [],
             onAddCategory: (_, _, _, _) => _category('new'),
+            onDeleteCategory: (_) {},
           ),
         ),
       ),

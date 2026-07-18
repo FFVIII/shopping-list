@@ -279,6 +279,7 @@ extension _HeaderAndAddBarState on _ListScreenState {
               item: item,
               categories: widget.categories,
               onAddCategory: widget.onAddCategory,
+              onDeleteCategory: widget.onDeleteCategory,
               onConfirm: (name, quantity, shelfCode, category, zone) {
                 widget.onEditSmart(
                     item.id, name, quantity, shelfCode, category, zone);
@@ -331,6 +332,7 @@ extension _HeaderAndAddBarState on _ListScreenState {
         name: name,
         categories: widget.categories,
         onAddCategory: widget.onAddCategory,
+        onDeleteCategory: widget.onDeleteCategory,
         onConfirm: (category, zone, quantityLabel, shelfCode, estimatedDays) {
           widget.onAddSmart(name, quantityLabel, shelfCode, estimatedDays, category, zone);
           _nameCtrl.clear();

@@ -8,11 +8,13 @@ class _AddInventorySheet extends StatefulWidget {
   final Category Function(
       String name, Color color, String shelfZone, int defaultDays)
       onAddCategory;
+  final void Function(String id) onDeleteCategory;
 
   const _AddInventorySheet({
     required this.onAdd,
     required this.categories,
     required this.onAddCategory,
+    required this.onDeleteCategory,
   });
 
   @override
@@ -147,6 +149,7 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
             categories: widget.categories,
             selected: _category,
             onAddCategory: widget.onAddCategory,
+            onDeleteCategory: widget.onDeleteCategory,
             onSelect: (cat) => setState(() => _category = cat),
           ),
           const SizedBox(height: 16),

@@ -90,6 +90,7 @@ class ListScreen extends StatefulWidget {
   final Category Function(
       String name, Color color, String shelfZone, int defaultDays)
       onAddCategory;
+  final void Function(String id) onDeleteCategory;
 
   const ListScreen({
     super.key,
@@ -122,6 +123,7 @@ class ListScreen extends StatefulWidget {
     required this.smartModeRequest,
     required this.shelfCodeOrder,
     required this.onAddCategory,
+    required this.onDeleteCategory,
   });
 
   @override
