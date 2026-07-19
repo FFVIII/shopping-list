@@ -8,8 +8,12 @@ class _DaysSheet extends StatefulWidget {
   final List<Category> categories;
   final List<String> shelfCodeOrder;
   final Category Function(
-      String name, Color color, String shelfZone, int defaultDays)
-      onAddCategory;
+    String name,
+    Color color,
+    String shelfZone,
+    int defaultDays,
+  )
+  onAddCategory;
   final void Function(
     int days,
     String name,
@@ -17,7 +21,12 @@ class _DaysSheet extends StatefulWidget {
     String? shelfCode,
     Category category,
     String zone,
-  ) onConfirm;
+  )
+  onConfirm;
+  // True if no other smart-list item currently shares this shelf code —
+  // i.e. changing it away would remove that aisle group from the By-aisle
+  // view. Used to confirm with the user before silently collapsing a group.
+  final bool Function(String shelfCode) isOnlyItemInAisle;
 
   const _DaysSheet({
     required this.item,
@@ -26,6 +35,7 @@ class _DaysSheet extends StatefulWidget {
     required this.shelfCodeOrder,
     required this.onAddCategory,
     required this.onConfirm,
+    required this.isOnlyItemInAisle,
   });
 
   @override
@@ -82,15 +92,52 @@ class _DaysSheetState extends State<_DaysSheet> {
     super.dispose();
   }
 
-  void _confirm() {
+  Future<void> _confirm() async {
     final typedName = _nameCtrl.text.trim();
     if (typedName.isEmpty) return;
-    final name = resolveCanonicalEdit(typedName, _nameDisplay, widget.item.name);
+    final name = resolveCanonicalEdit(
+      typedName,
+      _nameDisplay,
+      widget.item.name,
+    );
     final typedShelf = _shelfCtrl.text.trim();
     final shelf = resolveCanonicalEdit(
-        typedShelf, _shelfDisplay, widget.item.shelfCode ?? '');
+      typedShelf,
+      _shelfDisplay,
+      widget.item.shelfCode ?? '',
+    );
     final qty = resolveCanonicalEdit(
-        _qtyCtrl.text.trim(), _qtyDisplay, widget.item.quantityLabel);
+      _qtyCtrl.text.trim(),
+      _qtyDisplay,
+      widget.item.quantityLabel,
+    );
+
+    final oldCode = widget.item.shelfCode;
+    if (oldCode != null &&
+        oldCode.isNotEmpty &&
+        shelf != oldCode &&
+        widget.isOnlyItemInAisle(oldCode)) {
+      final l = L10n.of(context);
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l.shelfGroupWillDisappearTitle),
+          content: Text(l.shelfGroupWillDisappearMessage(l.data(oldCode))),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l.cancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l.save),
+            ),
+          ],
+        ),
+      );
+      if (proceed != true || !mounted) return;
+    }
+
     Navigator.pop(context);
     widget.onConfirm(
       _days,
@@ -102,31 +149,17 @@ class _DaysSheetState extends State<_DaysSheet> {
     );
   }
 
-  InputDecoration _dec(String hint) => InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textDisabled),
-        filled: true,
-        fillColor: AppColors.fieldBg,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        isDense: true,
-      );
-
   Widget _fieldLabel(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: Text(
-          text,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.only(bottom: 6),
+    child: Text(
+      text,
+      style: const TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textSecondary,
+      ),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -151,7 +184,9 @@ class _DaysSheetState extends State<_DaysSheet> {
                 Text(
                   l.editItem,
                   style: const TextStyle(
-                      fontSize: 17, fontWeight: FontWeight.w700),
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 Flexible(
                   child: FittedBox(
@@ -185,10 +220,7 @@ class _DaysSheetState extends State<_DaysSheet> {
                         controller: _nameCtrl,
                         style: const TextStyle(fontSize: 15),
                         maxLength: 30,
-                        decoration: _dec('').copyWith(
-                          counterStyle: const TextStyle(
-                              fontSize: 10, color: AppColors.textDisabled),
-                        ),
+                        decoration: fieldDecoration(''),
                       ),
                     ],
                   ),
@@ -203,14 +235,11 @@ class _DaysSheetState extends State<_DaysSheet> {
                         controller: _qtyCtrl,
                         keyboardType: TextInputType.number,
                         inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly
+                          FilteringTextInputFormatter.digitsOnly,
                         ],
                         maxLength: 10,
                         style: const TextStyle(fontSize: 15),
-                        decoration: _dec('1').copyWith(
-                          counterStyle: const TextStyle(
-                              fontSize: 10, color: AppColors.textDisabled),
-                        ),
+                        decoration: fieldDecoration('1'),
                       ),
                     ],
                   ),
@@ -224,18 +253,21 @@ class _DaysSheetState extends State<_DaysSheet> {
               controller: _shelfCtrl,
               maxLength: 20,
               style: const TextStyle(fontSize: 15),
-              decoration: _dec('').copyWith(
-                counterStyle: const TextStyle(
-                    fontSize: 10, color: AppColors.textDisabled),
+              decoration: fieldDecoration('').copyWith(
                 suffixIcon: widget.shelfCodeOrder.isEmpty
                     ? null
                     : Builder(
                         builder: (iconContext) => IconButton(
-                          icon: const Icon(Icons.list_alt_rounded,
-                              size: 20, color: AppColors.textSecondary),
+                          icon: const Icon(
+                            Icons.inventory_outlined,
+                            size: 20,
+                            color: AppColors.textSecondary,
+                          ),
                           onPressed: () async {
                             final picked = await pickShelfCode(
-                                iconContext, widget.shelfCodeOrder);
+                              iconContext,
+                              widget.shelfCodeOrder,
+                            );
                             if (picked != null) {
                               setState(() => _shelfCtrl.text = picked);
                             }
@@ -274,7 +306,8 @@ class _DaysSheetState extends State<_DaysSheet> {
                 backgroundColor: AppColors.brand,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 elevation: 0,
                 minimumSize: const Size(double.infinity, 50),
               ),
@@ -282,7 +315,9 @@ class _DaysSheetState extends State<_DaysSheet> {
               child: Text(
                 l.confirmEdit,
                 style: const TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.w600),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
@@ -308,7 +343,11 @@ class _StorageWarningBanner extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
           children: [
-            const Icon(Icons.error_outline_rounded, color: Colors.white, size: 18),
+            const Icon(
+              Icons.error_outline_rounded,
+              color: Colors.white,
+              size: 18,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -398,11 +437,13 @@ class _BottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
   final int reminderBadge;
+  final bool inventoryDot;
 
   const _BottomNav({
     required this.currentIndex,
     required this.onTap,
     this.reminderBadge = 0,
+    this.inventoryDot = false,
   });
 
   @override
@@ -441,6 +482,7 @@ class _BottomNav extends StatelessWidget {
                   index: 1,
                   currentIndex: currentIndex,
                   onTap: onTap,
+                  dot: inventoryDot,
                 ),
               ),
               _NavItem(
@@ -476,6 +518,7 @@ class _NavItem extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
   final int badge;
+  final bool dot;
 
   const _NavItem({
     required this.icon,
@@ -485,6 +528,7 @@ class _NavItem extends StatelessWidget {
     required this.currentIndex,
     required this.onTap,
     this.badge = 0,
+    this.dot = false,
   });
 
   bool get _selected => index == currentIndex;
@@ -507,7 +551,9 @@ class _NavItem extends StatelessWidget {
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 7),
+                    horizontal: 16,
+                    vertical: 7,
+                  ),
                   decoration: BoxDecoration(
                     color: _selected
                         ? green.withValues(alpha: 0.12)
@@ -543,6 +589,19 @@ class _NavItem extends StatelessWidget {
                       ),
                     ),
                   ),
+                if (dot)
+                  Positioned(
+                    top: 4,
+                    right: 10,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: AppColors.danger,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
               ],
             ),
             const SizedBox(height: 3),
@@ -550,8 +609,7 @@ class _NavItem extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 11.5,
-                fontWeight:
-                    _selected ? FontWeight.w600 : FontWeight.normal,
+                fontWeight: _selected ? FontWeight.w600 : FontWeight.normal,
                 color: _selected ? green : inactive,
               ),
             ),

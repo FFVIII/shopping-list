@@ -5,19 +5,26 @@ import '../widgets/drag_handle.dart';
 import '../models/item.dart';
 import '../l10n/l10n.dart';
 import '../widgets/batch_bar.dart';
+import '../utils/day_input.dart';
 
 class CategoryManageScreen extends StatefulWidget {
   final List<Category> categories;
   final List<ShelfZone> shelfZones;
-  final Category Function(String name, Color color, String shelfZone, int defaultDays)
-      onAdd;
+  final Category Function(
+    String name,
+    Color color,
+    String shelfZone,
+    int defaultDays,
+  )
+  onAdd;
   final void Function(
     String id,
     String name,
     Color color,
     String shelfZone,
     int defaultDays,
-  ) onEdit;
+  )
+  onEdit;
   final void Function(String id) onDelete;
   final void Function(int oldIndex, int newIndex) onReorder;
 
@@ -121,7 +128,9 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
       widget.onDelete(id);
     }
     setState(() {
-      _categories = _categories.where((c) => !_selected.contains(c.id)).toList();
+      _categories = _categories
+          .where((c) => !_selected.contains(c.id))
+          .toList();
       _selected.clear();
       _batchMode = false;
     });
@@ -218,8 +227,8 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
                       borderRadius: BorderRadius.circular(14),
                       onTap: _batchMode
                           ? (isFallback
-                              ? null
-                              : () => setState(() {
+                                ? null
+                                : () => setState(() {
                                     if (isSelected) {
                                       _selected.remove(cat.id);
                                     } else {
@@ -229,7 +238,9 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
                           : () => _openEdit(cat),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 14),
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                         child: Row(
                           children: [
                             if (_batchMode && !isFallback)
@@ -282,9 +293,9 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
                               onTap: isFallback
                                   ? null
                                   : () => setState(() {
-                                        _batchMode = true;
-                                        _selected.add(cat.id);
-                                      }),
+                                      _batchMode = true;
+                                      _selected.add(cat.id);
+                                    }),
                             ),
                           ],
                         ),
@@ -308,8 +319,13 @@ class _CategoryEditSheet extends StatefulWidget {
   final Category? initial;
   final List<ShelfZone> shelfZones;
   final List<Color> palette;
-  final void Function(String name, Color color, String shelfZone, int defaultDays)
-      onSubmit;
+  final void Function(
+    String name,
+    Color color,
+    String shelfZone,
+    int defaultDays,
+  )
+  onSubmit;
 
   const _CategoryEditSheet({
     required this.initial,
@@ -328,6 +344,7 @@ class _CategoryEditSheetState extends State<_CategoryEditSheet> {
   late Color _color;
   late String _zone;
   late int _days;
+  bool _daysOverflow = false;
   // The localized display text the name field started with — if the user
   // leaves it untouched, we save back the original canonical name instead
   // of the translated display string, so a built-in category (keyed in
@@ -351,7 +368,9 @@ class _CategoryEditSheetState extends State<_CategoryEditSheet> {
     super.didChangeDependencies();
     if (_initialDisplayName == null) {
       final init = widget.initial;
-      _initialDisplayName = init == null ? '' : L10n.of(context).data(init.name);
+      _initialDisplayName = init == null
+          ? ''
+          : L10n.of(context).data(init.name);
       _nameCtrl.text = _initialDisplayName!;
     }
   }
@@ -367,23 +386,24 @@ class _CategoryEditSheetState extends State<_CategoryEditSheet> {
     final typed = _nameCtrl.text.trim();
     if (typed.isEmpty) return;
     final init = widget.initial;
-    final name =
-        (init != null && typed == _initialDisplayName) ? init.name : typed;
+    final name = (init != null && typed == _initialDisplayName)
+        ? init.name
+        : typed;
     Navigator.pop(context);
     widget.onSubmit(name, _color, _zone, _days);
   }
 
   Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(top: 14, bottom: 6),
-        child: Text(
-          text,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.only(top: 14, bottom: 6),
+    child: Text(
+      text,
+      style: const TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textSecondary,
+      ),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -402,8 +422,7 @@ class _CategoryEditSheetState extends State<_CategoryEditSheet> {
           children: [
             Text(
               widget.initial == null ? l.addCategoryTitle : l.editCategoryTitle,
-              style:
-                  const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
             ),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -421,8 +440,9 @@ class _CategoryEditSheetState extends State<_CategoryEditSheet> {
                         style: const TextStyle(fontSize: 15),
                         decoration: InputDecoration(
                           hintText: l.categoryNameLabel,
-                          hintStyle:
-                              const TextStyle(color: AppColors.textDisabled),
+                          hintStyle: const TextStyle(
+                            color: AppColors.textDisabled,
+                          ),
                           filled: true,
                           fillColor: AppColors.fieldBg,
                           border: OutlineInputBorder(
@@ -430,9 +450,13 @@ class _CategoryEditSheetState extends State<_CategoryEditSheet> {
                             borderSide: BorderSide.none,
                           ),
                           contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 12),
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
                           counterStyle: const TextStyle(
-                              fontSize: 10, color: AppColors.textDisabled),
+                            fontSize: 10,
+                            color: AppColors.textDisabled,
+                          ),
                           isDense: true,
                         ),
                         onSubmitted: (_) => _submit(),
@@ -450,14 +474,15 @@ class _CategoryEditSheetState extends State<_CategoryEditSheet> {
                         controller: _daysCtrl,
                         keyboardType: TextInputType.number,
                         inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly
+                          FilteringTextInputFormatter.digitsOnly,
                         ],
                         maxLength: 4,
                         style: const TextStyle(fontSize: 15),
                         decoration: InputDecoration(
                           hintText: '7',
-                          hintStyle:
-                              const TextStyle(color: AppColors.textDisabled),
+                          hintStyle: const TextStyle(
+                            color: AppColors.textDisabled,
+                          ),
                           suffixText: l.dayUnit,
                           filled: true,
                           fillColor: AppColors.fieldBg,
@@ -466,15 +491,31 @@ class _CategoryEditSheetState extends State<_CategoryEditSheet> {
                             borderSide: BorderSide.none,
                           ),
                           contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 12),
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
                           counterText: '',
                           isDense: true,
                         ),
                         onChanged: (v) {
-                          final n = int.tryParse(v.trim());
-                          if (n != null && n > 0) _days = n;
+                          final result = parseDaysInput(v, _daysCtrl);
+                          if (result == null) return;
+                          setState(() {
+                            _days = result.value;
+                            _daysOverflow = result.overflow;
+                          });
                         },
                       ),
+                      if (_daysOverflow) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          l.customDaysMaxHint,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.danger,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -499,8 +540,11 @@ class _CategoryEditSheetState extends State<_CategoryEditSheet> {
                           : null,
                     ),
                     child: sel
-                        ? const Icon(Icons.check_rounded,
-                            size: 18, color: Colors.white)
+                        ? const Icon(
+                            Icons.check_rounded,
+                            size: 18,
+                            color: Colors.white,
+                          )
                         : null,
                   ),
                 );
@@ -512,7 +556,8 @@ class _CategoryEditSheetState extends State<_CategoryEditSheet> {
                 backgroundColor: AppColors.brand,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 elevation: 0,
                 minimumSize: const Size(double.infinity, 48),
               ),
@@ -520,7 +565,9 @@ class _CategoryEditSheetState extends State<_CategoryEditSheet> {
               child: Text(
                 widget.initial == null ? l.addToList : l.confirmEdit,
                 style: const TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.w600),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],

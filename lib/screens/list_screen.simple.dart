@@ -167,7 +167,7 @@ extension _SimpleModeState on _ListScreenState {
           if (trailing != null) ...[
             const Spacer(),
             ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 140),
+              constraints: const BoxConstraints(maxWidth: 170),
               child: trailing,
             ),
           ],

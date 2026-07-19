@@ -75,6 +75,8 @@ abstract class AppStrings {
   String get quantityFieldLabel; // "数量" / "Quantity"
   String get shelfCodeFieldLabel; // "货架码" / "Shelf code"
   String get shelfCodeFieldHint; // example placeholder, e.g. "货架B1" / "Shelf B1"
+  String get shelfGroupWillDisappearTitle; // confirm dialog shown when changing the shelf code would remove the aisle group it's currently the last item of
+  String shelfGroupWillDisappearMessage(String code); // explains that "{code}" group will vanish from the By-aisle view (item itself isn't lost)
 
   // ── Days sheet (main.dart) ──
   String days(int n); // "7天" / "7 days"
@@ -181,7 +183,7 @@ abstract class AppStrings {
 
   // ── Batch operations ──
   String get selectAll;         // "全选" / "Select all"
-  String get batchMarkBought;   // "勾选已购" / "Mark bought"
+  String get batchSave;         // "保存" / "Save"
   String get batchAddToRestock; // "加入补货" / "Add to restock"
   String selectedCount(int n);  // "已选 N 件" / "N selected"
 
@@ -272,6 +274,9 @@ class ZhStrings extends AppStrings {
   @override String get quantityFieldLabel => '数量';
   @override String get shelfCodeFieldLabel => '货架码';
   @override String get shelfCodeFieldHint => '货架B1';
+  @override String get shelfGroupWillDisappearTitle => '货架分组会消失？';
+  @override String shelfGroupWillDisappearMessage(String code) =>
+      '这是「$code」分组下最后一件商品，移走后这个货架分组会从"按货架"视图中消失（商品本身不会丢失）。';
 
   @override String days(int n) => '$n天';
 
@@ -306,9 +311,9 @@ class ZhStrings extends AppStrings {
   @override String daysLeftApprox(int n) => '还剩约$n天';
   @override String get add => '加入';
   @override String get alreadyInList => '已在清单';
-  @override String get addedToListToast => '已加入清单';
-  @override String get removedFromListToast => '已从清单移除';
-  @override String addedAllToListToast(int n) => '已加入 $n 件到清单';
+  @override String get addedToListToast => '已加入计划清单';
+  @override String get removedFromListToast => '已从计划清单移除';
+  @override String addedAllToListToast(int n) => '已加入 $n 件到计划清单';
   @override String get allAlreadyInList => '都已在清单了';
 
   @override String get settingsTitle => '设置';
@@ -382,7 +387,7 @@ class ZhStrings extends AppStrings {
       lang == AppLanguage.zh ? '中文' : lang == AppLanguage.en ? 'English' : '跟随系统';
 
   @override String get selectAll => '全选';
-  @override String get batchMarkBought => '勾选已购';
+  @override String get batchSave => '保存';
   @override String get batchAddToRestock => '加入补货';
   @override String selectedCount(int n) => '已选 $n 件';
 
@@ -419,7 +424,7 @@ class EnStrings extends AppStrings {
   @override String get shoppingListTitle => 'Shopping List';
   @override String listSubtitlePending(int r, DateTime d) => '$r left · ${_enDate(d)}';
   @override String listSubtitleDone(DateTime d) => 'All done 🎉 · ${_enDate(d)}';
-  @override String get addToInventoryButton => 'Add to inventory';
+  @override String get addToInventoryButton => 'Add';
   @override String get completeTripTitle => 'Clear bought items?';
   @override String completeTripMessage(int bought) =>
       '$bought bought item(s) will be removed from the list; unbought ones stay.';
@@ -485,6 +490,9 @@ class EnStrings extends AppStrings {
   @override String get quantityFieldLabel => 'Quantity';
   @override String get shelfCodeFieldLabel => 'Shelf code';
   @override String get shelfCodeFieldHint => 'Shelf B1';
+  @override String get shelfGroupWillDisappearTitle => 'Remove this aisle group?';
+  @override String shelfGroupWillDisappearMessage(String code) =>
+      'This is the last item in "$code" — moving it will remove that aisle group from the By-aisle view (the item itself isn\'t lost).';
 
   @override String days(int n) => '$n days';
 
@@ -519,9 +527,10 @@ class EnStrings extends AppStrings {
   @override String daysLeftApprox(int n) => '~$n days left';
   @override String get add => 'Add';
   @override String get alreadyInList => 'In list';
-  @override String get addedToListToast => 'Added to list';
-  @override String get removedFromListToast => 'Removed from list';
-  @override String addedAllToListToast(int n) => 'Added $n items to list';
+  @override String get addedToListToast => 'Added to Plan List';
+  @override String get removedFromListToast => 'Removed from Plan List';
+  @override String addedAllToListToast(int n) =>
+      'Added $n ${n == 1 ? 'item' : 'items'} to Plan List';
   @override String get allAlreadyInList => 'All already in list';
 
   @override String get settingsTitle => 'Settings';
@@ -601,7 +610,7 @@ class EnStrings extends AppStrings {
       lang == AppLanguage.zh ? '中文' : lang == AppLanguage.en ? 'English' : 'Follow system';
 
   @override String get selectAll => 'Select all';
-  @override String get batchMarkBought => 'Mark bought';
+  @override String get batchSave => 'Save';
   @override String get batchAddToRestock => 'Add to restock';
   @override String selectedCount(int n) => '$n selected';
 
@@ -642,13 +651,20 @@ const Map<String, String> _enData = {
   // shelf zones (DISPLAY ONLY — keys in code stay Chinese)
   '果蔬区': 'Produce',
   '冷藏': 'Fridge',
+  '水果区': 'Fruits',
+  '饮料': 'Beverages',
+  '其他': 'Other',
+  // Old zone names, kept for already-persisted data from before the
+  // Grains->Fruits / Household->Beverages rename — buildDefaultCategories()
+  // only seeds on first launch, so existing installs still carry these.
   '粮油区': 'Pantry',
   '日用品': 'Household',
-  '其他': 'Other',
   // default category names (used only to seed names when app starts in en)
   '果蔬': 'Produce',
   '乳制品': 'Dairy',
   '肉类': 'Meat',
+  '水果': 'Fruits',
+  // Old category name, same backward-compat reason as above.
   '粮油': 'Grains',
   // sample product names
   '香蕉': 'Banana',
@@ -656,8 +672,8 @@ const Map<String, String> _enData = {
   '藻菜': 'Greens',
   '牛奶': 'Milk',
   '鸡蛋': 'Eggs',
-  '洗洁精': 'Dish soap',
-  '大米': 'Rice',
+  '橙汁': 'Orange juice',
+  '苹果': 'Apple',
   '酸奶': 'Yogurt',
   // sample quantity labels
   '1串': '1 bunch',

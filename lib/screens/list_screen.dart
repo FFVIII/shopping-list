@@ -16,6 +16,7 @@ import '../widgets/tutorial_target.dart';
 import '../widgets/category_chip_picker.dart';
 import '../widgets/category_picker_field.dart';
 import '../widgets/shelf_code_picker.dart';
+import '../utils/field_decoration.dart';
 import '../services/navigation_store.dart';
 import '../services/tutorial_controller.dart';
 import '../services/tutorial_store.dart';
@@ -44,7 +45,16 @@ class ListScreen extends StatefulWidget {
   // Smart mode: triggers "how many days?" sheet → inventory
   final void Function(String id) onToggleSmart;
   final void Function(String name) onAddSimple;
-  final void Function(String name, String quantityLabel, String? shelfCode, int estimatedDays, Category category, String shelfZone, {double? unitPrice}) onAddSmart;
+  final void Function(
+    String name,
+    String quantityLabel,
+    String? shelfCode,
+    int estimatedDays,
+    Category category,
+    String shelfZone, {
+    double? unitPrice,
+  })
+  onAddSmart;
   final void Function(String id) onDeleteSimple;
   final void Function(String id) onDeleteSmart;
   final VoidCallback onCompleteSimple;
@@ -56,7 +66,8 @@ class ListScreen extends StatefulWidget {
     Category? newCategory,
     List<String> orderedIds,
     String? newShelfCode,
-  ) onReorderSmart;
+  )
+  onReorderSmart;
   final void Function(String id, String newName) onRenameSimple;
   final void Function(
     String id,
@@ -66,18 +77,18 @@ class ListScreen extends StatefulWidget {
     Category category,
     String shelfZone, {
     double? unitPrice,
-  }) onEditSmart;
+  })
+  onEditSmart;
   // Budget mode (记账)
   final List<BudgetItem> budgetItems;
   final void Function(String name, int quantity, double unitPrice) onAddBudget;
   final void Function(String id, String name, int quantity, double unitPrice)
-      onEditBudget;
+  onEditBudget;
   final void Function(String id) onDeleteBudget;
   final void Function(List<String> orderedIds) onReorderBudget;
   // Batch operations
   final void Function(List<String> ids) onBatchDeleteSimple;
   final void Function(List<String> ids) onBatchDeleteSmart;
-  final void Function(List<String> ids) onBatchMarkBought;
   final void Function(List<String> ids) onBatchDeleteBudget;
   // Custom shelf-code ordering from the Shelf Order screen. Used by
   // _groupByShelf() to sort sections; empty = fall back to alphabetical.
@@ -89,8 +100,12 @@ class ListScreen extends StatefulWidget {
   // last-viewed mode instead of always Jot.
   final ListMode initialMode;
   final Category Function(
-      String name, Color color, String shelfZone, int defaultDays)
-      onAddCategory;
+    String name,
+    Color color,
+    String shelfZone,
+    int defaultDays,
+  )
+  onAddCategory;
 
   const ListScreen({
     super.key,
@@ -117,7 +132,6 @@ class ListScreen extends StatefulWidget {
     required this.onReorderBudget,
     required this.onBatchDeleteSimple,
     required this.onBatchDeleteSmart,
-    required this.onBatchMarkBought,
     required this.onBatchDeleteBudget,
     required this.smartModeRequest,
     required this.shelfCodeOrder,
@@ -134,12 +148,21 @@ class _ListScreenState extends State<ListScreen> {
   SortDir _smartGroupDir = SortDir.asc;
   bool get _byShelf => _smartGroup == SmartGroupMode.shelf;
 
-  // Batch selection state (smart mode)
+  // Batch selection state (smart mode). Persists across exiting and
+  // re-entering batch mode — only genuinely new items default in as
+  // selected; an item the user deselected stays that way until they check
+  // it again, same reasoning as _tripSelected/_knownSmartIds below.
   bool _smartBatchMode = false;
   final Set<String> _smartSelected = {};
+  final Set<String> _knownSmartBatchIds = {};
 
   // Trip selection: which items to save to inventory on complete (default: all)
   final Set<String> _tripSelected = {};
+  // Every smart-item id we've ever synced _tripSelected against — lets
+  // didUpdateWidget tell "brand new item" (default-select it) apart from
+  // "existing item the user deselected" (leave it out), since both look
+  // identical as "present in the list, absent from _tripSelected".
+  final Set<String> _knownSmartIds = {};
 
   // Simple list sort: by name, off → asc → desc → off. null = off.
   SortDir? _simpleDir;
@@ -177,7 +200,11 @@ class _ListScreenState extends State<ListScreen> {
   void initState() {
     super.initState();
     if (_voiceInputEnabled) _initSpeech();
-    _tripSelected.addAll(widget.smartItems.map((i) => i.id));
+    final ids = widget.smartItems.map((i) => i.id).toSet();
+    _tripSelected.addAll(ids);
+    _knownSmartIds.addAll(ids);
+    _smartSelected.addAll(ids);
+    _knownSmartBatchIds.addAll(ids);
   }
 
   @override
@@ -186,11 +213,27 @@ class _ListScreenState extends State<ListScreen> {
     if (widget.smartModeRequest != old.smartModeRequest) {
       setState(() => _mode = ListMode.smart);
     }
-    // Keep trip selection in sync with item list
+    // Keep trip selection in sync with item list: only ids we've never seen
+    // before default in as selected — an existing id the user deselected
+    // stays out even though it's still "present but absent from
+    // _tripSelected", because _knownSmartIds distinguishes the two cases.
     final currentIds = widget.smartItems.map((i) => i.id).toSet();
+    final newIds = currentIds.difference(_knownSmartIds);
     _tripSelected
-      ..addAll(currentIds.difference(_tripSelected))
+      ..addAll(newIds)
       ..removeAll(_tripSelected.difference(currentIds));
+    _knownSmartIds
+      ..addAll(newIds)
+      ..removeAll(_knownSmartIds.difference(currentIds));
+
+    // Same logic for the batch-mode selection set.
+    final newBatchIds = currentIds.difference(_knownSmartBatchIds);
+    _smartSelected
+      ..addAll(newBatchIds)
+      ..removeAll(_smartSelected.difference(currentIds));
+    _knownSmartBatchIds
+      ..addAll(newBatchIds)
+      ..removeAll(_knownSmartBatchIds.difference(currentIds));
   }
 
   @override
@@ -235,8 +278,7 @@ class _ListScreenState extends State<ListScreen> {
         _isListening = true;
         _nameCtrl.clear();
       });
-      final localeId =
-          L10n.of(context) is ZhStrings ? 'zh_CN' : 'en_US';
+      final localeId = L10n.of(context) is ZhStrings ? 'zh_CN' : 'en_US';
       await _speech.listen(
         onResult: (result) {
           setState(() => _nameCtrl.text = result.recognizedWords);
@@ -272,6 +314,9 @@ class _ListScreenState extends State<ListScreen> {
       _pendingCount > 0
           ? l.listSubtitlePending(_pendingCount, today)
           : l.listSubtitleDone(today),
+      maxLines: 1,
+      softWrap: false,
+      overflow: TextOverflow.ellipsis,
       style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
     );
   }
@@ -309,8 +354,10 @@ class _ListScreenState extends State<ListScreen> {
 
   void _confirmCompleteTrip() {
     if (_isSmart) {
-      // Ensure every current item is in _tripSelected before opening the sheet
-      _tripSelected.addAll(widget.smartItems.map((i) => i.id));
+      // _tripSelected is already kept in sync with the current item list by
+      // didUpdateWidget (new items default in, deleted ones drop out) — it
+      // must NOT be blanket re-added here, or every deselected checkmark
+      // would silently get reselected right before this sheet opens.
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,
@@ -325,20 +372,24 @@ class _ListScreenState extends State<ListScreen> {
             // Captured before onCompleteSmart, which removes purchased items
             // from widget.smartItems.
             final priced = widget.smartItems
-                .where((i) =>
-                    selectedIds.contains(i.id) && i.unitPrice != null)
+                .where((i) => selectedIds.contains(i.id) && i.unitPrice != null)
                 .toList();
             setState(() {
-              _tripSelected
-                ..clear()
-                ..addAll(selectedIds);
+              // The confirmed ids are about to be purchased and removed
+              // from the list entirely — drop them from both trackers
+              // instead of collapsing _tripSelected down to just them,
+              // which used to erase every other item's selection state
+              // and made it look re-selected once the list rebuilt.
+              _tripSelected.removeAll(selectedIds);
+              _knownSmartIds.removeAll(selectedIds);
             });
             widget.onCompleteSmart(selectedIds);
-            // Only celebrate if something was actually saved to inventory.
-            if (mounted && selectedIds.isNotEmpty) {
+            if (selectedIds.isNotEmpty) {
               HapticFeedback.mediumImpact();
-              showCompletionCelebration(
-                  context, L10n.of(context).addedToInventoryCelebration);
+              showAppToast(
+                context,
+                L10n.of(context).addedToInventoryCelebration,
+              );
             }
             if (priced.isNotEmpty) _offerBudgetSync(priced);
           },
@@ -428,13 +479,13 @@ class _ListScreenState extends State<ListScreen> {
                 id: 'plan_list_area',
                 child: _isBudget
                     ? (widget.budgetItems.isEmpty
-                        ? _budgetEmptyState()
-                        : _buildBudgetList())
+                          ? _budgetEmptyState()
+                          : _buildBudgetList())
                     : _activeItems.isEmpty
-                        ? _emptyState()
-                        : _isSmart
-                            ? _buildSmartList()
-                            : _buildSimpleList(),
+                    ? _emptyState()
+                    : _isSmart
+                    ? _buildSmartList()
+                    : _buildSimpleList(),
               ),
             ),
             if (_isBudget && widget.budgetItems.isNotEmpty && !_budgetBatchMode)
@@ -443,15 +494,17 @@ class _ListScreenState extends State<ListScreen> {
               mode: _isSmart && _smartBatchMode
                   ? 0
                   : (_isBudget && _budgetBatchMode
-                      ? 1
-                      : (!_isSmart && !_isBudget && _simpleBatchMode ? 3 : 2)),
+                        ? 1
+                        : (!_isSmart && !_isBudget && _simpleBatchMode
+                              ? 3
+                              : 2)),
               child: _isSmart && _smartBatchMode
                   ? _buildSmartBatchBar()
                   : (_isBudget && _budgetBatchMode
-                      ? _buildBudgetBatchBar()
-                      : (!_isSmart && !_isBudget && _simpleBatchMode
-                          ? _buildSimpleBatchBar()
-                          : _buildAddBar(context))),
+                        ? _buildBudgetBatchBar()
+                        : (!_isSmart && !_isBudget && _simpleBatchMode
+                              ? _buildSimpleBatchBar()
+                              : _buildAddBar(context))),
             ),
           ],
         ),
@@ -488,35 +541,27 @@ class _ListScreenState extends State<ListScreen> {
           if (_isSmart && _smartBatchMode)
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 160),
+              // Always tappable — saving an empty selection ("I want nothing
+              // checked for the next trip") is a valid, intended action.
               child: GestureDetector(
-                onTap: _smartSelected.isNotEmpty
-                    ? () {
-                        widget.onBatchMarkBought(_smartSelected.toList());
-                        setState(() {
-                          _smartSelected.clear();
-                          _smartBatchMode = false;
-                        });
-                      }
-                    : null,
+                onTap: _saveSmartBatch,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 7),
+                    horizontal: 12,
+                    vertical: 7,
+                  ),
                   decoration: BoxDecoration(
-                    color: _smartSelected.isNotEmpty
-                        ? AppColors.brand
-                        : AppColors.fieldBg,
+                    color: AppColors.brand,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      l.batchMarkBought,
-                      style: TextStyle(
+                      l.batchSave,
+                      style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: _smartSelected.isNotEmpty
-                            ? Colors.white
-                            : AppColors.textDisabled,
+                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -535,7 +580,9 @@ class _ListScreenState extends State<ListScreen> {
                   onTap: _confirmCompleteTrip,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 7),
+                      horizontal: 12,
+                      vertical: 7,
+                    ),
                     decoration: BoxDecoration(
                       color: _isSmart ? AppColors.brand : AppColors.danger,
                       borderRadius: BorderRadius.circular(20),
@@ -562,7 +609,9 @@ class _ListScreenState extends State<ListScreen> {
                 onTap: _confirmClearBudget,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 7),
+                    horizontal: 12,
+                    vertical: 7,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.danger,
                     borderRadius: BorderRadius.circular(20),
@@ -659,12 +708,14 @@ class _ListScreenState extends State<ListScreen> {
               style: const TextStyle(fontSize: 15),
               decoration: InputDecoration(
                 hintText: _isListening
-                  ? l.listeningHint
-                  : _isBudget
-                      ? l.budgetAddHint
-                      : (_isSmart ? l.smartAddHint : l.simpleAddHint),
+                    ? l.listeningHint
+                    : _isBudget
+                    ? l.budgetAddHint
+                    : (_isSmart ? l.smartAddHint : l.simpleAddHint),
                 hintStyle: const TextStyle(
-                    color: AppColors.textDisabled, fontSize: 14),
+                  color: AppColors.textDisabled,
+                  fontSize: 14,
+                ),
                 filled: true,
                 fillColor: AppColors.fieldBg,
                 border: OutlineInputBorder(
@@ -672,7 +723,9 @@ class _ListScreenState extends State<ListScreen> {
                   borderSide: BorderSide.none,
                 ),
                 contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 12),
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 isDense: true,
                 counterText: '',
               ),
@@ -707,8 +760,11 @@ class _ListScreenState extends State<ListScreen> {
                     ),
                   ],
                 ),
-                child: const Icon(Icons.add_rounded,
-                    color: Colors.white, size: 24),
+                child: const Icon(
+                  Icons.add_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
             ),
           ),
@@ -731,11 +787,18 @@ class _ListScreenState extends State<ListScreen> {
               categories: widget.categories,
               shelfCodeOrder: widget.shelfCodeOrder,
               onAddCategory: widget.onAddCategory,
-              onConfirm: (name, quantity, shelfCode, category, zone, unitPrice) {
-                widget.onEditSmart(
-                    item.id, name, quantity, shelfCode, category, zone,
-                    unitPrice: unitPrice);
-              },
+              onConfirm:
+                  (name, quantity, shelfCode, category, zone, unitPrice) {
+                    widget.onEditSmart(
+                      item.id,
+                      name,
+                      quantity,
+                      shelfCode,
+                      category,
+                      zone,
+                      unitPrice: unitPrice,
+                    );
+                  },
             )
           : _RenameSheet(
               initialName: item.name,
@@ -785,11 +848,26 @@ class _ListScreenState extends State<ListScreen> {
         categories: widget.categories,
         shelfCodeOrder: widget.shelfCodeOrder,
         onAddCategory: widget.onAddCategory,
-        onConfirm: (category, zone, quantityLabel, shelfCode, estimatedDays, unitPrice) {
-          widget.onAddSmart(name, quantityLabel, shelfCode, estimatedDays, category, zone,
-              unitPrice: unitPrice);
-          _nameCtrl.clear();
-        },
+        onConfirm:
+            (
+              category,
+              zone,
+              quantityLabel,
+              shelfCode,
+              estimatedDays,
+              unitPrice,
+            ) {
+              widget.onAddSmart(
+                name,
+                quantityLabel,
+                shelfCode,
+                estimatedDays,
+                category,
+                zone,
+                unitPrice: unitPrice,
+              );
+              _nameCtrl.clear();
+            },
       ),
     );
   }

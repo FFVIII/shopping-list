@@ -41,7 +41,9 @@ class _InventoryCard extends StatelessWidget {
 
     return Dismissible(
       key: Key('inv_${item.id}'),
-      direction: batchMode ? DismissDirection.none : DismissDirection.endToStart,
+      direction: batchMode
+          ? DismissDirection.none
+          : DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 18),
@@ -50,198 +52,223 @@ class _InventoryCard extends StatelessWidget {
           color: AppColors.danger,
           borderRadius: BorderRadius.circular(14),
         ),
-        child: const Icon(Icons.delete_outline_rounded,
-            color: Colors.white, size: 22),
+        child: const Icon(
+          Icons.delete_outline_rounded,
+          color: Colors.white,
+          size: 22,
+        ),
       ),
       onDismissed: (_) => onDelete(),
       child: Container(
-          margin: const EdgeInsets.only(bottom: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.divider),
-            boxShadow: const [
-              BoxShadow(
-                color: AppColors.shadow,
-                blurRadius: 8,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: onTap,
-                  child: Row(
-                    children: [
-                      // Batch selection circle
-                      if (batchMode) ...[
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: selected ? AppColors.brand : Colors.transparent,
-                            border: selected
-                                ? null
-                                : Border.all(color: AppColors.border, width: 1.5),
-                          ),
-                          child: selected
-                              ? const Icon(Icons.check_rounded, color: Colors.white, size: 15)
-                              : null,
-                        ),
-                        const SizedBox(width: 10),
-                      ],
-                      // Muted thumbnail
-                      Container(
-                        width: 44,
-                        height: 44,
+        margin: const EdgeInsets.only(bottom: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.divider),
+          boxShadow: const [
+            BoxShadow(
+              color: AppColors.shadow,
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onTap,
+                child: Row(
+                  children: [
+                    // Batch selection circle
+                    if (batchMode) ...[
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        width: 24,
+                        height: 24,
                         decoration: BoxDecoration(
-                          color: item.category.bgColor,
-                          borderRadius: BorderRadius.circular(10),
+                          shape: BoxShape.circle,
+                          color: selected
+                              ? AppColors.brand
+                              : Colors.transparent,
+                          border: selected
+                              ? null
+                              : Border.all(color: AppColors.border, width: 1.5),
                         ),
-                        child: Center(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              dn.isNotEmpty ? dn.substring(0, 1) : '',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: item.category.color.withValues(alpha: 0.45),
+                        child: selected
+                            ? const Icon(
+                                Icons.check_rounded,
+                                color: Colors.white,
+                                size: 15,
+                              )
+                            : null,
+                      ),
+                      const SizedBox(width: 10),
+                    ],
+                    // Muted thumbnail
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: item.category.bgColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Center(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            dn.isNotEmpty ? dn.substring(0, 1) : '',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: item.category.color.withValues(
+                                alpha: 0.45,
                               ),
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      // Name + quantity
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              dn,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
-                              ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Name + quantity
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            dn,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
                             ),
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                if (q.isNotEmpty) ...[
-                                  QuantityBadge(qty: q),
-                                  const SizedBox(width: 6),
-                                ],
-                                Flexible(
-                                  child: Text(
-                                    l.lastBoughtLabel(
-                                        '${item.purchasedAt.month}/${item.purchasedAt.day}'),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      color: AppColors.textDisabled,
-                                    ),
-                                  ),
-                                ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              if (q.isNotEmpty) ...[
+                                QuantityBadge(qty: q),
+                                const SizedBox(width: 6),
                               ],
-                            ),
-                            if (showShelfCode &&
-                                item.shelfCode != null &&
-                                item.shelfCode!.isNotEmpty) ...[
-                              const SizedBox(height: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: item.category.color.withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
+                              Flexible(
                                 child: Text(
-                                  item.shelfCode!,
+                                  l.lastBoughtLabel(
+                                    '${item.purchasedAt.month}/${item.purchasedAt.day}',
+                                  ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    color: item.category.color,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.textDisabled,
                                   ),
                                 ),
                               ),
                             ],
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              // Right: date / progress bar / days:status — drag zone when reorderable
-              () {
-                final col = Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: 64,
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          endDateStr,
-                          style: const TextStyle(
-                              fontSize: 11, color: AppColors.textMuted),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    SizedBox(
-                      width: 64,
-                      child: _ProgressBar(ratio: item.progressRatio, color: status.color),
-                    ),
-                    const SizedBox(height: 4),
-                    SizedBox(
-                      width: 64,
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          status == StockStatus.empty
-                              ? l.usedUp
-                              : '${l.stockStatus(status)}(${l.daysShort(remaining.clamp(0, 999))})',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: status.color,
                           ),
-                        ),
+                          if (showShelfCode &&
+                              item.shelfCode != null &&
+                              item.shelfCode!.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: item.category.color.withValues(
+                                  alpha: 0.12,
+                                ),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                item.shelfCode!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: item.category.color,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                   ],
-                );
-                return Padding(
-                  padding: const EdgeInsets.only(left: 12),
-                  child: reorderIndex != null
-                      ? ReorderableDragStartListener(index: reorderIndex!, child: col)
-                      : col,
-                );
-              }(),
-              // Drag handle: always shown when onHandleTap is set.
-              // reorderIndex=null in flat/grouped views = tap-only (no drag).
-              if (onHandleTap != null)
-                DragHandle(index: reorderIndex, onTap: onHandleTap)
-              else
-                const SizedBox(width: 24),
-            ],
-          ),
+                ),
+              ),
+            ),
+            // Right: date / progress bar / days:status — drag zone when reorderable
+            () {
+              final col = Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 64,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        endDateStr,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  SizedBox(
+                    width: 64,
+                    child: _ProgressBar(
+                      ratio: item.progressRatio,
+                      color: status.color,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  SizedBox(
+                    width: 64,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        status == StockStatus.empty
+                            ? l.usedUp
+                            : '${l.stockStatus(status)}(${l.daysShort(remaining.clamp(0, 999))})',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: status.color,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+              return Padding(
+                padding: const EdgeInsets.only(left: 12),
+                child: reorderIndex != null
+                    ? ReorderableDragStartListener(
+                        index: reorderIndex!,
+                        child: col,
+                      )
+                    : col,
+              );
+            }(),
+            // Drag handle: always shown when onHandleTap is set.
+            // reorderIndex=null in flat/grouped views = tap-only (no drag).
+            if (onHandleTap != null)
+              DragHandle(index: reorderIndex, onTap: onHandleTap)
+            else
+              const SizedBox(width: 24),
+          ],
         ),
+      ),
     );
   }
 }
@@ -275,12 +302,12 @@ class _DetailDraft {
   });
 
   factory _DetailDraft.from(InventoryItem item) => _DetailDraft(
-        name: item.name,
-        quantity: item.quantityLabel,
-        shelfCode: item.shelfCode ?? '',
-        category: item.category,
-        zone: item.shelfZone,
-      );
+    name: item.name,
+    quantity: item.quantityLabel,
+    shelfCode: item.shelfCode ?? '',
+    category: item.category,
+    zone: item.shelfZone,
+  );
 }
 
 // ── Inventory detail sheet (inline-editable header + reset / restock / delete) ─
@@ -295,8 +322,12 @@ class _InventoryDetailSheet extends StatefulWidget {
   final VoidCallback onDelete;
   final VoidCallback onSave;
   final Category Function(
-      String name, Color color, String shelfZone, int defaultDays)
-      onAddCategory;
+    String name,
+    Color color,
+    String shelfZone,
+    int defaultDays,
+  )
+  onAddCategory;
   final List<String> shelfCodeOrder;
 
   const _InventoryDetailSheet({
@@ -361,34 +392,20 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
     super.dispose();
   }
 
-  InputDecoration _dec(String hint) => InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textDisabled),
-        filled: true,
-        fillColor: AppColors.fieldBg,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        isDense: true,
-        counterStyle: const TextStyle(
-            fontSize: 10, color: AppColors.textDisabled),
-      );
-
   @override
   Widget build(BuildContext context) {
     final l = L10n.of(context);
     final status = widget.item.statusFor(widget.thresholdDays);
     final previewStatus = _resetPending
         ? (_selectedDays <= 0
-            ? StockStatus.empty
-            : _selectedDays <= widget.thresholdDays
-                ? StockStatus.low
-                : StockStatus.sufficient)
+              ? StockStatus.empty
+              : _selectedDays <= widget.thresholdDays
+              ? StockStatus.low
+              : StockStatus.sufficient)
         : status;
-    final previewDays = _resetPending ? _selectedDays : widget.item.daysRemaining;
+    final previewDays = _resetPending
+        ? _selectedDays
+        : widget.item.daysRemaining;
     return Padding(
       padding: EdgeInsets.only(
         left: 20,
@@ -412,13 +429,18 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.location_on_outlined,
-                            size: 14, color: AppColors.textDisabled),
+                        const Icon(
+                          Icons.location_on_outlined,
+                          size: 14,
+                          color: AppColors.textDisabled,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           l.aisleLabel,
                           style: const TextStyle(
-                              fontSize: 14, color: AppColors.textMuted),
+                            fontSize: 14,
+                            color: AppColors.textMuted,
+                          ),
                         ),
                         const SizedBox(width: 6),
                         CategoryPickerField(
@@ -444,7 +466,9 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.brand,
                       borderRadius: BorderRadius.circular(20),
@@ -466,7 +490,9 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: previewStatus.bgColor,
                     borderRadius: BorderRadius.circular(12),
@@ -505,7 +531,10 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                     controller: _nameCtrl,
                     maxLength: 30,
                     style: const TextStyle(fontSize: 15),
-                    decoration: _dec(l.productNameHint),
+                    decoration: fieldDecoration(
+                      l.productNameHint,
+                      verticalPadding: 10,
+                    ),
                     onChanged: (v) {
                       _draft
                         ..name = v
@@ -521,7 +550,10 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     maxLength: 10,
                     style: const TextStyle(fontSize: 15),
-                    decoration: _dec(l.quantityFieldLabel),
+                    decoration: fieldDecoration(
+                      l.quantityFieldLabel,
+                      verticalPadding: 10,
+                    ),
                     onChanged: (v) {
                       _draft
                         ..quantity = v
@@ -537,29 +569,39 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
               controller: _shelfCtrl,
               maxLength: 20,
               style: const TextStyle(fontSize: 15),
-              decoration: _dec(l.shelfCodeFieldLabel).copyWith(
-                  suffixIcon: widget.shelfCodeOrder.isEmpty
-                      ? null
-                      : Builder(
-                          builder: (iconContext) => IconButton(
-                            icon: const Icon(Icons.list_alt_rounded,
-                                size: 20, color: AppColors.textSecondary),
-                            onPressed: () async {
-                              final picked = await pickShelfCode(
-                                  iconContext, widget.shelfCodeOrder);
-                              if (picked == null) return;
-                              // Programmatic controller.text writes don't
-                              // fire onChanged, so the draft needs updating
-                              // explicitly here too.
-                              setState(() {
-                                _shelfCtrl.text = picked;
-                                _draft
-                                  ..shelfCode = picked
-                                  ..dirty = true;
-                              });
-                            },
+              decoration:
+                  fieldDecoration(
+                    l.shelfCodeFieldLabel,
+                    verticalPadding: 10,
+                  ).copyWith(
+                    suffixIcon: widget.shelfCodeOrder.isEmpty
+                        ? null
+                        : Builder(
+                            builder: (iconContext) => IconButton(
+                              icon: const Icon(
+                                Icons.inventory_outlined,
+                                size: 20,
+                                color: AppColors.textSecondary,
+                              ),
+                              onPressed: () async {
+                                final picked = await pickShelfCode(
+                                  iconContext,
+                                  widget.shelfCodeOrder,
+                                );
+                                if (picked == null) return;
+                                // Programmatic controller.text writes don't
+                                // fire onChanged, so the draft needs updating
+                                // explicitly here too.
+                                setState(() {
+                                  _shelfCtrl.text = picked;
+                                  _draft
+                                    ..shelfCode = picked
+                                    ..dirty = true;
+                                });
+                              },
+                            ),
                           ),
-                        )),
+                  ),
               onChanged: (v) {
                 _draft
                   ..shelfCode = v
@@ -595,10 +637,12 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                 backgroundColor: _addedToList
                     ? AppColors.fieldBg
                     : AppColors.brand.withValues(alpha: 0.12),
-                foregroundColor:
-                    _addedToList ? AppColors.textMuted : AppColors.brand,
+                foregroundColor: _addedToList
+                    ? AppColors.textMuted
+                    : AppColors.brand,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 elevation: 0,
                 minimumSize: const Size(double.infinity, 50),
               ),
@@ -610,8 +654,10 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                     },
               child: Text(
                 _addedToList ? l.alreadyInList : l.addToRestockList,
-                style:
-                    const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
             const SizedBox(height: 8),
@@ -621,35 +667,38 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                 minimumSize: const Size(double.infinity, 44),
               ),
               onPressed: () async {
-                  final ok = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: Text(l.deleteFromInventory),
-                      content: Text(l.deleteConfirmMessage),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: Text(l.cancel),
+                final ok = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: Text(l.deleteFromInventory),
+                    content: Text(l.deleteConfirmMessage),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: Text(l.cancel),
+                      ),
+                      TextButton(
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.danger,
                         ),
-                        TextButton(
-                          style: TextButton.styleFrom(
-                              foregroundColor: AppColors.danger),
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: Text(l.delete),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (ok != true || !context.mounted) return;
-                  // Discard pending edits — the item is being removed.
-                  _draft.dirty = false;
-                  Navigator.pop(context);
-                  widget.onDelete();
-                },
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: Text(l.delete),
+                      ),
+                    ],
+                  ),
+                );
+                if (ok != true || !context.mounted) return;
+                // Discard pending edits — the item is being removed.
+                _draft.dirty = false;
+                Navigator.pop(context);
+                widget.onDelete();
+              },
               child: Text(
                 l.deleteFromInventory,
                 style: const TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w500),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ],
@@ -666,8 +715,12 @@ class _AddInventorySheet extends StatefulWidget {
   final List<Category> categories;
   final List<String> shelfCodeOrder;
   final Category Function(
-      String name, Color color, String shelfZone, int defaultDays)
-      onAddCategory;
+    String name,
+    Color color,
+    String shelfZone,
+    int defaultDays,
+  )
+  onAddCategory;
 
   const _AddInventorySheet({
     required this.onAdd,
@@ -700,33 +753,19 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
     if (name.isEmpty) return;
     final shelf = _shelfCtrl.text.trim();
     Navigator.pop(context);
-    widget.onAdd(InventoryItem(
-      id: generateId('inv'),
-      name: name,
-      category: _category,
-      shelfZone: _category.shelfZone,
-      shelfCode: shelf.isEmpty ? null : shelf,
-      quantityLabel: _qtyCtrl.text.trim(),
-      purchasedAt: DateTime.now(),
-      estimatedDays: _days,
-    ));
+    widget.onAdd(
+      InventoryItem(
+        id: generateId('inv'),
+        name: name,
+        category: _category,
+        shelfZone: _category.shelfZone,
+        shelfCode: shelf.isEmpty ? null : shelf,
+        quantityLabel: _qtyCtrl.text.trim(),
+        purchasedAt: DateTime.now(),
+        estimatedDays: _days,
+      ),
+    );
   }
-
-  InputDecoration _fieldDecoration(String hint) => InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textDisabled),
-        filled: true,
-        fillColor: AppColors.fieldBg,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        isDense: true,
-        counterStyle: const TextStyle(
-            fontSize: 10, color: AppColors.textDisabled),
-      );
 
   @override
   Widget build(BuildContext context) {
@@ -758,7 +797,7 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
                   autofocus: true,
                   maxLength: 30,
                   style: const TextStyle(fontSize: 15),
-                  decoration: _fieldDecoration(l.productNameHint),
+                  decoration: fieldDecoration(l.productNameHint),
                   onChanged: (_) => setState(() {}),
                   onSubmitted: (_) => _submit(),
                 ),
@@ -771,7 +810,7 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   maxLength: 10,
                   style: const TextStyle(fontSize: 15),
-                  decoration: _fieldDecoration(l.quantityFieldLabel),
+                  decoration: fieldDecoration(l.quantityFieldLabel),
                 ),
               ),
             ],
@@ -782,22 +821,28 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
             controller: _shelfCtrl,
             maxLength: 20,
             style: const TextStyle(fontSize: 15),
-            decoration: _fieldDecoration(l.shelfCodeFieldLabel).copyWith(
-                suffixIcon: widget.shelfCodeOrder.isEmpty
-                    ? null
-                    : Builder(
-                        builder: (iconContext) => IconButton(
-                          icon: const Icon(Icons.list_alt_rounded,
-                              size: 20, color: AppColors.textSecondary),
-                          onPressed: () async {
-                            final picked = await pickShelfCode(
-                                iconContext, widget.shelfCodeOrder);
-                            if (picked != null) {
-                              setState(() => _shelfCtrl.text = picked);
-                            }
-                          },
+            decoration: fieldDecoration(l.shelfCodeFieldLabel).copyWith(
+              suffixIcon: widget.shelfCodeOrder.isEmpty
+                  ? null
+                  : Builder(
+                      builder: (iconContext) => IconButton(
+                        icon: const Icon(
+                          Icons.inventory_outlined,
+                          size: 20,
+                          color: AppColors.textSecondary,
                         ),
-                      )),
+                        onPressed: () async {
+                          final picked = await pickShelfCode(
+                            iconContext,
+                            widget.shelfCodeOrder,
+                          );
+                          if (picked != null) {
+                            setState(() => _shelfCtrl.text = picked);
+                          }
+                        },
+                      ),
+                    ),
+            ),
           ),
           const SizedBox(height: 16),
           Text(
@@ -836,7 +881,8 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
               foregroundColor: Colors.white,
               disabledBackgroundColor: AppColors.divider,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14)),
+                borderRadius: BorderRadius.circular(14),
+              ),
               elevation: 0,
               minimumSize: const Size(double.infinity, 48),
             ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme/app_colors.dart';
 import '../l10n/l10n.dart';
+import '../utils/day_input.dart';
 
 /// Horizontal chip row for selecting a number of days.
 /// Preset chips: 3, 5, 7, 14, 30. Last chip is an inline custom text field.
@@ -22,7 +23,6 @@ class DaysSelector extends StatefulWidget {
 
 class _DaysSelectorState extends State<DaysSelector> {
   static const _presets = [3, 5, 7, 14, 30];
-  static const _maxCustomDays = 1000;
 
   late int _selectedDays;
   bool _usingCustom = false;
@@ -85,7 +85,9 @@ class _DaysSelectorState extends State<DaysSelector> {
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 150),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 8),
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: sel ? AppColors.brand : AppColors.fieldBg,
                         borderRadius: BorderRadius.circular(20),
@@ -105,8 +107,10 @@ class _DaysSelectorState extends State<DaysSelector> {
               // Custom inline chip
               AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 0,
+                ),
                 decoration: BoxDecoration(
                   color: _usingCustom ? AppColors.brand : AppColors.fieldBg,
                   borderRadius: BorderRadius.circular(20),
@@ -119,7 +123,10 @@ class _DaysSelectorState extends State<DaysSelector> {
                       child: TextField(
                         controller: _customCtrl,
                         keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        maxLength: 4,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 13,
@@ -138,38 +145,33 @@ class _DaysSelectorState extends State<DaysSelector> {
                           ),
                           border: InputBorder.none,
                           isDense: true,
-                          contentPadding:
-                              const EdgeInsets.symmetric(vertical: 10),
+                          counterText: '',
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 10,
+                          ),
                         ),
                         onChanged: (v) {
-                          final n = int.tryParse(v.trim());
-                          final overflow = n != null && n > _maxCustomDays;
-                          setState(() {
-                            _usingCustom = v.trim().isNotEmpty;
-                            _overflow = overflow;
-                            if (n != null && n > 0 && !overflow) {
-                              _selectedDays = n;
-                            }
-                          });
-                          if (n != null && n > 0 && !overflow) {
-                            widget.onChanged(n);
+                          final result = parseDaysInput(v, _customCtrl);
+                          if (result == null) {
+                            setState(() => _usingCustom = v.trim().isNotEmpty);
+                            return;
                           }
+                          setState(() {
+                            _usingCustom = true;
+                            _overflow = result.overflow;
+                            _selectedDays = result.value;
+                          });
+                          widget.onChanged(result.value);
                         },
                         onSubmitted: (v) {
-                          final raw = int.tryParse(v.trim());
-                          if (raw == null || raw <= 0) return;
-                          final n = raw.clamp(1, _maxCustomDays);
-                          if (raw > _maxCustomDays) {
-                            _customCtrl.text = '$n';
-                            _customCtrl.selection = TextSelection.collapsed(
-                                offset: '$n'.length);
-                          }
+                          final result = parseDaysInput(v, _customCtrl);
+                          if (result == null) return;
                           setState(() {
-                            _selectedDays = n;
+                            _selectedDays = result.value;
                             _usingCustom = true;
                             _overflow = false;
                           });
-                          widget.onChanged(n);
+                          widget.onChanged(result.value);
                         },
                       ),
                     ),
@@ -179,9 +181,7 @@ class _DaysSelectorState extends State<DaysSelector> {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: _usingCustom
-                            ? Colors.white
-                            : AppColors.textChip,
+                        color: _usingCustom ? Colors.white : AppColors.textChip,
                       ),
                     ),
                   ],

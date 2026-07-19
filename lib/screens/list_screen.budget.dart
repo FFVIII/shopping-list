@@ -73,9 +73,10 @@ extension _BudgetModeState on _ListScreenState {
               ? _toggleBudgetSelection(item.id)
               : _showBudgetSheet(item: item),
           onDelete: () => _handleSwipeDelete(
-              id: item.id,
-              label: L10n.of(context).data(item.name),
-              realDelete: () => widget.onDeleteBudget(item.id)),
+            id: item.id,
+            label: L10n.of(context).data(item.name),
+            realDelete: () => widget.onDeleteBudget(item.id),
+          ),
           onHandleTap: () => _budgetBatchMode
               ? _toggleBudgetSelection(item.id)
               : _enterBudgetBatchWithItem(item.id),
@@ -86,8 +87,7 @@ extension _BudgetModeState on _ListScreenState {
 
   Widget _buildBudgetTotalBar() {
     final l = L10n.of(context);
-    final total =
-        widget.budgetItems.fold<double>(0, (s, i) => s + i.lineTotal);
+    final total = widget.budgetItems.fold<double>(0, (s, i) => s + i.lineTotal);
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 4),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -117,10 +117,7 @@ extension _BudgetModeState on _ListScreenState {
               l.budgetCount(widget.budgetItems.length),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.textMuted,
-              ),
+              style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
             ),
           ),
           const SizedBox(width: 8),
@@ -148,8 +145,11 @@ extension _BudgetModeState on _ListScreenState {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.receipt_long_outlined,
-              size: 56, color: Color(0xFFD8D8D3)),
+          const Icon(
+            Icons.receipt_long_outlined,
+            size: 56,
+            color: Color(0xFFD8D8D3),
+          ),
           const SizedBox(height: 16),
           Text(
             l.budgetEmptyTitle,
@@ -197,8 +197,9 @@ class _BudgetRow extends StatelessWidget {
     final l = L10n.of(context);
     return Dismissible(
       key: Key('budget_dismiss_${item.id}'),
-      direction:
-          batchMode ? DismissDirection.none : DismissDirection.endToStart,
+      direction: batchMode
+          ? DismissDirection.none
+          : DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 18),
@@ -207,82 +208,88 @@ class _BudgetRow extends StatelessWidget {
           color: AppColors.danger,
           borderRadius: BorderRadius.circular(14),
         ),
-        child: const Icon(Icons.delete_outline_rounded,
-            color: Colors.white, size: 22),
+        child: const Icon(
+          Icons.delete_outline_rounded,
+          color: Colors.white,
+          size: 22,
+        ),
       ),
       onDismissed: (_) => onDelete(),
       child: Container(
-          margin: const EdgeInsets.only(bottom: 6),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.divider),
-            boxShadow: const [
-              BoxShadow(
-                  color: AppColors.shadow,
-                  blurRadius: 8,
-                  offset: Offset(0, 2)),
-            ],
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: onTap,
-                  child: Row(
-                    children: [
-                      if (batchMode)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 12),
-                          child: _SelectCircle(selected: selected),
-                        ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l.data(item.name),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              '${l.money(item.unitPrice)} × ${item.quantity}',
-                              style: const TextStyle(
-                                  fontSize: 12, color: AppColors.textMuted),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              ReorderableDragStartListener(
-                index: reorderIndex,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 10),
-                  child: Text(
-                    l.money(item.lineTotal),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ),
-              ),
-              DragHandle(index: reorderIndex, onTap: onHandleTap),
-            ],
-          ),
+        margin: const EdgeInsets.only(bottom: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.divider),
+          boxShadow: const [
+            BoxShadow(
+              color: AppColors.shadow,
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
         ),
+        child: Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onTap,
+                child: Row(
+                  children: [
+                    if (batchMode)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 12),
+                        child: _SelectCircle(selected: selected),
+                      ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l.data(item.name),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            '${l.money(item.unitPrice)} × ${item.quantity}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            ReorderableDragStartListener(
+              index: reorderIndex,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 10),
+                child: Text(
+                  l.money(item.lineTotal),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ),
+            DragHandle(index: reorderIndex, onTap: onHandleTap),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -321,11 +328,12 @@ class _BudgetSheetState extends State<_BudgetSheet> {
   void initState() {
     super.initState();
     _nameCtrl = TextEditingController(
-        text: widget.item == null ? widget.initialName : '');
-    _qtyCtrl =
-        TextEditingController(text: '${widget.item?.quantity ?? 1}');
+      text: widget.item == null ? widget.initialName : '',
+    );
+    _qtyCtrl = TextEditingController(text: '${widget.item?.quantity ?? 1}');
     _priceCtrl = TextEditingController(
-        text: widget.item == null ? '' : _trimNum(widget.item!.unitPrice));
+      text: widget.item == null ? '' : _trimNum(widget.item!.unitPrice),
+    );
   }
 
   @override
@@ -376,37 +384,22 @@ class _BudgetSheetState extends State<_BudgetSheet> {
       return;
     }
     final item = widget.item;
-    final name =
-        (item != null && typed == _nameDisplay) ? item.name : typed;
+    final name = (item != null && typed == _nameDisplay) ? item.name : typed;
     Navigator.pop(context);
     widget.onConfirm(name, _qty, _price);
   }
 
-  InputDecoration _dec(String hint) => InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textDisabled),
-        filled: true,
-        fillColor: AppColors.fieldBg,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        isDense: true,
-      );
-
   Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 6, top: 14),
-        child: Text(
-          text,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.only(bottom: 6, top: 14),
+    child: Text(
+      text,
+      style: const TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textSecondary,
+      ),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -425,8 +418,7 @@ class _BudgetSheetState extends State<_BudgetSheet> {
           children: [
             Text(
               widget.item == null ? l.addBudgetTitle : l.editBudgetTitle,
-              style:
-                  const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
             ),
             _label(l.productNameHint),
             TextField(
@@ -434,9 +426,7 @@ class _BudgetSheetState extends State<_BudgetSheet> {
               autofocus: !_namePrefilled,
               maxLength: 30,
               style: const TextStyle(fontSize: 15),
-              decoration: _dec(l.productNameHint).copyWith(
-                  counterStyle: const TextStyle(
-                      fontSize: 10, color: AppColors.textDisabled)),
+              decoration: fieldDecoration(l.productNameHint),
               textInputAction: TextInputAction.next,
               onSubmitted: (_) => _priceFocus.requestFocus(),
             ),
@@ -453,15 +443,16 @@ class _BudgetSheetState extends State<_BudgetSheet> {
                         focusNode: _priceFocus,
                         autofocus: _namePrefilled,
                         keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true),
+                          decimal: true,
+                        ),
                         inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$'))
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r'^\d*\.?\d*$'),
+                          ),
                         ],
                         maxLength: 8,
                         style: const TextStyle(fontSize: 15),
-                        decoration: _dec(l.currencySymbol).copyWith(
-                            counterStyle: const TextStyle(
-                                fontSize: 10, color: AppColors.textDisabled)),
+                        decoration: fieldDecoration(l.currencySymbol),
                         textInputAction: TextInputAction.next,
                         onChanged: (_) => setState(() {}),
                         onSubmitted: (_) => _qtyFocus.requestFocus(),
@@ -479,12 +470,12 @@ class _BudgetSheetState extends State<_BudgetSheet> {
                         controller: _qtyCtrl,
                         focusNode: _qtyFocus,
                         keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
                         maxLength: 10,
                         style: const TextStyle(fontSize: 15),
-                        decoration: _dec('1').copyWith(
-                            counterStyle: const TextStyle(
-                                fontSize: 10, color: AppColors.textDisabled)),
+                        decoration: fieldDecoration('1'),
                         textInputAction: TextInputAction.done,
                         onChanged: (_) => setState(() {}),
                         onSubmitted: (_) => _confirm(),
@@ -500,7 +491,9 @@ class _BudgetSheetState extends State<_BudgetSheet> {
                 Text(
                   l.budgetTotalLabel,
                   style: const TextStyle(
-                      fontSize: 13, color: AppColors.textMuted),
+                    fontSize: 13,
+                    color: AppColors.textMuted,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Flexible(
@@ -523,7 +516,8 @@ class _BudgetSheetState extends State<_BudgetSheet> {
                 backgroundColor: AppColors.brand,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 elevation: 0,
                 minimumSize: const Size(double.infinity, 48),
               ),
@@ -531,7 +525,9 @@ class _BudgetSheetState extends State<_BudgetSheet> {
               child: Text(
                 l.save,
                 style: const TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.w600),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
