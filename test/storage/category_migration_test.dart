@@ -5,34 +5,33 @@ import 'package:shopping_list/storage/app_repository.dart';
 
 // Regression tests for the category-name localization bug: older builds
 // persisted default category names translated into the install language
-// (e.g. '果蔬' → 'Produce'), which froze them in that language because display
+// (e.g. '蔬菜' → 'Vegetables'), which froze them in that language because display
 // translation is one-way (canonical zh → other). migrateDefaultCategoryNamesToCanonical
 // restores the canonical names so l.data() can localize them again.
 
 Category _cat(String id, String name) => Category(
-      id: id,
-      name: name,
-      color: const Color(0xFF000000),
-      bgColor: const Color(0xFFFFFFFF),
-      shelfZone: '其他',
-      defaultDays: 7,
-    );
+  id: id,
+  name: name,
+  color: const Color(0xFF000000),
+  bgColor: const Color(0xFFFFFFFF),
+  defaultDays: 7,
+);
 
 void main() {
   test('rewrites an English default name back to its zh canonical', () {
-    final cats = [_cat('produce', 'Produce'), _cat('dairy', 'Dairy')];
+    final cats = [_cat('produce', 'Vegetables'), _cat('dairy', 'Dairy')];
     migrateDefaultCategoryNamesToCanonical(cats);
-    expect(cats[0].name, '果蔬');
+    expect(cats[0].name, '蔬菜');
     expect(cats[1].name, '乳制品');
   });
 
   test('is a no-op when names are already canonical (idempotent)', () {
-    final cats = [_cat('produce', '果蔬')];
+    final cats = [_cat('produce', '蔬菜')];
     migrateDefaultCategoryNamesToCanonical(cats);
-    expect(cats[0].name, '果蔬');
+    expect(cats[0].name, '蔬菜');
     // Running twice changes nothing further.
     migrateDefaultCategoryNamesToCanonical(cats);
-    expect(cats[0].name, '果蔬');
+    expect(cats[0].name, '蔬菜');
   });
 
   test('leaves custom (non-default id) categories untouched', () {

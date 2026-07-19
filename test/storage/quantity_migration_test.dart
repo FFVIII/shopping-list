@@ -8,31 +8,24 @@ import 'package:shopping_list/storage/app_repository.dart';
 // persisted labels so old data matches the digits-only input.
 
 Category _cat() => Category(
-      id: 'other',
-      name: '其他',
-      color: const Color(0xFF000000),
-      bgColor: const Color(0xFFFFFFFF),
-      shelfZone: '其他',
-      defaultDays: 7,
-    );
+  id: 'other',
+  name: '其他',
+  color: const Color(0xFF000000),
+  bgColor: const Color(0xFFFFFFFF),
+  defaultDays: 7,
+);
 
-ShoppingItem _shop(String qty) => ShoppingItem(
-      id: 's',
-      name: 'x',
-      category: _cat(),
-      quantityLabel: qty,
-      shelfZone: '其他',
-    );
+ShoppingItem _shop(String qty) =>
+    ShoppingItem(id: 's', name: 'x', category: _cat(), quantityLabel: qty);
 
 InventoryItem _inv(String qty) => InventoryItem(
-      id: 'i',
-      name: 'x',
-      category: _cat(),
-      shelfZone: '其他',
-      quantityLabel: qty,
-      purchasedAt: DateTime.now(),
-      estimatedDays: 7,
-    );
+  id: 'i',
+  name: 'x',
+  category: _cat(),
+  quantityLabel: qty,
+  purchasedAt: DateTime.now(),
+  estimatedDays: 7,
+);
 
 void main() {
   test('strips units from shopping and inventory quantity labels', () {

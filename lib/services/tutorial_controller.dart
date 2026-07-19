@@ -41,8 +41,11 @@ class TutorialController extends ChangeNotifier {
     if (step == s) return;
     step = s;
     notifyListeners();
-    unawaited(TutorialStore.save(s)
-        .catchError((e) => debugPrint('tutorial save failed: $e')));
+    unawaited(
+      TutorialStore.save(
+        s,
+      ).catchError((e) => debugPrint('tutorial save failed: $e')),
+    );
   }
 
   void onItemAdded(String name) {

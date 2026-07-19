@@ -60,7 +60,9 @@ extension _ListBatch on _ListScreenState {
                       child: Text(l.cancel),
                     ),
                     TextButton(
-                      style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.danger,
+                      ),
                       onPressed: () => Navigator.pop(ctx, true),
                       child: Text(l.delete),
                     ),
@@ -176,7 +178,9 @@ extension _ListBatch on _ListScreenState {
                       child: Text(l.cancel),
                     ),
                     TextButton(
-                      style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.danger,
+                      ),
                       onPressed: () => Navigator.pop(ctx, true),
                       child: Text(l.delete),
                     ),
@@ -221,9 +225,14 @@ extension _ListBatch on _ListScreenState {
                   title: Text(l.selectedCount(_smartSelected.length)),
                   content: Text(l.deleteConfirmMessage),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l.cancel)),
                     TextButton(
-                      style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: Text(l.cancel),
+                    ),
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.danger,
+                      ),
                       onPressed: () => Navigator.pop(ctx, true),
                       child: Text(l.delete),
                     ),

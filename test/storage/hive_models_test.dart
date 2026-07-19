@@ -11,7 +11,6 @@ void main() {
         name: '果蔬',
         color: const Color(0xFF4CAF50),
         bgColor: const Color(0xFFE8F5E9),
-        shelfZone: '果蔬区',
         defaultDays: 7,
       );
 
@@ -21,7 +20,6 @@ void main() {
       expect(restored.name, cat.name);
       expect(restored.color.toARGB32(), cat.color.toARGB32());
       expect(restored.bgColor.toARGB32(), cat.bgColor.toARGB32());
-      expect(restored.shelfZone, cat.shelfZone);
       expect(restored.defaultDays, cat.defaultDays);
     });
   });
@@ -33,7 +31,6 @@ void main() {
         name: '乳制品',
         color: const Color(0xFF2196F3),
         bgColor: const Color(0xFFE3F2FD),
-        shelfZone: '冷藏/乳制品',
         defaultDays: 7,
       );
       final categories = [cat];
@@ -42,11 +39,9 @@ void main() {
         name: '牛奶',
         category: cat,
         quantityLabel: '2盒',
-        shelfZone: '冷藏/乳制品',
         shelfCode: '冷柜C2',
         estimatedDays: 6,
         checked: true,
-        addedToInventory: true,
         sourceInventoryId: 'inv_1',
       );
 
@@ -56,11 +51,9 @@ void main() {
       expect(restored.name, item.name);
       expect(restored.category.id, cat.id);
       expect(restored.quantityLabel, item.quantityLabel);
-      expect(restored.shelfZone, item.shelfZone);
       expect(restored.shelfCode, item.shelfCode);
       expect(restored.estimatedDays, item.estimatedDays);
       expect(restored.checked, item.checked);
-      expect(restored.addedToInventory, item.addedToInventory);
       expect(restored.sourceInventoryId, item.sourceInventoryId);
     });
 
@@ -70,7 +63,6 @@ void main() {
         name: '其他',
         color: const Color(0xFF78909C),
         bgColor: const Color(0xFFECEFF1),
-        shelfZone: '其他',
         defaultDays: 7,
       );
       final map = {
@@ -78,11 +70,9 @@ void main() {
         'name': '手动添加',
         'categoryId': kFallbackCategoryId,
         'quantityLabel': '',
-        'shelfZone': '其他',
         'shelfCode': null,
         'estimatedDays': null,
         'checked': false,
-        'addedToInventory': false,
       };
 
       final restored = shoppingItemFromMap(map, [fallback]);
@@ -96,7 +86,6 @@ void main() {
         name: '其他',
         color: const Color(0xFF78909C),
         bgColor: const Color(0xFFECEFF1),
-        shelfZone: '其他',
         defaultDays: 7,
       );
       final map = {
@@ -104,11 +93,9 @@ void main() {
         'name': '神秘商品',
         'categoryId': 'does_not_exist',
         'quantityLabel': '',
-        'shelfZone': '其他',
         'shelfCode': null,
         'estimatedDays': null,
         'checked': false,
-        'addedToInventory': false,
       };
 
       final restored = shoppingItemFromMap(map, [fallback]);
@@ -124,7 +111,6 @@ void main() {
         name: '果蔬',
         color: const Color(0xFF4CAF50),
         bgColor: const Color(0xFFE8F5E9),
-        shelfZone: '果蔬区',
         defaultDays: 7,
       );
       final purchasedAt = DateTime(2026, 6, 30, 10, 30);
@@ -132,7 +118,6 @@ void main() {
         id: 'i1',
         name: '番茄',
         category: cat,
-        shelfZone: '果蔬区',
         shelfCode: '货架B1',
         quantityLabel: '6个',
         purchasedAt: purchasedAt,
@@ -144,7 +129,6 @@ void main() {
       expect(restored.id, item.id);
       expect(restored.name, item.name);
       expect(restored.category.id, cat.id);
-      expect(restored.shelfZone, item.shelfZone);
       expect(restored.shelfCode, item.shelfCode);
       expect(restored.quantityLabel, item.quantityLabel);
       expect(restored.purchasedAt, purchasedAt);
@@ -154,7 +138,12 @@ void main() {
 
   group('BudgetItem', () {
     test('toMap/fromMap round-trips all fields', () {
-      final item = BudgetItem(id: 'b1', name: '牛奶', quantity: 2, unitPrice: 8.5);
+      final item = BudgetItem(
+        id: 'b1',
+        name: '牛奶',
+        quantity: 2,
+        unitPrice: 8.5,
+      );
 
       final restored = budgetItemFromMap(item.toMap());
 
@@ -205,17 +194,6 @@ void main() {
       expect(restored.restockReminderEnabled, settings.restockReminderEnabled);
       expect(restored.reminderHour, settings.reminderHour);
       expect(restored.reminderMinute, settings.reminderMinute);
-    });
-  });
-
-  group('ShelfZone', () {
-    test('toMap/fromMap round-trips all fields', () {
-      const zone = ShelfZone('果蔬区', Color(0xFF4CAF50));
-
-      final restored = shelfZoneFromMap(zone.toMap());
-
-      expect(restored.name, zone.name);
-      expect(restored.dotColor.toARGB32(), zone.dotColor.toARGB32());
     });
   });
 }

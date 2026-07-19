@@ -13,7 +13,6 @@ AppData _sampleData() {
         name: '纸巾',
         category: categories.fallback,
         quantityLabel: '',
-        shelfZone: '其他',
       ),
     ],
     shoppingSmart: buildSampleShopping(categories),
@@ -36,7 +35,6 @@ AppData _sampleData() {
       reminderHour: 9,
       reminderMinute: 30,
     ),
-    shelfZones: defaultShelfZones.toList(),
     shelfCodeOrder: ['货架B1', '货架B2'],
   );
 }
@@ -59,32 +57,42 @@ void main() {
     final data = _sampleData();
     final decoded = decodeBackupExcel(encodeBackupExcel(data));
 
-    expect(decoded.shoppingSimple.map((i) => i.name),
-        data.shoppingSimple.map((i) => i.name));
+    expect(
+      decoded.shoppingSimple.map((i) => i.name),
+      data.shoppingSimple.map((i) => i.name),
+    );
     expect(decoded.shoppingSmart.length, data.shoppingSmart.length);
-    expect(decoded.shoppingSmart.first.category.id,
-        data.shoppingSmart.first.category.id);
+    expect(
+      decoded.shoppingSmart.first.category.id,
+      data.shoppingSmart.first.category.id,
+    );
     expect(decoded.inventory.length, data.inventory.length);
     // toMap 存毫秒，DateTime.now() 带微秒 — 按毫秒比较
-    expect(decoded.inventory.first.purchasedAt.millisecondsSinceEpoch,
-        data.inventory.first.purchasedAt.millisecondsSinceEpoch);
-    expect(decoded.budget.map((b) => b.unitPrice),
-        data.budget.map((b) => b.unitPrice));
-    expect(decoded.categories.map((c) => c.id),
-        data.categories.map((c) => c.id));
+    expect(
+      decoded.inventory.first.purchasedAt.millisecondsSinceEpoch,
+      data.inventory.first.purchasedAt.millisecondsSinceEpoch,
+    );
+    expect(
+      decoded.budget.map((b) => b.unitPrice),
+      data.budget.map((b) => b.unitPrice),
+    );
+    expect(
+      decoded.categories.map((c) => c.id),
+      data.categories.map((c) => c.id),
+    );
     expect(decoded.settings.reminderThresholdDays, 3);
     expect(decoded.settings.restockReminderEnabled, false);
     expect(decoded.settings.reminderHour, 9);
     expect(decoded.settings.reminderMinute, 30);
-    expect(decoded.shelfZones.map((z) => z.name),
-        data.shelfZones.map((z) => z.name));
     expect(decoded.shelfCodeOrder, ['货架B1', '货架B2']);
     expect(decoded.budgetHistory.length, 1);
     expect(decoded.budgetHistory.single.id, 'hist_1');
     expect(decoded.budgetHistory.single.items.length, 2);
     expect(decoded.budgetHistory.single.items[0].name, '牛奶');
-    expect(decoded.budgetHistory.single.totalAmount,
-        data.budgetHistory.single.totalAmount);
+    expect(
+      decoded.budgetHistory.single.totalAmount,
+      data.budgetHistory.single.totalAmount,
+    );
   });
 
   test('rejects non-xlsx input', () {
@@ -93,23 +101,26 @@ void main() {
 
   test('rejects wrong format field', () {
     expect(
-        () => decodeBackupExcel(
-            _metaOnlyXlsx(format: 'something_else', version: 1)),
-        throwsFormatException);
+      () => decodeBackupExcel(
+        _metaOnlyXlsx(format: 'something_else', version: 1),
+      ),
+      throwsFormatException,
+    );
   });
 
   test('rejects version above current', () {
     expect(
-        () => decodeBackupExcel(
-            _metaOnlyXlsx(format: kBackupFormat, version: 99)),
-        throwsFormatException);
+      () =>
+          decodeBackupExcel(_metaOnlyXlsx(format: kBackupFormat, version: 99)),
+      throwsFormatException,
+    );
   });
 
   test('rejects missing data segments', () {
     expect(
-        () => decodeBackupExcel(
-            _metaOnlyXlsx(format: kBackupFormat, version: 1)),
-        throwsFormatException);
+      () => decodeBackupExcel(_metaOnlyXlsx(format: kBackupFormat, version: 1)),
+      throwsFormatException,
+    );
   });
 
   test('decodes older backups that predate the SpendingHistory sheets', () {

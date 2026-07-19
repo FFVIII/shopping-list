@@ -15,9 +15,8 @@ class CategoryChipPicker extends StatefulWidget {
   final List<Category> categories;
   final Category selected;
   final void Function(Category category) onSelect;
-  final Category Function(
-      String name, Color color, String shelfZone, int defaultDays)
-      onAddCategory;
+  final Category Function(String name, Color color, int defaultDays)
+  onAddCategory;
 
   const CategoryChipPicker({
     super.key,
@@ -58,20 +57,16 @@ class _CategoryChipPickerState extends State<CategoryChipPicker> {
   void _addCategory() {
     if (_categories.length >= _maxCategories) {
       showAppToast(
-          context, L10n.of(context).categoryLimitReachedToast(_maxCategories));
+        context,
+        L10n.of(context).categoryLimitReachedToast(_maxCategories),
+      );
       return;
     }
     showQuickAddCategorySheet(
       context,
       existingNames: _categories.map((c) => c.name).toList(),
       onSubmit: (name, color) {
-        // Quick-add doesn't ask for a shelf zone, so borrow the curated
-        // "other" category's zone rather than an arbitrary list position —
-        // deterministic regardless of category ordering.
-        final zone = _categories.isNotEmpty
-            ? _categories.fallback.shelfZone
-            : widget.selected.shelfZone;
-        final cat = widget.onAddCategory(name, color, zone, 7);
+        final cat = widget.onAddCategory(name, color, 7);
         setState(() => _categories = [..._categories, cat]);
         widget.onSelect(cat);
       },
@@ -86,8 +81,8 @@ class _CategoryChipPickerState extends State<CategoryChipPicker> {
     final visible = query.isEmpty
         ? _categories
         : _categories
-            .where((cat) => l.data(cat.name).toLowerCase().contains(query))
-            .toList();
+              .where((cat) => l.data(cat.name).toLowerCase().contains(query))
+              .toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -100,17 +95,24 @@ class _CategoryChipPickerState extends State<CategoryChipPicker> {
               decoration: InputDecoration(
                 hintText: l.categorySearchHint,
                 hintStyle: const TextStyle(
-                    fontSize: 13, color: AppColors.textDisabled),
-                prefixIcon: const Icon(Icons.search_rounded,
-                    size: 18, color: AppColors.textDisabled),
+                  fontSize: 13,
+                  color: AppColors.textDisabled,
+                ),
+                prefixIcon: const Icon(
+                  Icons.search_rounded,
+                  size: 18,
+                  color: AppColors.textDisabled,
+                ),
                 filled: true,
                 fillColor: AppColors.fieldBg,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 isDense: true,
               ),
               onChanged: (v) => setState(() => _query = v),
@@ -125,7 +127,10 @@ class _CategoryChipPickerState extends State<CategoryChipPicker> {
               return GestureDetector(
                 onTap: () => widget.onSelect(cat),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: sel ? cat.color : AppColors.fieldBg,
                     borderRadius: BorderRadius.circular(20),
@@ -144,15 +149,20 @@ class _CategoryChipPickerState extends State<CategoryChipPicker> {
             GestureDetector(
               onTap: _addCategory,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.fieldBg,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: AppColors.divider),
                 ),
-                child: const Icon(Icons.add_rounded,
-                    size: 18, color: AppColors.textSecondary),
+                child: const Icon(
+                  Icons.add_rounded,
+                  size: 18,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ),
           ],

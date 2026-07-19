@@ -5,13 +5,16 @@ part of 'list_screen.dart';
 extension _SimpleModeState on _ListScreenState {
   Widget _buildSimpleList() {
     final l = L10n.of(context);
-    final visible =
-        widget.simpleItems.where((i) => !_pendingDeleteIds.contains(i.id));
+    final visible = widget.simpleItems.where(
+      (i) => !_pendingDeleteIds.contains(i.id),
+    );
     final pendingRaw = visible.where((i) => !i.checked).toList();
     final pending = _simpleDir != null
-        ? ([...pendingRaw]..sort((a, b) => _simpleDir == SortDir.asc
-            ? a.name.compareTo(b.name)
-            : b.name.compareTo(a.name)))
+        ? ([...pendingRaw]..sort(
+            (a, b) => _simpleDir == SortDir.asc
+                ? a.name.compareTo(b.name)
+                : b.name.compareTo(a.name),
+          ))
         : pendingRaw;
     final done = visible.where((i) => i.checked).toList();
 
@@ -45,7 +48,11 @@ extension _SimpleModeState on _ListScreenState {
                   HapticFeedback.lightImpact();
                   widget.onToggleSimple(item.id);
                 },
-                onDelete: () => _handleSwipeDelete(id: item.id, label: l.data(item.name), realDelete: () => widget.onDeleteSimple(item.id)),
+                onDelete: () => _handleSwipeDelete(
+                  id: item.id,
+                  label: l.data(item.name),
+                  realDelete: () => widget.onDeleteSimple(item.id),
+                ),
                 onLongPress: () => _showRenameSheet(item, false),
                 showDragHandle: true,
                 batchMode: _simpleBatchMode,
@@ -93,22 +100,28 @@ extension _SimpleModeState on _ListScreenState {
                   topPad: 18,
                   trailing: pending.isEmpty ? _buildSummaryTrailing() : null,
                 ),
-                ...done.map((item) => _SimpleRow(
-                      key: Key('d_${item.id}'),
-                      item: item,
-                      onToggle: () {
-                  HapticFeedback.lightImpact();
-                  widget.onToggleSimple(item.id);
-                },
-                      onDelete: () => _handleSwipeDelete(id: item.id, label: l.data(item.name), realDelete: () => widget.onDeleteSimple(item.id)),
-                      onLongPress: () => _showRenameSheet(item, false),
-                      batchMode: _simpleBatchMode,
-                      selected: _simpleSelected.contains(item.id),
-                      onSelect: () => _toggleSimpleSelection(item.id),
-                      onHandleTap: _simpleBatchMode
-                          ? () => _toggleSimpleSelection(item.id)
-                          : () => _enterSimpleBatchWithItem(item.id),
-                    )),
+                ...done.map(
+                  (item) => _SimpleRow(
+                    key: Key('d_${item.id}'),
+                    item: item,
+                    onToggle: () {
+                      HapticFeedback.lightImpact();
+                      widget.onToggleSimple(item.id);
+                    },
+                    onDelete: () => _handleSwipeDelete(
+                      id: item.id,
+                      label: l.data(item.name),
+                      realDelete: () => widget.onDeleteSimple(item.id),
+                    ),
+                    onLongPress: () => _showRenameSheet(item, false),
+                    batchMode: _simpleBatchMode,
+                    selected: _simpleSelected.contains(item.id),
+                    onSelect: () => _toggleSimpleSelection(item.id),
+                    onHandleTap: _simpleBatchMode
+                        ? () => _toggleSimpleSelection(item.id)
+                        : () => _enterSimpleBatchWithItem(item.id),
+                  ),
+                ),
               ]),
             ),
           ),
@@ -209,7 +222,9 @@ class _SimpleRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dismissible(
       key: Key('simple_${item.id}'),
-      direction: batchMode ? DismissDirection.none : DismissDirection.endToStart,
+      direction: batchMode
+          ? DismissDirection.none
+          : DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 18),
@@ -218,71 +233,75 @@ class _SimpleRow extends StatelessWidget {
           color: AppColors.danger,
           borderRadius: BorderRadius.circular(14),
         ),
-        child: const Icon(Icons.delete_outline_rounded,
-            color: Colors.white, size: 22),
+        child: const Icon(
+          Icons.delete_outline_rounded,
+          color: Colors.white,
+          size: 22,
+        ),
       ),
       onDismissed: (_) => onDelete(),
       child: Container(
-          margin: const EdgeInsets.only(bottom: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.divider),
-            boxShadow: const [
-              BoxShadow(
-                color: AppColors.shadow,
-                blurRadius: 8,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: batchMode ? onSelect : onToggle,
-                  onLongPress: batchMode ? null : onLongPress,
-                  child: Row(
-                    children: [
-                      if (batchMode) ...[
-                        _SelectCircle(selected: selected),
-                        const SizedBox(width: 14),
-                      ] else ...[
-                        _Checkbox(checked: item.checked),
-                        const SizedBox(width: 14),
-                      ],
-                      Expanded(
-                        child: Text(
-                          item.name,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: item.checked
-                                ? AppColors.textDisabled
-                                : AppColors.textPrimary,
-                            decoration:
-                                item.checked ? TextDecoration.lineThrough : null,
-                            decorationColor: AppColors.textDisabled,
-                          ),
+        margin: const EdgeInsets.only(bottom: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.divider),
+          boxShadow: const [
+            BoxShadow(
+              color: AppColors.shadow,
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: batchMode ? onSelect : onToggle,
+                onLongPress: batchMode ? null : onLongPress,
+                child: Row(
+                  children: [
+                    if (batchMode) ...[
+                      _SelectCircle(selected: selected),
+                      const SizedBox(width: 14),
+                    ] else ...[
+                      _Checkbox(checked: item.checked),
+                      const SizedBox(width: 14),
+                    ],
+                    Expanded(
+                      child: Text(
+                        item.name,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: item.checked
+                              ? AppColors.textDisabled
+                              : AppColors.textPrimary,
+                          decoration: item.checked
+                              ? TextDecoration.lineThrough
+                              : null,
+                          decorationColor: AppColors.textDisabled,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-              if (showDragHandle && !item.checked && reorderIndex != null) ...[
-                ReorderableDragStartListener(
-                  index: reorderIndex!,
-                  child: const SizedBox(width: 12, height: 44),
-                ),
-                DragHandle(index: reorderIndex, onTap: onHandleTap),
-              ] else if (onHandleTap != null)
-                DragHandle(onTap: onHandleTap),
-            ],
-          ),
+            ),
+            if (showDragHandle && !item.checked && reorderIndex != null) ...[
+              ReorderableDragStartListener(
+                index: reorderIndex!,
+                child: const SizedBox(width: 12, height: 44),
+              ),
+              DragHandle(index: reorderIndex, onTap: onHandleTap),
+            ] else if (onHandleTap != null)
+              DragHandle(onTap: onHandleTap),
+          ],
         ),
+      ),
     );
   }
 }

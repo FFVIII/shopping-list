@@ -54,7 +54,6 @@ class InventoryScreen extends StatefulWidget {
   final void Function(InventoryItem item) onAddToShoppingList;
   final void Function(
     String movedId,
-    String? newZone,
     Category? newCategory,
     List<String> orderedIds,
     String? newShelfCode,
@@ -66,7 +65,6 @@ class InventoryScreen extends StatefulWidget {
     String quantityLabel,
     String? shelfCode,
     Category category,
-    String shelfZone,
   )
   onEdit;
   final void Function(List<String> ids) onBatchDelete;
@@ -74,12 +72,7 @@ class InventoryScreen extends StatefulWidget {
   // Custom shelf-code ordering from the Shelf Order screen. Used to sort
   // "by aisle" groups; empty = fall back to alphabetical.
   final List<String> shelfCodeOrder;
-  final Category Function(
-    String name,
-    Color color,
-    String shelfZone,
-    int defaultDays,
-  )
+  final Category Function(String name, Color color, int defaultDays)
   onAddCategory;
 
   const InventoryScreen({
@@ -154,7 +147,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
         .where(
           (i) =>
               i.name.contains(q) ||
-              i.shelfZone.contains(q) ||
+              (i.shelfCode?.toLowerCase().contains(q) ?? false) ||
               i.category.name.contains(q),
         )
         .toList();
@@ -284,7 +277,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
         draft.quantity.trim(),
         shelf.isEmpty ? null : shelf,
         draft.category,
-        draft.zone,
       );
     }
 

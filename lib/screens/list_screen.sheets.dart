@@ -175,19 +175,13 @@ class _SmartAddSheet extends StatefulWidget {
   final List<String> shelfCodeOrder;
   final void Function(
     Category category,
-    String zone,
     String quantityLabel,
     String? shelfCode,
     int estimatedDays,
     double? unitPrice,
   )
   onConfirm;
-  final Category Function(
-    String name,
-    Color color,
-    String shelfZone,
-    int defaultDays,
-  )
+  final Category Function(String name, Color color, int defaultDays)
   onAddCategory;
 
   const _SmartAddSheet({
@@ -204,7 +198,6 @@ class _SmartAddSheet extends StatefulWidget {
 
 class _SmartAddSheetState extends State<_SmartAddSheet> {
   late Category _selectedCategory;
-  late String _selectedZone;
   late final TextEditingController _qtyCtrl;
   late final TextEditingController _shelfCtrl;
   late int _days;
@@ -213,7 +206,6 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
   void initState() {
     super.initState();
     _selectedCategory = widget.categories.first;
-    _selectedZone = _selectedCategory.shelfZone;
     _days = _selectedCategory.defaultDays;
     _qtyCtrl = TextEditingController();
     _shelfCtrl = TextEditingController();
@@ -322,7 +314,6 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
               onAddCategory: widget.onAddCategory,
               onSelect: (cat) => setState(() {
                 _selectedCategory = cat;
-                _selectedZone = cat.shelfZone;
                 _days = cat.defaultDays;
               }),
             ),
@@ -369,7 +360,6 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
                   Navigator.pop(context);
                   widget.onConfirm(
                     _selectedCategory,
-                    _selectedZone,
                     _qtyCtrl.text.trim(),
                     shelf.isEmpty ? null : shelf,
                     _days,
@@ -402,16 +392,10 @@ class _EditSmartSheet extends StatefulWidget {
     String quantityLabel,
     String? shelfCode,
     Category category,
-    String shelfZone,
     double? unitPrice,
   )
   onConfirm;
-  final Category Function(
-    String name,
-    Color color,
-    String shelfZone,
-    int defaultDays,
-  )
+  final Category Function(String name, Color color, int defaultDays)
   onAddCategory;
   final List<String> shelfCodeOrder;
 
@@ -433,7 +417,6 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
   late final TextEditingController _shelfCtrl;
   late final TextEditingController _priceCtrl;
   late Category _category;
-  late String _zone;
 
   // See lib/l10n/canonical_edit.dart: seeded items store canonical Chinese
   // text, so the fields are pre-filled with the translated display text and
@@ -455,7 +438,6 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
           : _trimNum(widget.item.unitPrice!),
     );
     _category = widget.item.category;
-    _zone = widget.item.shelfZone;
   }
 
   static String _trimNum(double v) =>
@@ -506,14 +488,7 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
     );
     final price = double.tryParse(_priceCtrl.text.trim());
     Navigator.pop(context);
-    widget.onConfirm(
-      name,
-      qty,
-      shelf.isEmpty ? null : shelf,
-      _category,
-      _zone,
-      price,
-    );
+    widget.onConfirm(name, qty, shelf.isEmpty ? null : shelf, _category, price);
   }
 
   Widget _label(String text) => Padding(
@@ -563,7 +538,6 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
                       onAddCategory: widget.onAddCategory,
                       onChanged: (cat) => setState(() {
                         _category = cat;
-                        _zone = cat.shelfZone;
                       }),
                     ),
                   ),

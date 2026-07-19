@@ -162,8 +162,11 @@ class _SegmentBtn extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _SegmentBtn(
-      {required this.label, required this.selected, required this.onTap});
+  const _SegmentBtn({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -179,8 +182,7 @@ class _SegmentBtn extends StatelessWidget {
               curve: Curves.easeOut,
               style: TextStyle(
                 fontSize: 13,
-                fontWeight:
-                    selected ? FontWeight.w600 : FontWeight.normal,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
                 color: selected
                     ? AppColors.textPrimary
                     : const Color(0xFF8A8A8A),
@@ -246,15 +248,20 @@ class _TextToggleBtn extends StatelessWidget {
   final VoidCallback onTap;
   final SortDir? direction;
 
-  const _TextToggleBtn(
-      {required this.label,
-      required this.selected,
-      required this.onTap,
-      this.direction});
+  const _TextToggleBtn({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.direction,
+  });
 
   @override
   Widget build(BuildContext context) => SortToggleButton(
-      label: label, selected: selected, onTap: onTap, direction: direction);
+    label: label,
+    selected: selected,
+    onTap: onTap,
+    direction: direction,
+  );
 }
 
 // ── Rename Sheet ──────────────────────────────────────────────────────────────
@@ -336,10 +343,14 @@ class _RenameSheetState extends State<_RenameSheet> {
                 borderSide: BorderSide.none,
               ),
               contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14, vertical: 12),
+                horizontal: 14,
+                vertical: 12,
+              ),
               isDense: true,
               counterStyle: const TextStyle(
-                  fontSize: 10, color: AppColors.textDisabled),
+                fontSize: 10,
+                color: AppColors.textDisabled,
+              ),
             ),
             onSubmitted: (_) => _confirm(),
           ),
@@ -349,15 +360,15 @@ class _RenameSheetState extends State<_RenameSheet> {
               backgroundColor: AppColors.brand,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14)),
+                borderRadius: BorderRadius.circular(14),
+              ),
               elevation: 0,
               minimumSize: const Size(double.infinity, 48),
             ),
             onPressed: _confirm,
             child: Text(
               l.confirmEdit,
-              style: const TextStyle(
-                  fontSize: 15, fontWeight: FontWeight.w600),
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             ),
           ),
         ],

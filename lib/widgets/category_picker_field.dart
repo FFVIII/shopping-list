@@ -14,9 +14,8 @@ class CategoryPickerField extends StatelessWidget {
   final List<Category> categories;
   final Category selected;
   final ValueChanged<Category> onChanged;
-  final Category Function(
-      String name, Color color, String shelfZone, int defaultDays)
-      onAddCategory;
+  final Category Function(String name, Color color, int defaultDays)
+  onAddCategory;
 
   const CategoryPickerField({
     super.key,
@@ -69,8 +68,11 @@ class CategoryPickerField extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.expand_more_rounded,
-                size: 16, color: Colors.white),
+            const Icon(
+              Icons.expand_more_rounded,
+              size: 16,
+              color: Colors.white,
+            ),
           ],
         ),
       ),
@@ -81,9 +83,8 @@ class CategoryPickerField extends StatelessWidget {
 class _CategoryPickerSheet extends StatefulWidget {
   final List<Category> categories;
   final Category selected;
-  final Category Function(
-      String name, Color color, String shelfZone, int defaultDays)
-      onAddCategory;
+  final Category Function(String name, Color color, int defaultDays)
+  onAddCategory;
 
   const _CategoryPickerSheet({
     required this.categories,
@@ -114,13 +115,7 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
       context,
       existingNames: _categories.map((c) => c.name).toList(),
       onSubmit: (name, color) {
-        // Quick-add doesn't ask for a shelf zone, so borrow the curated
-        // "other" category's zone rather than an arbitrary list position —
-        // deterministic regardless of category ordering.
-        final zone = _categories.isNotEmpty
-            ? _categories.fallback.shelfZone
-            : widget.selected.shelfZone;
-        final cat = widget.onAddCategory(name, color, zone, 7);
+        final cat = widget.onAddCategory(name, color, 7);
         setState(() {
           _categories = [..._categories, cat];
           _index = _categories.length - 1;
@@ -148,32 +143,44 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
               children: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text(l.cancel,
-                      style: const TextStyle(
-                          fontSize: 17, color: AppColors.textMuted)),
-                ),
-                Text(l.categoryLabel,
+                  child: Text(
+                    l.cancel,
                     style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary)),
+                      fontSize: 17,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ),
+                Text(
+                  l.categoryLabel,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
                       onPressed: _addCategory,
                       visualDensity: VisualDensity.compact,
-                      icon: const Icon(Icons.add_rounded,
-                          color: AppColors.textSecondary),
+                      icon: const Icon(
+                        Icons.add_rounded,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                     TextButton(
                       onPressed: () =>
                           Navigator.pop(context, _categories[_index]),
-                      child: Text(l.save,
-                          style: const TextStyle(
-                              fontSize: 17,
-                              color: AppColors.brand,
-                              fontWeight: FontWeight.w600)),
+                      child: Text(
+                        l.save,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          color: AppColors.brand,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -187,35 +194,38 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
               itemExtent: 40,
               onSelectedItemChanged: (i) => _index = i,
               children: _categories
-                  .map((cat) => Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 10,
-                                height: 10,
-                                decoration: BoxDecoration(
-                                  color: cat.color,
-                                  shape: BoxShape.circle,
+                  .map(
+                    (cat) => Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: cat.color,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                l.data(cat.name),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 19,
+                                  color: AppColors.textPrimary,
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: Text(
-                                  l.data(cat.name),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                      fontSize: 19,
-                                      color: AppColors.textPrimary),
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ))
+                      ),
+                    ),
+                  )
                   .toList(),
             ),
           ),

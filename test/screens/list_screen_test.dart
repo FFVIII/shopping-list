@@ -19,7 +19,6 @@ Category _category(String id) => Category(
   name: id,
   color: const Color(0xFF000000),
   bgColor: const Color(0xFFFFFFFF),
-  shelfZone: '其他',
   defaultDays: 7,
 );
 
@@ -29,7 +28,6 @@ ShoppingItem _simple(String id, String name, {bool checked = false}) =>
       name: name,
       category: _category('other'),
       quantityLabel: '1',
-      shelfZone: '其他',
       checked: checked,
     );
 
@@ -39,7 +37,6 @@ ShoppingItem _smart(String id, String name, {String? shelfCode}) =>
       name: name,
       category: _category('other'),
       quantityLabel: '1',
-      shelfZone: '其他',
       shelfCode: shelfCode,
       estimatedDays: 7,
     );
@@ -64,8 +61,7 @@ Future<void> _pumpList(
   void Function(List<String> ids)? onCompleteSmart,
   void Function(List<BudgetItem> snapshot)? onRecordBudgetPurchase,
   void Function(List<String> ids)? onBatchDeleteBudget,
-  void Function(String, String?, Category?, List<String>, String?)?
-  onReorderSmart,
+  void Function(String, Category?, List<String>, String?)? onReorderSmart,
   TextScaler textScaler = TextScaler.noScaling,
 }) async {
   tester.view.physicalSize = const Size(1290, 2796);
@@ -87,15 +83,15 @@ Future<void> _pumpList(
             onToggleSimple: onToggleSimple ?? (_) {},
             onToggleSmart: onToggleSmart ?? (_) {},
             onAddSimple: onAddSimple ?? (_) {},
-            onAddSmart: (_, _, _, _, _, _, {unitPrice}) {},
+            onAddSmart: (_, _, _, _, _, {unitPrice}) {},
             onDeleteSimple: (_) {},
             onDeleteSmart: (_) {},
             onCompleteSimple: onCompleteSimple ?? () {},
             onCompleteSmart: onCompleteSmart ?? (_) {},
             onReorderSimple: (_) {},
-            onReorderSmart: onReorderSmart ?? (_, _, _, _, _) {},
+            onReorderSmart: onReorderSmart ?? (_, _, _, _) {},
             onRenameSimple: (_, _) {},
-            onEditSmart: (_, _, _, _, _, _, {unitPrice}) {},
+            onEditSmart: (_, _, _, _, _, {unitPrice}) {},
             budgetItems: budgetItems,
             onAddBudget: (_, _, _) {},
             onEditBudget: (_, _, _, _) {},
@@ -107,7 +103,7 @@ Future<void> _pumpList(
             onBatchDeleteBudget: onBatchDeleteBudget ?? (_) {},
             smartModeRequest: 0,
             shelfCodeOrder: const [],
-            onAddCategory: (_, _, _, _) => _category('new'),
+            onAddCategory: (_, _, _) => _category('new'),
           ),
         ),
       ),
@@ -320,8 +316,9 @@ void main() {
       // Now Add completes the trip using exactly what Save committed (just a).
       await tester.tap(find.text(ZhStrings().addToInventoryButton));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(
-          ElevatedButton, ZhStrings().addToInventoryButton));
+      await tester.tap(
+        find.widgetWithText(ElevatedButton, ZhStrings().addToInventoryButton),
+      );
       await tester.pump();
 
       expect(completedIds, ['a']);
@@ -331,7 +328,8 @@ void main() {
 
   testWidgets(
     'deselecting an item in batch mode survives exiting and re-entering '
-    'batch mode', (tester) async {
+    'batch mode',
+    (tester) async {
       // Regression test: _enterSmartBatchWithItem used to unconditionally
       // reset _smartSelected to "everything selected" every time batch mode
       // was entered, silently reselecting anything the user had deselected
@@ -381,37 +379,38 @@ void main() {
   });
 
   testWidgets(
-      'confirming Clear Budget records the snapshot before batch-deleting',
-      (tester) async {
-    final recorded = <BudgetItem>[];
-    final deletedIds = <String>[];
-    final calls = <String>[];
-    await _pumpList(
-      tester,
-      budgetItems: [_budget('b1', '牛奶')],
-      onRecordBudgetPurchase: (items) {
-        calls.add('record');
-        recorded.addAll(items);
-      },
-      onBatchDeleteBudget: (ids) {
-        calls.add('delete');
-        deletedIds.addAll(ids);
-      },
-    );
+    'confirming Clear Budget records the snapshot before batch-deleting',
+    (tester) async {
+      final recorded = <BudgetItem>[];
+      final deletedIds = <String>[];
+      final calls = <String>[];
+      await _pumpList(
+        tester,
+        budgetItems: [_budget('b1', '牛奶')],
+        onRecordBudgetPurchase: (items) {
+          calls.add('record');
+          recorded.addAll(items);
+        },
+        onBatchDeleteBudget: (ids) {
+          calls.add('delete');
+          deletedIds.addAll(ids);
+        },
+      );
 
-    // Switch to budget mode and trigger the clear-budget confirm dialog.
-    await tester.tap(find.text(ZhStrings().budgetMode));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(ZhStrings().clearBudget));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(ZhStrings().delete));
-    await tester.pumpAndSettle();
+      // Switch to budget mode and trigger the clear-budget confirm dialog.
+      await tester.tap(find.text(ZhStrings().budgetMode));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(ZhStrings().clearBudget));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(ZhStrings().delete));
+      await tester.pumpAndSettle();
 
-    expect(calls, ['record', 'delete']);
+      expect(calls, ['record', 'delete']);
 
-    expect(recorded.single.id, 'b1');
-    expect(deletedIds, ['b1']);
-  });
+      expect(recorded.single.id, 'b1');
+      expect(deletedIds, ['b1']);
+    },
+  );
 
   // Regression test for the Pro-gating fix in `main.dart`: the "Spending
   // History" *viewer* on the Settings screen is Pro-gated
@@ -433,39 +432,41 @@ void main() {
   // real gating logic without needing the full `main.dart` app tree (which
   // pulls in Hive, platform channels, and the first-run tutorial overlay).
   testWidgets(
-      'free user (isPro == false): clearing Budget does not record history',
-      (tester) async {
-    final purchaseService = PurchaseService();
-    expect(purchaseService.isPro, isFalse);
-    final recorded = <BudgetItem>[];
-    final deletedIds = <String>[];
+    'free user (isPro == false): clearing Budget does not record history',
+    (tester) async {
+      final purchaseService = PurchaseService();
+      expect(purchaseService.isPro, isFalse);
+      final recorded = <BudgetItem>[];
+      final deletedIds = <String>[];
 
-    await _pumpList(
-      tester,
-      budgetItems: [_budget('b1', '牛奶')],
-      onRecordBudgetPurchase: (snapshot) {
-        if (purchaseService.isPro) {
-          recorded.addAll(snapshot);
-        }
-      },
-      onBatchDeleteBudget: (ids) => deletedIds.addAll(ids),
-    );
+      await _pumpList(
+        tester,
+        budgetItems: [_budget('b1', '牛奶')],
+        onRecordBudgetPurchase: (snapshot) {
+          if (purchaseService.isPro) {
+            recorded.addAll(snapshot);
+          }
+        },
+        onBatchDeleteBudget: (ids) => deletedIds.addAll(ids),
+      );
 
-    await tester.tap(find.text(ZhStrings().budgetMode));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(ZhStrings().clearBudget));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(ZhStrings().delete));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text(ZhStrings().budgetMode));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(ZhStrings().clearBudget));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(ZhStrings().delete));
+      await tester.pumpAndSettle();
 
-    // The clear itself still happens (batch-delete is not Pro-gated)...
-    expect(deletedIds, ['b1']);
-    // ...but nothing was recorded to history for the free user.
-    expect(recorded, isEmpty);
-  });
+      // The clear itself still happens (batch-delete is not Pro-gated)...
+      expect(deletedIds, ['b1']);
+      // ...but nothing was recorded to history for the free user.
+      expect(recorded, isEmpty);
+    },
+  );
 
-  testWidgets('Pro user (isPro == true): clearing Budget records history',
-      (tester) async {
+  testWidgets('Pro user (isPro == true): clearing Budget records history', (
+    tester,
+  ) async {
     final purchaseService = PurchaseService()..isPro = true;
     final recorded = <BudgetItem>[];
 
@@ -523,12 +524,9 @@ void main() {
       // makes them split the whole row 50/50 instead of "title takes what's
       // left after the pill's own natural width" — the pill ends up stuck
       // around the row's midpoint instead of hugging the right edge.
-      await _pumpList(
-          tester, simpleItems: [_simple('a', '牛奶', checked: true)]);
+      await _pumpList(tester, simpleItems: [_simple('a', '牛奶', checked: true)]);
 
-      final screenWidth = tester
-          .getTopRight(find.byType(MaterialApp))
-          .dx;
+      final screenWidth = tester.getTopRight(find.byType(MaterialApp)).dx;
       final pillRight = tester.getTopRight(find.text('清空')).dx;
 
       expect(pillRight, greaterThan(screenWidth * 0.7));
@@ -568,31 +566,29 @@ void main() {
     },
   );
 
-  testWidgets(
-    'completing a smart-mode trip calls onCompleteSmart and shows a '
-    'confirmation toast',
-    (tester) async {
-      List<String>? completedIds;
-      await _pumpList(
-        tester,
-        smartItems: [_smart('a', '牛奶')],
-        onCompleteSmart: (ids) => completedIds = ids,
-      );
+  testWidgets('completing a smart-mode trip calls onCompleteSmart and shows a '
+      'confirmation toast', (tester) async {
+    List<String>? completedIds;
+    await _pumpList(
+      tester,
+      smartItems: [_smart('a', '牛奶')],
+      onCompleteSmart: (ids) => completedIds = ids,
+    );
 
-      await tester.tap(find.text('计划'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text(ZhStrings().addToInventoryButton));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(
-          ElevatedButton, ZhStrings().addToInventoryButton));
-      await tester.pump();
+    await tester.tap(find.text('计划'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(ZhStrings().addToInventoryButton));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.widgetWithText(ElevatedButton, ZhStrings().addToInventoryButton),
+    );
+    await tester.pump();
 
-      expect(completedIds, ['a']);
-      expect(find.text(ZhStrings().addedToInventoryCelebration), findsOneWidget);
-      // The toast has its own dismiss Timer — let it fire before teardown.
-      await tester.pump(const Duration(milliseconds: 1600));
-    },
-  );
+    expect(completedIds, ['a']);
+    expect(find.text(ZhStrings().addedToInventoryCelebration), findsOneWidget);
+    // The toast has its own dismiss Timer — let it fire before teardown.
+    await tester.pump(const Duration(milliseconds: 1600));
+  });
 
   testWidgets(
     'Plan "N left" tracks how many items are selected, not how many exist',
@@ -634,7 +630,7 @@ void main() {
           _smart('a', '牛奶', shelfCode: 'A1'),
           _smart('b', '鸡蛋', shelfCode: 'B2'),
         ],
-        onReorderSmart: (id, zone, cat, ids, code) => movedCode = code,
+        onReorderSmart: (id, cat, ids, code) => movedCode = code,
       );
       await tester.tap(find.text('计划'));
       await tester.pumpAndSettle();
@@ -650,8 +646,10 @@ void main() {
 
       // The aisle-will-vanish warning must appear, and declining it must not
       // push the move through to the parent.
-      expect(find.text(ZhStrings().shelfGroupWillDisappearTitle),
-          findsOneWidget);
+      expect(
+        find.text(ZhStrings().shelfGroupWillDisappearTitle),
+        findsOneWidget,
+      );
       await tester.tap(find.text(ZhStrings().cancel));
       await tester.pumpAndSettle();
       expect(movedCode, isNull);
@@ -660,7 +658,8 @@ void main() {
 
   testWidgets(
     'unchecking an item on the Plan list before tapping Add keeps it out of '
-    'the trip', (tester) async {
+    'the trip',
+    (tester) async {
       // Regression test: _confirmCompleteTrip used to unconditionally
       // re-add every item id to _tripSelected right before opening the
       // confirm sheet, silently re-selecting anything the user had just
@@ -681,8 +680,9 @@ void main() {
 
       await tester.tap(find.text(ZhStrings().addToInventoryButton));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(
-          ElevatedButton, ZhStrings().addToInventoryButton));
+      await tester.tap(
+        find.widgetWithText(ElevatedButton, ZhStrings().addToInventoryButton),
+      );
       await tester.pump();
 
       expect(completedIds, ['b']);
@@ -693,7 +693,8 @@ void main() {
 
   testWidgets(
     'a deselected item stays unchecked after a sibling item is purchased '
-    'and the list rebuilds', (tester) async {
+    'and the list rebuilds',
+    (tester) async {
       // Regression test: after confirming a trip, the code used to collapse
       // _tripSelected down to just the purchased ids. Once the parent
       // rebuilt with those items removed, didUpdateWidget's "any id present
@@ -726,7 +727,8 @@ void main() {
 
   testWidgets(
     'the add-to-inventory sheet stays on screen and its Save button is '
-    'reachable with many items', (tester) async {
+    'reachable with many items',
+    (tester) async {
       // Regression test: with enough items the sheet's content used to grow
       // taller than the screen with nothing capping it, pushing the header
       // off the top and leaving no way to scroll down to the Save button.
@@ -738,8 +740,7 @@ void main() {
       await tester.tap(find.text(ZhStrings().addToInventoryButton));
       await tester.pumpAndSettle();
 
-      final screenHeight =
-          tester.getBottomRight(find.byType(MaterialApp)).dy;
+      final screenHeight = tester.getBottomRight(find.byType(MaterialApp)).dy;
       final titleTop = tester
           .getTopLeft(find.text(ZhStrings().addToInventoryButton).last)
           .dy;
@@ -747,7 +748,9 @@ void main() {
       expect(titleTop, greaterThanOrEqualTo(0));
 
       final saveButton = find.widgetWithText(
-          ElevatedButton, ZhStrings().addToInventoryButton);
+        ElevatedButton,
+        ZhStrings().addToInventoryButton,
+      );
       final buttonBottom = tester.getBottomRight(saveButton).dy;
       // The Save button must be within the visible screen, not off the
       // bottom edge.
@@ -755,7 +758,10 @@ void main() {
 
       await tester.tap(saveButton);
       await tester.pump();
-      expect(find.text(ZhStrings().addedToInventoryCelebration), findsOneWidget);
+      expect(
+        find.text(ZhStrings().addedToInventoryCelebration),
+        findsOneWidget,
+      );
       // The toast has its own dismiss Timer — let it fire before teardown.
       await tester.pump(const Duration(milliseconds: 1600));
     },
@@ -765,7 +771,8 @@ void main() {
 
   testWidgets(
     'opening the add-expense sheet after typing a name focuses price, not '
-    'quantity', (tester) async {
+    'quantity',
+    (tester) async {
       await _pumpList(tester);
 
       await tester.tap(find.text('记账'));
@@ -775,8 +782,9 @@ void main() {
       await tester.tap(find.byIcon(Icons.add_rounded));
       await tester.pumpAndSettle();
 
-      final focused = tester.widgetList<TextField>(find.byType(TextField)).where(
-          (w) => w.focusNode?.hasFocus ?? false);
+      final focused = tester
+          .widgetList<TextField>(find.byType(TextField))
+          .where((w) => w.focusNode?.hasFocus ?? false);
       expect(focused, hasLength(1));
       expect(focused.single.decoration?.hintText, ZhStrings().currencySymbol);
     },

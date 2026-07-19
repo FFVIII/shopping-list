@@ -27,9 +27,11 @@ class InventoryNotifier extends ChangeNotifier {
 
   void persistItems() {
     notifyListeners();
-    unawaited(_repo
-        .saveInventory(items)
-        .catchError((e) => debugPrint('save inventory failed: $e')));
+    unawaited(
+      _repo
+          .saveInventory(items)
+          .catchError((e) => debugPrint('save inventory failed: $e')),
+    );
     afterPersist?.call();
   }
 
@@ -61,24 +63,31 @@ class InventoryNotifier extends ChangeNotifier {
     persistItems();
   }
 
-  void editItem(String id, String name, String quantityLabel,
-      String? shelfCode, Category category, String shelfZone) {
+  void editItem(
+    String id,
+    String name,
+    String quantityLabel,
+    String? shelfCode,
+    Category category,
+  ) {
     final idx = items.indexWhere((i) => i.id == id);
     if (idx == -1) return;
     items[idx]
       ..name = name
       ..quantityLabel = quantityLabel
       ..shelfCode = shelfCode
-      ..category = category
-      ..shelfZone = shelfZone;
+      ..category = category;
     persistItems();
   }
 
-  void reorder(String movedId, String? newZone, Category? newCategory,
-      List<String> orderedIds, String? newShelfCode) {
+  void reorder(
+    String movedId,
+    Category? newCategory,
+    List<String> orderedIds,
+    String? newShelfCode,
+  ) {
     final idx = items.indexWhere((i) => i.id == movedId);
     if (idx != -1) {
-      if (newZone != null) items[idx].shelfZone = newZone;
       if (newCategory != null) items[idx].category = newCategory;
       if (newShelfCode != null) {
         items[idx].shelfCode = newShelfCode.isEmpty ? null : newShelfCode;

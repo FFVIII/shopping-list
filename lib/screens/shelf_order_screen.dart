@@ -50,8 +50,9 @@ class _ShelfOrderScreenState extends State<ShelfOrderScreen> {
   List<String> get _displayCodes {
     if (_sortDir == null) return _codes;
     final sorted = [..._codes];
-    sorted.sort((a, b) =>
-        _sortDir == SortDir.asc ? a.compareTo(b) : b.compareTo(a));
+    sorted.sort(
+      (a, b) => _sortDir == SortDir.asc ? a.compareTo(b) : b.compareTo(a),
+    );
     return sorted;
   }
 
@@ -190,11 +191,13 @@ class _ShelfOrderScreenState extends State<ShelfOrderScreen> {
             )
           else ...[
             IconButton(
-              onPressed: () => setState(() => _sortDir = _sortDir == null
-                  ? SortDir.asc
-                  : _sortDir == SortDir.asc
-                      ? SortDir.desc
-                      : null),
+              onPressed: () => setState(
+                () => _sortDir = _sortDir == null
+                    ? SortDir.asc
+                    : _sortDir == SortDir.asc
+                    ? SortDir.desc
+                    : null,
+              ),
               icon: Icon(
                 Icons.sort_rounded,
                 color: _sortDir != null ? AppColors.brand : AppColors.textMuted,
@@ -202,8 +205,8 @@ class _ShelfOrderScreenState extends State<ShelfOrderScreen> {
               tooltip: _sortDir == SortDir.asc
                   ? 'A→Z'
                   : _sortDir == SortDir.desc
-                      ? 'Z→A'
-                      : l.shelfOrder,
+                  ? 'Z→A'
+                  : l.shelfOrder,
             ),
             IconButton(
               onPressed: _openAdd,
@@ -222,7 +225,9 @@ class _ShelfOrderScreenState extends State<ShelfOrderScreen> {
                       child: Text(
                         l.noShelfCodes,
                         style: const TextStyle(
-                            color: AppColors.textMuted, fontSize: 14),
+                          color: AppColors.textMuted,
+                          fontSize: 14,
+                        ),
                       ),
                     )
                   : ReorderableListView.builder(
@@ -258,22 +263,23 @@ class _ShelfOrderScreenState extends State<ShelfOrderScreen> {
                             borderRadius: BorderRadius.circular(14),
                             onTap: _batchMode
                                 ? () => setState(() {
-                                      if (isSelected) {
-                                        _selected.remove(code);
-                                      } else {
-                                        _selected.add(code);
-                                      }
-                                    })
+                                    if (isSelected) {
+                                      _selected.remove(code);
+                                    } else {
+                                      _selected.add(code);
+                                    }
+                                  })
                                 : () => _openRename(code),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 14),
+                                horizontal: 16,
+                                vertical: 14,
+                              ),
                               child: Row(
                                 children: [
                                   if (_batchMode)
                                     Padding(
-                                      padding:
-                                          const EdgeInsets.only(right: 10),
+                                      padding: const EdgeInsets.only(right: 10),
                                       child: Icon(
                                         isSelected
                                             ? Icons.check_circle_rounded
@@ -395,8 +401,10 @@ class _RenameShelfCodeSheetState extends State<_RenameShelfCodeSheet> {
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
+              ),
               isDense: true,
             ),
             onSubmitted: (_) => _submit(),
@@ -407,15 +415,15 @@ class _RenameShelfCodeSheetState extends State<_RenameShelfCodeSheet> {
               backgroundColor: AppColors.brand,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14)),
+                borderRadius: BorderRadius.circular(14),
+              ),
               elevation: 0,
               minimumSize: const Size(double.infinity, 48),
             ),
             onPressed: _submit,
             child: Text(
               l.rename,
-              style: const TextStyle(
-                  fontSize: 15, fontWeight: FontWeight.w600),
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -488,8 +496,10 @@ class _AddShelfCodeSheetState extends State<_AddShelfCodeSheet> {
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
+              ),
               isDense: true,
             ),
             onSubmitted: (_) => _submit(),
@@ -500,15 +510,15 @@ class _AddShelfCodeSheetState extends State<_AddShelfCodeSheet> {
               backgroundColor: AppColors.brand,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14)),
+                borderRadius: BorderRadius.circular(14),
+              ),
               elevation: 0,
               minimumSize: const Size(double.infinity, 48),
             ),
             onPressed: _submit,
             child: Text(
               l.addShelfCodeTitle,
-              style: const TextStyle(
-                  fontSize: 15, fontWeight: FontWeight.w600),
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             ),
           ),
         ],

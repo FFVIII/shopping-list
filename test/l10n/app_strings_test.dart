@@ -21,7 +21,7 @@ void main() {
   test('default categories carry plain-text names (no l10n)', () {
     final cats = buildDefaultCategories();
     final produce = cats.findById('produce')!;
-    expect(produce.name, '果蔬');
+    expect(produce.name, '蔬菜');
     expect(cats.fallback.id, 'other');
   });
 
@@ -30,14 +30,16 @@ void main() {
     expect(en.stockStatus(StockStatus.low), 'Low');
   });
 
-  test('data() translates known canonical tokens in en, passes through unknown',
-      () {
-    expect(en.data('果蔬区'), 'Produce');
-    expect(en.data('香蕉'), 'Banana');
-    expect(en.data('自定义商品'), '自定义商品'); // unknown user input passes through
-    expect(zh.data('果蔬区'), '果蔬区'); // zh is always passthrough
-    expect(zh.data('香蕉'), '香蕉');
-  });
+  test(
+    'data() translates known canonical tokens in en, passes through unknown',
+    () {
+      expect(en.data('果蔬区'), 'Produce');
+      expect(en.data('香蕉'), 'Banana');
+      expect(en.data('自定义商品'), '自定义商品'); // unknown user input passes through
+      expect(zh.data('果蔬区'), '果蔬区'); // zh is always passthrough
+      expect(zh.data('香蕉'), '香蕉');
+    },
+  );
 
   test('data() translates the generic default quantity label', () {
     // Regression test: '1件' is the app's own fallback quantity label

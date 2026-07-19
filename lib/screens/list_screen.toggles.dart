@@ -129,8 +129,8 @@ extension _ListToggles on _ListScreenState {
   SortDir? _cycleDir(SortDir? current) => current == null
       ? SortDir.asc
       : current == SortDir.asc
-          ? SortDir.desc
-          : null;
+      ? SortDir.desc
+      : null;
 
   // Cycle a multi-key value sort. Tapping a different key activates it ascending;
   // tapping the active key cycles asc → desc → off.

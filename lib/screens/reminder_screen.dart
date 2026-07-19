@@ -57,9 +57,10 @@ class ReminderScreen extends StatelessWidget {
 
   void _handleAddAll(BuildContext context) {
     final l = L10n.of(context);
-    final toAddCount = [..._restock, ..._expiringSoon]
-        .where((i) => !_inList(i))
-        .length;
+    final toAddCount = [
+      ..._restock,
+      ..._expiringSoon,
+    ].where((i) => !_inList(i)).length;
     if (toAddCount == 0) {
       _toast(context, l.allAlreadyInList);
       return;
@@ -109,7 +110,9 @@ class ReminderScreen extends StatelessWidget {
                 Text(
                   l.reminderSummary(_restock.length, _expiringSoon.length),
                   style: const TextStyle(
-                      fontSize: 13, color: AppColors.textMuted),
+                    fontSize: 13,
+                    color: AppColors.textMuted,
+                  ),
                 ),
               ],
             ),
@@ -119,7 +122,9 @@ class ReminderScreen extends StatelessWidget {
               onTap: () => _handleAddAll(context),
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 7),
+                  horizontal: 12,
+                  vertical: 7,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEEEEE8),
                   borderRadius: BorderRadius.circular(20),
@@ -147,22 +152,26 @@ class ReminderScreen extends StatelessWidget {
       children: [
         if (_restock.isNotEmpty) ...[
           _sectionHeader(l.sectionRestock, AppColors.danger),
-          ..._restock.map((item) => _ReminderRow(
-                item: item,
-                thresholdDays: thresholdDays,
-                inList: _inList(item),
-                onTap: () => _handleToggle(context, item),
-              )),
+          ..._restock.map(
+            (item) => _ReminderRow(
+              item: item,
+              thresholdDays: thresholdDays,
+              inList: _inList(item),
+              onTap: () => _handleToggle(context, item),
+            ),
+          ),
           const SizedBox(height: 16),
         ],
         if (_expiringSoon.isNotEmpty) ...[
           _sectionHeader(l.sectionExpiringSoon, const Color(0xFFFF9800)),
-          ..._expiringSoon.map((item) => _ReminderRow(
-                item: item,
-                thresholdDays: thresholdDays,
-                inList: _inList(item),
-                onTap: () => _handleToggle(context, item),
-              )),
+          ..._expiringSoon.map(
+            (item) => _ReminderRow(
+              item: item,
+              thresholdDays: thresholdDays,
+              inList: _inList(item),
+              onTap: () => _handleToggle(context, item),
+            ),
+          ),
         ],
       ],
     );
@@ -176,8 +185,7 @@ class ReminderScreen extends StatelessWidget {
           Container(
             width: 8,
             height: 8,
-            decoration:
-                BoxDecoration(color: dotColor, shape: BoxShape.circle),
+            decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
           ),
           const SizedBox(width: 8),
           Text(
@@ -339,8 +347,7 @@ class _ReminderRow extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.check_rounded,
-              size: 14, color: AppColors.textMuted),
+          const Icon(Icons.check_rounded, size: 14, color: AppColors.textMuted),
           const SizedBox(width: 4),
           Text(
             l.alreadyInList,

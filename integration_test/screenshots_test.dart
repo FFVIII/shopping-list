@@ -37,34 +37,126 @@ void main() {
     await repo.saveCategories(categories);
 
     await repo.saveShoppingSimple([
-      ShoppingItem(id: 'sim1', name: 'Milk', category: dairy, quantityLabel: '2', shelfZone: dairy.shelfZone),
-      ShoppingItem(id: 'sim2', name: 'Bananas', category: produce, quantityLabel: '6', shelfZone: produce.shelfZone),
-      ShoppingItem(id: 'sim3', name: 'Bread', category: grain, quantityLabel: '1', shelfZone: grain.shelfZone),
-      ShoppingItem(id: 'sim4', name: 'Paper towels', category: household, quantityLabel: '2', shelfZone: household.shelfZone, checked: true),
-      ShoppingItem(id: 'sim5', name: 'Eggs', category: dairy, quantityLabel: '12', shelfZone: dairy.shelfZone, checked: true),
+      ShoppingItem(
+        id: 'sim1',
+        name: 'Milk',
+        category: dairy,
+        quantityLabel: '2',
+      ),
+      ShoppingItem(
+        id: 'sim2',
+        name: 'Bananas',
+        category: produce,
+        quantityLabel: '6',
+      ),
+      ShoppingItem(
+        id: 'sim3',
+        name: 'Bread',
+        category: grain,
+        quantityLabel: '1',
+      ),
+      ShoppingItem(
+        id: 'sim4',
+        name: 'Paper towels',
+        category: household,
+        quantityLabel: '2',
+        checked: true,
+      ),
+      ShoppingItem(
+        id: 'sim5',
+        name: 'Eggs',
+        category: dairy,
+        quantityLabel: '12',
+        checked: true,
+      ),
     ]);
 
     await repo.saveShoppingSmart([
-      ShoppingItem(id: 'sm1', name: 'Chicken breast', category: byId('meat'), quantityLabel: '1', shelfZone: byId('meat').shelfZone, shelfCode: 'B2', estimatedDays: 5),
-      ShoppingItem(id: 'sm2', name: 'Rice', category: grain, quantityLabel: '1', shelfZone: grain.shelfZone, shelfCode: 'A1', estimatedDays: 30),
-      ShoppingItem(id: 'sm3', name: 'Olive oil', category: grain, quantityLabel: '1', shelfZone: grain.shelfZone, shelfCode: 'A3', estimatedDays: 60),
-      ShoppingItem(id: 'sm4', name: 'Yogurt', category: dairy, quantityLabel: '4', shelfZone: dairy.shelfZone, shelfCode: 'C1', estimatedDays: 10),
+      ShoppingItem(
+        id: 'sm1',
+        name: 'Chicken breast',
+        category: byId('meat'),
+        quantityLabel: '1',
+        shelfCode: 'B2',
+        estimatedDays: 5,
+      ),
+      ShoppingItem(
+        id: 'sm2',
+        name: 'Rice',
+        category: grain,
+        quantityLabel: '1',
+        shelfCode: 'A1',
+        estimatedDays: 30,
+      ),
+      ShoppingItem(
+        id: 'sm3',
+        name: 'Olive oil',
+        category: grain,
+        quantityLabel: '1',
+        shelfCode: 'A3',
+        estimatedDays: 60,
+      ),
+      ShoppingItem(
+        id: 'sm4',
+        name: 'Yogurt',
+        category: dairy,
+        quantityLabel: '4',
+        shelfCode: 'C1',
+        estimatedDays: 10,
+      ),
     ]);
 
     await repo.saveBudget([
       BudgetItem(id: 'b1', name: 'Milk', quantity: 2, unitPrice: 3.49),
       BudgetItem(id: 'b2', name: 'Bananas', quantity: 6, unitPrice: 0.29),
-      BudgetItem(id: 'b3', name: 'Chicken breast', quantity: 1, unitPrice: 8.99),
+      BudgetItem(
+        id: 'b3',
+        name: 'Chicken breast',
+        quantity: 1,
+        unitPrice: 8.99,
+      ),
       BudgetItem(id: 'b4', name: 'Bread', quantity: 1, unitPrice: 2.99),
       BudgetItem(id: 'b5', name: 'Olive oil', quantity: 1, unitPrice: 12.5),
     ]);
 
     final now = DateTime.now();
     await repo.saveInventory([
-      InventoryItem(id: 'inv1', name: 'Rice', category: grain, shelfZone: grain.shelfZone, shelfCode: 'A1', quantityLabel: '1', purchasedAt: now.subtract(const Duration(days: 5)), estimatedDays: 30),
-      InventoryItem(id: 'inv2', name: 'Milk', category: dairy, shelfZone: dairy.shelfZone, shelfCode: 'C1', quantityLabel: '1', purchasedAt: now.subtract(const Duration(days: 6)), estimatedDays: 7),
-      InventoryItem(id: 'inv3', name: 'Paper towels', category: household, shelfZone: household.shelfZone, shelfCode: 'D2', quantityLabel: '2', purchasedAt: now.subtract(const Duration(days: 20)), estimatedDays: 45),
-      InventoryItem(id: 'inv4', name: 'Olive oil', category: grain, shelfZone: grain.shelfZone, shelfCode: 'A3', quantityLabel: '1', purchasedAt: now.subtract(const Duration(days: 10)), estimatedDays: 60),
+      InventoryItem(
+        id: 'inv1',
+        name: 'Rice',
+        category: grain,
+        shelfCode: 'A1',
+        quantityLabel: '1',
+        purchasedAt: now.subtract(const Duration(days: 5)),
+        estimatedDays: 30,
+      ),
+      InventoryItem(
+        id: 'inv2',
+        name: 'Milk',
+        category: dairy,
+        shelfCode: 'C1',
+        quantityLabel: '1',
+        purchasedAt: now.subtract(const Duration(days: 6)),
+        estimatedDays: 7,
+      ),
+      InventoryItem(
+        id: 'inv3',
+        name: 'Paper towels',
+        category: household,
+        shelfCode: 'D2',
+        quantityLabel: '2',
+        purchasedAt: now.subtract(const Duration(days: 20)),
+        estimatedDays: 45,
+      ),
+      InventoryItem(
+        id: 'inv4',
+        name: 'Olive oil',
+        category: grain,
+        shelfCode: 'A3',
+        quantityLabel: '1',
+        purchasedAt: now.subtract(const Duration(days: 10)),
+        estimatedDays: 60,
+      ),
     ]);
 
     final notifications = NotificationService();
@@ -75,29 +167,34 @@ void main() {
     }
 
     final repaintKey = GlobalKey();
-    await tester.pumpWidget(RepaintBoundary(
-      key: repaintKey,
-      child: ShoppingListApp(
-        initialLanguage: AppLanguage.en,
-        repository: repo,
-        notifications: notifications,
-        storageAvailable: true,
+    await tester.pumpWidget(
+      RepaintBoundary(
+        key: repaintKey,
+        child: ShoppingListApp(
+          initialLanguage: AppLanguage.en,
+          repository: repo,
+          notifications: notifications,
+          storageAvailable: true,
+        ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
 
     Future<void> shoot(String name) async {
       await tester.pumpAndSettle();
       final boundary =
-          repaintKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-      final image = await boundary.toImage(pixelRatio: tester.view.devicePixelRatio);
+          repaintKey.currentContext!.findRenderObject()
+              as RenderRepaintBoundary;
+      final image = await boundary.toImage(
+        pixelRatio: tester.view.devicePixelRatio,
+      );
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       final dir = await getApplicationDocumentsDirectory();
       final outDir = Directory('${dir.path}/screenshots');
       await outDir.create(recursive: true);
-      await File('${outDir.path}/$name.png').writeAsBytes(
-        byteData!.buffer.asUint8List(),
-      );
+      await File(
+        '${outDir.path}/$name.png',
+      ).writeAsBytes(byteData!.buffer.asUint8List());
     }
 
     // Jot mode is the default tab/mode on launch.

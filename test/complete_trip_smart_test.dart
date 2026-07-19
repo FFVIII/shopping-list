@@ -30,10 +30,12 @@ void main() {
     // install (categoriesBox non-empty) — otherwise AppRepository.load()
     // treats it as a first install and overwrites shopping_smart with an
     // empty list, wiping the smart items seeded below.
-    final category = buildDefaultCategories().first; // 'produce' / 果蔬
+    final category = buildDefaultCategories().first; // 'produce' / 蔬菜
     final categoriesBox = await Hive.openBox('categories');
     await categoriesBox.put(
-        'items', buildDefaultCategories().map((c) => c.toMap()).toList());
+      'items',
+      buildDefaultCategories().map((c) => c.toMap()).toList(),
+    );
     await categoriesBox.close();
 
     // Pre-seed three smart/plan items before the app's own repository.load()
@@ -47,7 +49,6 @@ void main() {
         name: '苹果',
         category: category,
         quantityLabel: '2',
-        shelfZone: category.shelfZone,
         estimatedDays: 7,
       ).toMap(),
       ShoppingItem(
@@ -55,7 +56,6 @@ void main() {
         name: '香蕉',
         category: category,
         quantityLabel: '3',
-        shelfZone: category.shelfZone,
         estimatedDays: 7,
       ).toMap(),
       ShoppingItem(
@@ -63,7 +63,6 @@ void main() {
         name: '牛奶',
         category: category,
         quantityLabel: '1',
-        shelfZone: category.shelfZone,
         estimatedDays: 7,
       ).toMap(),
     ]);
@@ -84,9 +83,9 @@ void main() {
     if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
   });
 
-  testWidgets(
-      'completing a trip keeps unselected items in the smart list',
-      (WidgetTester tester) async {
+  testWidgets('completing a trip keeps unselected items in the smart list', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1290, 2796);
     tester.view.devicePixelRatio = 3.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -100,10 +99,14 @@ void main() {
       ),
     );
 
-    for (var i = 0;
-        i < 20 && find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
-        i++) {
-      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 50)));
+    for (
+      var i = 0;
+      i < 20 && find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
+      i++
+    ) {
+      await tester.runAsync(
+        () => Future.delayed(const Duration(milliseconds: 50)),
+      );
       await tester.pump();
     }
     await tester.pumpAndSettle();
@@ -113,8 +116,12 @@ void main() {
     // Switch to Plan/smart mode. The mode-toggle segment button shares its
     // label with the screen's header title, so target the GestureDetector
     // that wraps the segment's text instead of the ambiguous Text finder.
-    await tester.tap(find.ancestor(
-        of: find.text(l.modeSmart), matching: find.byType(GestureDetector)));
+    await tester.tap(
+      find.ancestor(
+        of: find.text(l.modeSmart),
+        matching: find.byType(GestureDetector),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('苹果'), findsOneWidget);
@@ -128,17 +135,20 @@ void main() {
     // Both items start selected; deselect '牛奶' (keep_this) so only '苹果'
     // (buy_this) is marked as purchased. '牛奶' also appears in the list
     // behind the sheet, so target the sheet's modal-route copy explicitly.
-    await tester.tap(find.descendant(
-        of: find.byType(BottomSheet), matching: find.text('牛奶')));
+    await tester.tap(
+      find.descendant(of: find.byType(BottomSheet), matching: find.text('牛奶')),
+    );
     await tester.pumpAndSettle();
 
     // Confirming triggers real Hive writes (persistSmart/persistItems), which
     // fake-async pumping can't wait out — bridge with runAsync like the
     // initial load does.
     await tester.tap(
-        find.widgetWithText(ElevatedButton, l.addToInventoryButton));
+      find.widgetWithText(ElevatedButton, l.addToInventoryButton),
+    );
     await tester.runAsync(
-        () => Future.delayed(const Duration(milliseconds: 50)));
+      () => Future.delayed(const Duration(milliseconds: 50)),
+    );
     await tester.pumpAndSettle();
     // Completing a trip shows a toast with its own dismiss Timer — let it
     // fire so it doesn't outlive the widget tree at test teardown.

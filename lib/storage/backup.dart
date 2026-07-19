@@ -9,25 +9,35 @@ const int kBackupVersion = 1;
 
 // Column order per sheet — must match the keys produced by the matching
 // toMap() extension in hive_models.dart.
-const _categoriesColumns = [
-  'id', 'name', 'color', 'bgColor', 'shelfZone', 'defaultDays'
-];
+const _categoriesColumns = ['id', 'name', 'color', 'bgColor', 'defaultDays'];
 const _shoppingColumns = [
-  'id', 'name', 'categoryId', 'quantityLabel', 'shelfZone', 'shelfCode',
-  'estimatedDays', 'checked', 'addedToInventory', 'sourceInventoryId'
+  'id',
+  'name',
+  'categoryId',
+  'quantityLabel',
+  'shelfCode',
+  'estimatedDays',
+  'checked',
+  'sourceInventoryId',
 ];
 const _inventoryColumns = [
-  'id', 'name', 'categoryId', 'shelfZone', 'shelfCode', 'quantityLabel',
-  'purchasedAt', 'estimatedDays'
+  'id',
+  'name',
+  'categoryId',
+  'shelfCode',
+  'quantityLabel',
+  'purchasedAt',
+  'estimatedDays',
 ];
 const _budgetColumns = ['id', 'name', 'quantity', 'unitPrice'];
 const _historyColumns = ['id', 'clearedAt'];
 const _historyItemColumns = ['entryId', 'name', 'quantity', 'unitPrice'];
 const _settingsColumns = [
-  'reminderThresholdDays', 'restockReminderEnabled', 'reminderHour',
-  'reminderMinute'
+  'reminderThresholdDays',
+  'restockReminderEnabled',
+  'reminderHour',
+  'reminderMinute',
 ];
-const _shelfZonesColumns = ['name', 'dotColor'];
 const _shelfCodeOrderColumns = ['code'];
 
 CellValue? _cellValueFor(Object? v) {
@@ -72,8 +82,9 @@ List<Map<String, dynamic>> _readMapsSheet(Excel excel, String sheetName) {
   if (rows.isEmpty) {
     throw FormatException('backup: sheet $sheetName has no header row');
   }
-  final header =
-      rows.first.map((c) => _rawValueFromCell(c) as String? ?? '').toList();
+  final header = rows.first
+      .map((c) => _rawValueFromCell(c) as String? ?? '')
+      .toList();
   return rows.skip(1).map((row) {
     final map = <String, dynamic>{};
     for (var i = 0; i < header.length; i++) {
@@ -86,7 +97,10 @@ List<Map<String, dynamic>> _readMapsSheet(Excel excel, String sheetName) {
 /// Like [_readMapsSheet], but returns `[]` instead of throwing when the
 /// sheet is absent — for segments added after the backup format shipped,
 /// so backups exported before they existed still import.
-List<Map<String, dynamic>> _readMapsSheetOptional(Excel excel, String sheetName) {
+List<Map<String, dynamic>> _readMapsSheetOptional(
+  Excel excel,
+  String sheetName,
+) {
   if (excel.tables[sheetName] == null) return const [];
   return _readMapsSheet(excel, sheetName);
 }
@@ -107,16 +121,36 @@ List<int> encodeBackupExcel(AppData data) {
     TextCellValue(DateTime.now().toIso8601String()),
   ]);
 
-  _writeMapsSheet(excel, 'Categories',
-      data.categories.map((c) => c.toMap()).toList(), _categoriesColumns);
-  _writeMapsSheet(excel, 'ShoppingSimple',
-      data.shoppingSimple.map((i) => i.toMap()).toList(), _shoppingColumns);
-  _writeMapsSheet(excel, 'ShoppingSmart',
-      data.shoppingSmart.map((i) => i.toMap()).toList(), _shoppingColumns);
-  _writeMapsSheet(excel, 'Inventory',
-      data.inventory.map((i) => i.toMap()).toList(), _inventoryColumns);
-  _writeMapsSheet(excel, 'Budget',
-      data.budget.map((i) => i.toMap()).toList(), _budgetColumns);
+  _writeMapsSheet(
+    excel,
+    'Categories',
+    data.categories.map((c) => c.toMap()).toList(),
+    _categoriesColumns,
+  );
+  _writeMapsSheet(
+    excel,
+    'ShoppingSimple',
+    data.shoppingSimple.map((i) => i.toMap()).toList(),
+    _shoppingColumns,
+  );
+  _writeMapsSheet(
+    excel,
+    'ShoppingSmart',
+    data.shoppingSmart.map((i) => i.toMap()).toList(),
+    _shoppingColumns,
+  );
+  _writeMapsSheet(
+    excel,
+    'Inventory',
+    data.inventory.map((i) => i.toMap()).toList(),
+    _inventoryColumns,
+  );
+  _writeMapsSheet(
+    excel,
+    'Budget',
+    data.budget.map((i) => i.toMap()).toList(),
+    _budgetColumns,
+  );
   _writeMapsSheet(excel, 'SpendingHistory', [
     for (final e in data.budgetHistory)
       {'id': e.id, 'clearedAt': e.clearedAt.millisecondsSinceEpoch},
@@ -132,13 +166,12 @@ List<int> encodeBackupExcel(AppData data) {
         },
   ], _historyItemColumns);
   _writeMapsSheet(excel, 'Settings', [data.settings.toMap()], _settingsColumns);
-  _writeMapsSheet(excel, 'ShelfZones',
-      data.shelfZones.map((z) => z.toMap()).toList(), _shelfZonesColumns);
   _writeMapsSheet(
-      excel,
-      'ShelfCodeOrder',
-      data.shelfCodeOrder.map((c) => {'code': c}).toList(),
-      _shelfCodeOrderColumns);
+    excel,
+    'ShelfCodeOrder',
+    data.shelfCodeOrder.map((c) => {'code': c}).toList(),
+    _shelfCodeOrderColumns,
+  );
 
   if (defaultSheet != null) excel.delete(defaultSheet);
 
@@ -163,8 +196,9 @@ AppData decodeBackupExcel(List<int> bytes) {
     final meta = <String, dynamic>{
       for (final row in metaRows)
         if (row.isNotEmpty)
-          (_rawValueFromCell(row[0]) as String?) ?? '':
-              row.length > 1 ? _rawValueFromCell(row[1]) : null,
+          (_rawValueFromCell(row[0]) as String?) ?? '': row.length > 1
+              ? _rawValueFromCell(row[1])
+              : null,
     };
     if (meta['format'] != kBackupFormat) {
       throw const FormatException('backup: unrecognized format');
@@ -174,50 +208,54 @@ AppData decodeBackupExcel(List<int> bytes) {
       throw FormatException('backup: unsupported version $version');
     }
 
-    final categories = _readMapsSheet(excel, 'Categories')
-        .map(categoryFromMap)
-        .toList();
-    List<ShoppingItem> shopping(String sheetName) =>
-        _readMapsSheet(excel, sheetName)
-            .map((m) => shoppingItemFromMap(m, categories))
-            .toList();
+    final categories = _readMapsSheet(
+      excel,
+      'Categories',
+    ).map(categoryFromMap).toList();
+    List<ShoppingItem> shopping(String sheetName) => _readMapsSheet(
+      excel,
+      sheetName,
+    ).map((m) => shoppingItemFromMap(m, categories)).toList();
 
     final historyItemsByEntryId = <String, List<BudgetHistoryLineItem>>{};
     for (final m in _readMapsSheetOptional(excel, 'SpendingHistoryItems')) {
       historyItemsByEntryId
           .putIfAbsent(m['entryId'] as String, () => [])
-          .add(BudgetHistoryLineItem(
-            name: m['name'] as String,
-            quantity: (m['quantity'] as num).toInt(),
-            unitPrice: (m['unitPrice'] as num).toDouble(),
-          ));
+          .add(
+            BudgetHistoryLineItem(
+              name: m['name'] as String,
+              quantity: (m['quantity'] as num).toInt(),
+              unitPrice: (m['unitPrice'] as num).toDouble(),
+            ),
+          );
     }
     final budgetHistory = _readMapsSheetOptional(excel, 'SpendingHistory')
-        .map((m) => BudgetHistoryEntry(
-              id: m['id'] as String,
-              clearedAt:
-                  DateTime.fromMillisecondsSinceEpoch(m['clearedAt'] as int),
-              items: historyItemsByEntryId[m['id']] ?? const [],
-            ))
+        .map(
+          (m) => BudgetHistoryEntry(
+            id: m['id'] as String,
+            clearedAt: DateTime.fromMillisecondsSinceEpoch(
+              m['clearedAt'] as int,
+            ),
+            items: historyItemsByEntryId[m['id']] ?? const [],
+          ),
+        )
         .toList();
 
     return AppData(
       shoppingSimple: shopping('ShoppingSimple'),
       shoppingSmart: shopping('ShoppingSmart'),
-      inventory: _readMapsSheet(excel, 'Inventory')
-          .map((m) => inventoryItemFromMap(m, categories))
-          .toList(),
-      budget:
-          _readMapsSheet(excel, 'Budget').map(budgetItemFromMap).toList(),
+      inventory: _readMapsSheet(
+        excel,
+        'Inventory',
+      ).map((m) => inventoryItemFromMap(m, categories)).toList(),
+      budget: _readMapsSheet(excel, 'Budget').map(budgetItemFromMap).toList(),
       budgetHistory: budgetHistory,
       categories: categories,
       settings: appSettingsFromMap(_readMapsSheet(excel, 'Settings').first),
-      shelfZones: _readMapsSheet(excel, 'ShelfZones')
-          .map(shelfZoneFromMap)
-          .toList(),
-      shelfCodeOrder: _readMapsSheet(excel, 'ShelfCodeOrder')
-          .map((m) => m['code'] as String)
-          .toList(),
+      shelfCodeOrder: _readMapsSheet(
+        excel,
+        'ShelfCodeOrder',
+      ).map((m) => m['code'] as String).toList(),
     );
   } on FormatException {
     rethrow;

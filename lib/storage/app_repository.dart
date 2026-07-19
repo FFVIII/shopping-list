@@ -50,7 +50,6 @@ class AppData {
   final List<BudgetHistoryEntry> budgetHistory;
   final List<Category> categories;
   final AppSettings settings;
-  final List<ShelfZone> shelfZones;
   final List<String> shelfCodeOrder;
 
   AppData({
@@ -61,7 +60,6 @@ class AppData {
     required this.budgetHistory,
     required this.categories,
     required this.settings,
-    required this.shelfZones,
     required this.shelfCodeOrder,
   });
 }
@@ -126,10 +124,10 @@ class AppRepository {
     // Older builds stored quantity labels as free text with units (e.g. "2件");
     // quantities are now plain numbers. Strip any non-digits so existing data
     // matches the new digits-only input. Idempotent.
-    migrateQuantityLabelsToDigits(
-      [...shoppingSimple, ...shoppingSmart],
-      inventory,
-    );
+    migrateQuantityLabelsToDigits([
+      ...shoppingSimple,
+      ...shoppingSmart,
+    ], inventory);
 
     final budget = ((_budgetBox.get('items') as List?) ?? const [])
         .cast<Map>()
@@ -143,17 +141,13 @@ class AppRepository {
             .toList();
 
     final settingsMap = _metaBox.get('settings') as Map?;
-    final settings =
-        settingsMap != null ? appSettingsFromMap(settingsMap) : AppSettings();
-
-    final zonesList = _metaBox.get('shelf_zones') as List?;
-    final shelfZones = zonesList != null
-        ? zonesList.cast<Map>().map(shelfZoneFromMap).toList()
-        : defaultShelfZones.toList();
+    final settings = settingsMap != null
+        ? appSettingsFromMap(settingsMap)
+        : AppSettings();
 
     final shelfCodeOrder =
         (_metaBox.get('shelf_code_order') as List?)?.cast<String>() ??
-            <String>[];
+        <String>[];
 
     return AppData(
       shoppingSimple: shoppingSimple,
@@ -163,7 +157,6 @@ class AppRepository {
       budgetHistory: budgetHistory,
       categories: categories,
       settings: settings,
-      shelfZones: shelfZones,
       shelfCodeOrder: shelfCodeOrder,
     );
   }
@@ -174,7 +167,9 @@ class AppRepository {
     // language later (see migrateDefaultCategoryNamesToCanonical).
     final categories = buildDefaultCategories();
     await _categoriesBox.put(
-        'items', categories.map((c) => c.toMap()).toList());
+      'items',
+      categories.map((c) => c.toMap()).toList(),
+    );
     // Shopping/inventory/budget start empty — only the category structure
     // is seeded. See design spec 2026-07-02 §3.
     await _shoppingSmartBox.put('items', <Map>[]);
@@ -203,17 +198,13 @@ class AppRepository {
   Future<void> saveSettings(AppSettings settings) =>
       _metaBox.put('settings', settings.toMap());
 
-  Future<void> saveShelfZones(List<ShelfZone> zones) =>
-      _metaBox.put('shelf_zones', zones.map((z) => z.toMap()).toList());
-
   Future<void> saveShelfCodeOrder(List<String> order) =>
       _metaBox.put('shelf_code_order', order);
 
   /// Purchase entitlement — intentionally NOT part of [AppData]/[replaceAll]:
   /// restoring a backup from another install must not overwrite whether
   /// *this* Apple ID has purchased Pro.
-  Future<bool> loadIsPro() async =>
-      _metaBox.get('is_pro') as bool? ?? false;
+  Future<bool> loadIsPro() async => _metaBox.get('is_pro') as bool? ?? false;
 
   Future<void> saveIsPro(bool value) => _metaBox.put('is_pro', value);
 
@@ -227,7 +218,6 @@ class AppRepository {
     await saveBudget(data.budget);
     await saveHistory(data.budgetHistory);
     await saveSettings(data.settings);
-    await saveShelfZones(data.shelfZones);
     await saveShelfCodeOrder(data.shelfCodeOrder);
   }
 }

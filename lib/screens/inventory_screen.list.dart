@@ -22,13 +22,13 @@ extension _InvListBuilders on _InventoryScreenState {
           thresholdDays: widget.thresholdDays,
           onTap: _batchMode
               ? () => setState(() {
-                    HapticFeedback.selectionClick();
-                    if (_selected.contains(item.id)) {
-                      _selected.remove(item.id);
-                    } else {
-                      _selected.add(item.id);
-                    }
-                  })
+                  HapticFeedback.selectionClick();
+                  if (_selected.contains(item.id)) {
+                    _selected.remove(item.id);
+                  } else {
+                    _selected.add(item.id);
+                  }
+                })
               : () => _showDetailSheet(item),
           onDelete: () => _handleSwipeDelete(item),
           batchMode: _batchMode,
@@ -58,42 +58,47 @@ extension _InvListBuilders on _InventoryScreenState {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
       children: [
         for (final entry in groups.entries) ...[
-          _buildSectionHeader(entry.key, entry.value.length,
-              color: _byCategory ? null : entry.value.first.category.color,
-              trailing: entry.key == firstKey
-                  ? _buildInventorySummaryTrailing()
-                  : null),
-          ...entry.value.map((item) => _InventoryCard(
-                item: item,
-                thresholdDays: widget.thresholdDays,
-                showShelfCode: _byCategory,
-                onTap: _batchMode
-                    ? () => setState(() {
-                          HapticFeedback.selectionClick();
-                          if (_selected.contains(item.id)) {
-                            _selected.remove(item.id);
-                          } else {
-                            _selected.add(item.id);
-                          }
-                        })
-                    : () => _showDetailSheet(item),
-                onDelete: () => _handleSwipeDelete(item),
-                batchMode: _batchMode,
-                selected: _selected.contains(item.id),
-                onHandleTap: () => setState(() {
-                  HapticFeedback.selectionClick();
-                  if (_batchMode) {
-                    if (_selected.contains(item.id)) {
-                      _selected.remove(item.id);
-                    } else {
-                      _selected.add(item.id);
-                    }
+          _buildSectionHeader(
+            entry.key,
+            entry.value.length,
+            color: _byCategory ? null : entry.value.first.category.color,
+            trailing: entry.key == firstKey
+                ? _buildInventorySummaryTrailing()
+                : null,
+          ),
+          ...entry.value.map(
+            (item) => _InventoryCard(
+              item: item,
+              thresholdDays: widget.thresholdDays,
+              showShelfCode: _byCategory,
+              onTap: _batchMode
+                  ? () => setState(() {
+                      HapticFeedback.selectionClick();
+                      if (_selected.contains(item.id)) {
+                        _selected.remove(item.id);
+                      } else {
+                        _selected.add(item.id);
+                      }
+                    })
+                  : () => _showDetailSheet(item),
+              onDelete: () => _handleSwipeDelete(item),
+              batchMode: _batchMode,
+              selected: _selected.contains(item.id),
+              onHandleTap: () => setState(() {
+                HapticFeedback.selectionClick();
+                if (_batchMode) {
+                  if (_selected.contains(item.id)) {
+                    _selected.remove(item.id);
                   } else {
-                    _batchMode = true;
                     _selected.add(item.id);
                   }
-                }),
-              )),
+                } else {
+                  _batchMode = true;
+                  _selected.add(item.id);
+                }
+              }),
+            ),
+          ),
           const SizedBox(height: 6),
         ],
       ],
@@ -112,12 +117,10 @@ extension _InvListBuilders on _InventoryScreenState {
         flat.add(_InvEntry.forItem(item, entry.key));
       }
     }
-    final groupCounts = {
-      for (final e in groups.entries) e.key: e.value.length
-    };
+    final groupCounts = {for (final e in groups.entries) e.key: e.value.length};
     final groupColors = {
       for (final e in groups.entries)
-        if (!_byCategory) e.key: e.value.first.category.color
+        if (!_byCategory) e.key: e.value.first.category.color,
     };
 
     final firstHeaderIndex = flat.indexWhere((e) => e.isHeader);
@@ -134,8 +137,9 @@ extension _InvListBuilders on _InventoryScreenState {
             groupCounts[entry.groupKey] ?? 0,
             color: groupColors[entry.groupKey],
             key: Key('invh_${entry.groupKey}'),
-            trailing:
-                i == firstHeaderIndex ? _buildInventorySummaryTrailing() : null,
+            trailing: i == firstHeaderIndex
+                ? _buildInventorySummaryTrailing()
+                : null,
           );
         }
         final item = entry.item!;
@@ -144,8 +148,8 @@ extension _InvListBuilders on _InventoryScreenState {
         // ReorderableListView can transiently duplicate a card's subtree
         // during its drag/reorder animation — TutorialRectReporter reports
         // its rect without needing element identity, so it's safe.
-        final isTutorialExampleItem =
-            TutorialController.instance.isExampleItemName(item.name);
+        final isTutorialExampleItem = TutorialController.instance
+            .isExampleItemName(item.name);
         final card = _InventoryCard(
           key: isTutorialExampleItem ? null : Key('invc_${item.id}'),
           item: item,
@@ -153,13 +157,13 @@ extension _InvListBuilders on _InventoryScreenState {
           showShelfCode: _byCategory,
           onTap: _batchMode
               ? () => setState(() {
-                    HapticFeedback.selectionClick();
-                    if (_selected.contains(item.id)) {
-                      _selected.remove(item.id);
-                    } else {
-                      _selected.add(item.id);
-                    }
-                  })
+                  HapticFeedback.selectionClick();
+                  if (_selected.contains(item.id)) {
+                    _selected.remove(item.id);
+                  } else {
+                    _selected.add(item.id);
+                  }
+                })
               : () => _showDetailSheet(item),
           onDelete: () => _handleSwipeDelete(item),
           reorderIndex: i,
@@ -229,7 +233,9 @@ extension _InvListBuilders on _InventoryScreenState {
                       child: Text(l.cancel),
                     ),
                     TextButton(
-                      style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.danger,
+                      ),
                       onPressed: () => Navigator.pop(ctx, true),
                       child: Text(l.delete),
                     ),
@@ -278,32 +284,42 @@ extension _InvListBuilders on _InventoryScreenState {
     }
     if (newGroup.isEmpty) return;
 
-    final orderedIds =
-        mutable.where((e) => !e.isHeader).map((e) => e.item!.id).toList();
+    final orderedIds = mutable
+        .where((e) => !e.isHeader)
+        .map((e) => e.item!.id)
+        .toList();
     if (_byCategory) {
       // Cross-group drag in category mode updates the item's category.
       final newCat = widget.categories.firstWhere(
         (c) => c.name == newGroup,
         orElse: () => movedItem.category,
       );
-      widget.onReorder(movedItem.id, null, newCat, orderedIds, null);
+      widget.onReorder(movedItem.id, newCat, orderedIds, null);
     } else {
       // Cross-group drag in aisle mode updates the item's shelf code.
       final l = L10n.of(context);
       final newCode = newGroup == l.untaggedShelf ? '' : newGroup;
-      widget.onReorder(movedItem.id, null, null, orderedIds, newCode);
+      widget.onReorder(movedItem.id, null, orderedIds, newCode);
     }
   }
 
-  Widget _buildSectionHeader(String zone, int count,
-      {Key? key, Color? color, Widget? trailing}) {
+  Widget _buildSectionHeader(
+    String zone,
+    int count, {
+    Key? key,
+    Color? color,
+    Widget? trailing,
+  }) {
     final l = L10n.of(context);
-    final resolvedColor = color ??
+    final resolvedColor =
+        color ??
         (_byCategory
             ? widget.categories
-                .firstWhere((c) => c.name == zone,
-                    orElse: () => widget.categories.fallback)
-                .color
+                  .firstWhere(
+                    (c) => c.name == zone,
+                    orElse: () => widget.categories.fallback,
+                  )
+                  .color
             : AppColors.textMuted);
     return Padding(
       key: key,
@@ -313,8 +329,10 @@ extension _InvListBuilders on _InventoryScreenState {
           Container(
             width: 10,
             height: 10,
-            decoration:
-                BoxDecoration(color: resolvedColor, shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: resolvedColor,
+              shape: BoxShape.circle,
+            ),
           ),
           const SizedBox(width: 8),
           ConstrainedBox(
@@ -333,8 +351,7 @@ extension _InvListBuilders on _InventoryScreenState {
           ),
           const SizedBox(width: 8),
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
             decoration: BoxDecoration(
               color: resolvedColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
@@ -357,10 +374,9 @@ extension _InvListBuilders on _InventoryScreenState {
               // name/count chip on the left need the room instead and
               // truncation here is an acceptable fallback.
               constraints: BoxConstraints(
-                maxWidth:
-                    MediaQuery.textScalerOf(context).scale(1) > 1.3
-                        ? 140
-                        : 200,
+                maxWidth: MediaQuery.textScalerOf(context).scale(1) > 1.3
+                    ? 140
+                    : 200,
               ),
               child: trailing,
             ),
@@ -397,8 +413,7 @@ extension _InvListBuilders on _InventoryScreenState {
             _query.isEmpty
                 ? l.inventoryEmptySubtitle
                 : l.inventoryEmptySubtitleQuery,
-            style: const TextStyle(
-                fontSize: 13, color: AppColors.textDisabled),
+            style: const TextStyle(fontSize: 13, color: AppColors.textDisabled),
           ),
         ],
       ),

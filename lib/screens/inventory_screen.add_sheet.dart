@@ -6,9 +6,8 @@ class _AddInventorySheet extends StatefulWidget {
   final void Function(InventoryItem) onAdd;
   final List<Category> categories;
   final List<String> shelfCodeOrder;
-  final Category Function(
-      String name, Color color, String shelfZone, int defaultDays)
-      onAddCategory;
+  final Category Function(String name, Color color, int defaultDays)
+  onAddCategory;
 
   const _AddInventorySheet({
     required this.onAdd,
@@ -41,18 +40,18 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
     if (name.isEmpty) return;
     final shelf = _shelfCtrl.text.trim();
     Navigator.pop(context);
-    widget.onAdd(InventoryItem(
-      id: generateId('inv'),
-      name: name,
-      category: _category,
-      shelfZone: _category.shelfZone,
-      shelfCode: shelf.isEmpty ? null : shelf,
-      quantityLabel: _qtyCtrl.text.trim(),
-      purchasedAt: DateTime.now(),
-      estimatedDays: _days,
-    ));
+    widget.onAdd(
+      InventoryItem(
+        id: generateId('inv'),
+        name: name,
+        category: _category,
+        shelfCode: shelf.isEmpty ? null : shelf,
+        quantityLabel: _qtyCtrl.text.trim(),
+        purchasedAt: DateTime.now(),
+        estimatedDays: _days,
+      ),
+    );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -104,9 +103,7 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
                     TextField(
                       controller: _qtyCtrl,
                       keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       maxLength: 10,
                       style: const TextStyle(fontSize: 15),
                       decoration: fieldDecoration(l.quantityFieldLabel),
@@ -127,21 +124,27 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
                 maxLength: 20,
                 style: const TextStyle(fontSize: 15),
                 decoration: fieldDecoration(l.shelfCodeFieldLabel).copyWith(
-                    suffixIcon: widget.shelfCodeOrder.isEmpty
-                        ? null
-                        : Builder(
-                            builder: (iconContext) => IconButton(
-                              icon: const Icon(Icons.list_alt_rounded,
-                                  size: 20, color: AppColors.textSecondary),
-                              onPressed: () async {
-                                final picked = await pickShelfCode(
-                                    iconContext, widget.shelfCodeOrder);
-                                if (picked != null) {
-                                  setState(() => _shelfCtrl.text = picked);
-                                }
-                              },
+                  suffixIcon: widget.shelfCodeOrder.isEmpty
+                      ? null
+                      : Builder(
+                          builder: (iconContext) => IconButton(
+                            icon: const Icon(
+                              Icons.list_alt_rounded,
+                              size: 20,
+                              color: AppColors.textSecondary,
                             ),
-                          )),
+                            onPressed: () async {
+                              final picked = await pickShelfCode(
+                                iconContext,
+                                widget.shelfCodeOrder,
+                              );
+                              if (picked != null) {
+                                setState(() => _shelfCtrl.text = picked);
+                              }
+                            },
+                          ),
+                        ),
+                ),
               ),
             ],
           ),
@@ -182,7 +185,8 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
               foregroundColor: Colors.white,
               disabledBackgroundColor: AppColors.divider,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14)),
+                borderRadius: BorderRadius.circular(14),
+              ),
               elevation: 0,
               minimumSize: const Size(double.infinity, 48),
             ),

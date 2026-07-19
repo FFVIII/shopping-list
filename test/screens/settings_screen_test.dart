@@ -24,31 +24,30 @@ Future<void> _pumpSettings(
       child: MediaQuery(
         data: MediaQueryData(textScaler: textScaler),
         child: MaterialApp(
-        home: SettingsScreen(
-          settings: AppSettings(),
-          onChanged: (_) {},
-          language: AppLanguage.zh,
-          onLanguageChanged: (_) {},
-          shelfZones: defaultShelfZones,
-          onReorderShelfZones: (_, _) {},
-          shelfCodeOrder: const [],
-          onReorderShelfCodes: (_, _) {},
-          onAddShelfCode: (_) {},
-          onDeleteShelfCode: (_) {},
-          onRenameShelfCode: (_, _) {},
-          categories: buildDefaultCategories(),
-          onAddCategory: (name, color, zone, days) => buildDefaultCategories().fallback,
-          onEditCategory: (_, _, _, _, _) {},
-          onDeleteCategory: (_) {},
-          onReorderCategories: (_, _) {},
-          buildBackupBytes: () => <int>[],
-          onImportBackup: (_) async {},
-          requestNotificationPermission:
-              requestNotificationPermission ?? () async => true,
-          purchaseService: purchaseService,
-          budgetHistory: budgetHistory,
-          onDeleteBudgetHistoryEntry: onDeleteBudgetHistoryEntry ?? (_) {},
-        ),
+          home: SettingsScreen(
+            settings: AppSettings(),
+            onChanged: (_) {},
+            language: AppLanguage.zh,
+            onLanguageChanged: (_) {},
+            shelfCodeOrder: const [],
+            onReorderShelfCodes: (_, _) {},
+            onAddShelfCode: (_) {},
+            onDeleteShelfCode: (_) {},
+            onRenameShelfCode: (_, _) {},
+            categories: buildDefaultCategories(),
+            onAddCategory: (name, color, days) =>
+                buildDefaultCategories().fallback,
+            onEditCategory: (_, _, _, _) {},
+            onDeleteCategory: (_) {},
+            onReorderCategories: (_, _) {},
+            buildBackupBytes: () => <int>[],
+            onImportBackup: (_) async {},
+            requestNotificationPermission:
+                requestNotificationPermission ?? () async => true,
+            purchaseService: purchaseService,
+            budgetHistory: budgetHistory,
+            onDeleteBudgetHistoryEntry: onDeleteBudgetHistoryEntry ?? (_) {},
+          ),
         ),
       ),
     ),
@@ -57,16 +56,18 @@ Future<void> _pumpSettings(
 }
 
 void main() {
-  testWidgets('Data section hidden and Pro card shown when not purchased',
-      (tester) async {
+  testWidgets('Data section hidden and Pro card shown when not purchased', (
+    tester,
+  ) async {
     await _pumpSettings(tester, isPro: false);
 
     expect(find.text(ZhStrings().sectionData), findsNothing);
     expect(find.text(ZhStrings().proUpgrade), findsOneWidget);
   });
 
-  testWidgets('Data section shown and Pro card hidden once purchased',
-      (tester) async {
+  testWidgets('Data section shown and Pro card hidden once purchased', (
+    tester,
+  ) async {
     await _pumpSettings(tester, isPro: true);
 
     expect(find.text(ZhStrings().sectionData), findsOneWidget);
@@ -74,31 +75,38 @@ void main() {
   });
 
   testWidgets(
-      'turning on the restock reminder shows the primer dialog before any '
-      'system permission request', (tester) async {
-    var requested = false;
-    await _pumpSettings(tester, requestNotificationPermission: () async {
-      requested = true;
-      return true;
-    });
+    'turning on the restock reminder shows the primer dialog before any '
+    'system permission request',
+    (tester) async {
+      var requested = false;
+      await _pumpSettings(
+        tester,
+        requestNotificationPermission: () async {
+          requested = true;
+          return true;
+        },
+      );
 
-    await tester.tap(find.byType(Switch));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byType(Switch));
+      await tester.pumpAndSettle();
 
-    expect(find.text(ZhStrings().notifPrimerTitle), findsOneWidget);
-    expect(find.text(ZhStrings().notifPrimerMessage), findsOneWidget);
-    // The dialog is up; the real permission request hasn't fired yet.
-    expect(requested, isFalse);
-  });
+      expect(find.text(ZhStrings().notifPrimerTitle), findsOneWidget);
+      expect(find.text(ZhStrings().notifPrimerMessage), findsOneWidget);
+      // The dialog is up; the real permission request hasn't fired yet.
+      expect(requested, isFalse);
+    },
+  );
 
-  testWidgets(
-      'confirming the primer dialog requests the system notification '
+  testWidgets('confirming the primer dialog requests the system notification '
       'permission', (tester) async {
     var requested = false;
-    await _pumpSettings(tester, requestNotificationPermission: () async {
-      requested = true;
-      return true;
-    });
+    await _pumpSettings(
+      tester,
+      requestNotificationPermission: () async {
+        requested = true;
+        return true;
+      },
+    );
 
     await tester.tap(find.byType(Switch));
     await tester.pumpAndSettle();
@@ -109,29 +117,34 @@ void main() {
   });
 
   testWidgets(
-      'dismissing the primer dialog never requests the system permission',
-      (tester) async {
-    var requested = false;
-    await _pumpSettings(tester, requestNotificationPermission: () async {
-      requested = true;
-      return true;
-    });
+    'dismissing the primer dialog never requests the system permission',
+    (tester) async {
+      var requested = false;
+      await _pumpSettings(
+        tester,
+        requestNotificationPermission: () async {
+          requested = true;
+          return true;
+        },
+      );
 
-    await tester.tap(find.byType(Switch));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(ZhStrings().cancel));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byType(Switch));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(ZhStrings().cancel));
+      await tester.pumpAndSettle();
 
-    expect(requested, isFalse);
-    expect(find.text(ZhStrings().notifPrimerTitle), findsNothing);
-  });
+      expect(requested, isFalse);
+      expect(find.text(ZhStrings().notifPrimerTitle), findsNothing);
+    },
+  );
 
   testWidgets(
-      'renders without layout exceptions at a large system text scale',
-      (tester) async {
-    await _pumpSettings(tester, textScaler: const TextScaler.linear(3.0));
-    expect(tester.takeException(), isNull);
-  });
+    'renders without layout exceptions at a large system text scale',
+    (tester) async {
+      await _pumpSettings(tester, textScaler: const TextScaler.linear(3.0));
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('Spending History row hidden when not Pro', (tester) async {
     await _pumpSettings(tester, isPro: false);
@@ -139,8 +152,9 @@ void main() {
     expect(find.text(ZhStrings().spendingHistory), findsNothing);
   });
 
-  testWidgets(
-      'Spending History row visible and navigates when Pro', (tester) async {
+  testWidgets('Spending History row visible and navigates when Pro', (
+    tester,
+  ) async {
     await _pumpSettings(tester, isPro: true);
 
     expect(find.text(ZhStrings().spendingHistory), findsOneWidget);

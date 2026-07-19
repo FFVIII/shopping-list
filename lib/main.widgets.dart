@@ -7,12 +7,7 @@ class _DaysSheet extends StatefulWidget {
   final int initialDays;
   final List<Category> categories;
   final List<String> shelfCodeOrder;
-  final Category Function(
-    String name,
-    Color color,
-    String shelfZone,
-    int defaultDays,
-  )
+  final Category Function(String name, Color color, int defaultDays)
   onAddCategory;
   final void Function(
     int days,
@@ -20,7 +15,6 @@ class _DaysSheet extends StatefulWidget {
     String quantity,
     String? shelfCode,
     Category category,
-    String zone,
   )
   onConfirm;
   // True if no other smart-list item currently shares this shelf code —
@@ -48,7 +42,6 @@ class _DaysSheetState extends State<_DaysSheet> {
   late final TextEditingController _qtyCtrl;
   late final TextEditingController _shelfCtrl;
   late Category _category;
-  late String _zone;
 
   // See lib/l10n/canonical_edit.dart: seeded items store canonical Chinese
   // text, so the fields are pre-filled with the translated display text and
@@ -66,7 +59,6 @@ class _DaysSheetState extends State<_DaysSheet> {
     _qtyCtrl = TextEditingController();
     _shelfCtrl = TextEditingController();
     _category = widget.item.category;
-    _zone = widget.item.shelfZone;
   }
 
   @override
@@ -139,14 +131,7 @@ class _DaysSheetState extends State<_DaysSheet> {
     }
 
     Navigator.pop(context);
-    widget.onConfirm(
-      _days,
-      name,
-      qty,
-      shelf.isEmpty ? null : shelf,
-      _category,
-      _zone,
-    );
+    widget.onConfirm(_days, name, qty, shelf.isEmpty ? null : shelf, _category);
   }
 
   Widget _fieldLabel(String text) => Padding(
@@ -207,7 +192,6 @@ class _DaysSheetState extends State<_DaysSheet> {
                           onAddCategory: widget.onAddCategory,
                           onChanged: (cat) => setState(() {
                             _category = cat;
-                            _zone = cat.shelfZone;
                           }),
                         ),
                       ],

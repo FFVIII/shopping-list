@@ -19,7 +19,6 @@ class Category {
   String name;
   Color color;
   Color bgColor;
-  String shelfZone;
   int defaultDays;
 
   Category({
@@ -27,7 +26,6 @@ class Category {
     required this.name,
     required this.color,
     required this.bgColor,
-    required this.shelfZone,
     required this.defaultDays,
   });
 
@@ -52,55 +50,56 @@ const String kFallbackCategoryId = 'other';
 
 /// Default categories in default order. App state owns a mutable copy.
 List<Category> buildDefaultCategories() => [
-      Category(
-        id: 'produce',
-        name: '果蔬',
-        color: const Color(0xFF4CAF50),
-        bgColor: const Color(0xFFE8F5E9),
-        shelfZone: '果蔬区',
-        defaultDays: 7,
-      ),
-      Category(
-        id: 'dairy',
-        name: '乳制品',
-        color: const Color(0xFF2196F3),
-        bgColor: const Color(0xFFE3F2FD),
-        shelfZone: '乳制品',
-        defaultDays: 7,
-      ),
-      Category(
-        id: 'meat',
-        name: '肉类',
-        color: const Color(0xFFE53935),
-        bgColor: const Color(0xFFFFEBEE),
-        shelfZone: '冷藏',
-        defaultDays: 5,
-      ),
-      Category(
-        id: 'grain',
-        name: '水果',
-        color: const Color(0xFF8D6E63),
-        bgColor: const Color(0xFFEFEBE9),
-        shelfZone: '水果区',
-        defaultDays: 30,
-      ),
-      Category(
-        id: 'household',
-        name: '饮料',
-        color: const Color(0xFF7B1FA2),
-        bgColor: const Color(0xFFF3E5F5),
-        shelfZone: '饮料',
-        defaultDays: 30,
-      ),
-      Category(
-        id: kFallbackCategoryId,
-        name: '其他',
-        color: const Color(0xFF78909C),
-        bgColor: const Color(0xFFECEFF1),
-        shelfZone: '其他',
-        defaultDays: 7,
-      ),
-    ];
+  Category(
+    id: 'produce',
+    name: '蔬菜',
+    color: const Color(0xFF4CAF50),
+    bgColor: const Color(0xFFE8F5E9),
+    defaultDays: 7,
+  ),
+  Category(
+    id: 'dairy',
+    name: '乳制品',
+    color: const Color(0xFF2196F3),
+    bgColor: const Color(0xFFE3F2FD),
+    defaultDays: 7,
+  ),
+  Category(
+    id: 'meat',
+    name: '肉类',
+    color: const Color(0xFFE53935),
+    bgColor: const Color(0xFFFFEBEE),
+    defaultDays: 5,
+  ),
+  Category(
+    id: 'grain',
+    name: '水果',
+    color: const Color(0xFF8D6E63),
+    bgColor: const Color(0xFFEFEBE9),
+    defaultDays: 30,
+  ),
+  Category(
+    id: 'household',
+    name: '饮料',
+    color: const Color(0xFF7B1FA2),
+    bgColor: const Color(0xFFF3E5F5),
+    defaultDays: 30,
+  ),
+  Category(
+    id: 'snacks',
+    name: '零食',
+    color: const Color(0xFFFF9800),
+    bgColor: const Color(0xFFFFF3E0),
+    defaultDays: 14,
+  ),
+  Category(
+    id: kFallbackCategoryId,
+    name: '其他',
+    color: const Color(0xFF78909C),
+    bgColor: const Color(0xFFECEFF1),
+    defaultDays: 7,
+  ),
+];
 
 extension CategoryListLookup on List<Category> {
   Category? findById(String id) {
@@ -135,40 +134,6 @@ void reassignCategoryToFallback({
   }
 }
 
-// ─── Shelf Zone ───────────────────────────────────────────────────────────────
-
-class ShelfZone {
-  final String name;
-  final Color dotColor;
-  const ShelfZone(this.name, this.dotColor);
-}
-
-/// Default shelf zones in default order. App state owns a mutable copy.
-const List<ShelfZone> defaultShelfZones = [
-  ShelfZone('果蔬区', Color(0xFF4CAF50)),
-  ShelfZone('乳制品', Color(0xFF2196F3)),
-  ShelfZone('冷藏',   Color(0xFF00ACC1)),
-  ShelfZone('水果区', Color(0xFF8D6E63)),
-  ShelfZone('饮料',   Color(0xFF7B1FA2)),
-  ShelfZone('其他',   Color(0xFF78909C)),
-];
-
-extension ShelfZoneListLookup on List<ShelfZone> {
-  ShelfZone? findByName(String name) {
-    for (final z in this) {
-      if (z.name == name) return z;
-    }
-    return null;
-  }
-
-  int orderIndexOf(String name) {
-    for (int i = 0; i < length; i++) {
-      if (this[i].name == name) return i;
-    }
-    return length; // unknown zones sort last
-  }
-}
-
 // ─── Stock Status ─────────────────────────────────────────────────────────────
 
 enum StockStatus { sufficient, low, empty }
@@ -176,17 +141,23 @@ enum StockStatus { sufficient, low, empty }
 extension StockStatusInfo on StockStatus {
   Color get color {
     switch (this) {
-      case StockStatus.sufficient: return const Color(0xFF4CAF50);
-      case StockStatus.low:        return const Color(0xFFFF9800);
-      case StockStatus.empty:      return const Color(0xFFE53935);
+      case StockStatus.sufficient:
+        return const Color(0xFF4CAF50);
+      case StockStatus.low:
+        return const Color(0xFFFF9800);
+      case StockStatus.empty:
+        return const Color(0xFFE53935);
     }
   }
 
   Color get bgColor {
     switch (this) {
-      case StockStatus.sufficient: return const Color(0xFFE8F5E9);
-      case StockStatus.low:        return const Color(0xFFFFF3E0);
-      case StockStatus.empty:      return const Color(0xFFFFEBEE);
+      case StockStatus.sufficient:
+        return const Color(0xFFE8F5E9);
+      case StockStatus.low:
+        return const Color(0xFFFFF3E0);
+      case StockStatus.empty:
+        return const Color(0xFFFFEBEE);
     }
   }
 }
@@ -198,11 +169,9 @@ class ShoppingItem {
   String name;
   Category category;
   String quantityLabel;
-  String shelfZone;
   String? shelfCode;
   int? estimatedDays;
   bool checked;
-  bool addedToInventory;
   // Set when this entry was created from an existing InventoryItem (restock /
   // reminder "add to list"). Lets purchase/dedup logic match the exact
   // inventory row by id instead of by name, so it survives renames and
@@ -220,11 +189,9 @@ class ShoppingItem {
     required this.name,
     required this.category,
     required this.quantityLabel,
-    required this.shelfZone,
     this.shelfCode,
     this.estimatedDays,
     this.checked = false,
-    this.addedToInventory = false,
     this.sourceInventoryId,
     this.unitPrice,
   });
@@ -236,17 +203,15 @@ class InventoryItem {
   final String id;
   String name;
   Category category;
-  String shelfZone;
   String? shelfCode;
   String quantityLabel; // e.g. "2盒" — may be empty
   DateTime purchasedAt;
-  int estimatedDays;   // how long this purchase lasts
+  int estimatedDays; // how long this purchase lasts
 
   InventoryItem({
     required this.id,
     required this.name,
     required this.category,
-    required this.shelfZone,
     this.shelfCode,
     this.quantityLabel = '',
     required this.purchasedAt,
@@ -279,13 +244,15 @@ class InventoryItem {
 /// entries that never had a source (manually typed items).
 bool sameProduct(ShoppingItem s, InventoryItem inv) =>
     s.sourceInventoryId != null
-        ? s.sourceInventoryId == inv.id
-        : s.name == inv.name;
+    ? s.sourceInventoryId == inv.id
+    : s.name == inv.name;
 
 /// Index of the entry in [inventory] that corresponds to [item], per
 /// [sameProduct]'s matching rule; -1 if none.
 int inventoryIndexForShoppingItem(
-    List<InventoryItem> inventory, ShoppingItem item) {
+  List<InventoryItem> inventory,
+  ShoppingItem item,
+) {
   if (item.sourceInventoryId != null) {
     final idx = inventory.indexWhere((i) => i.id == item.sourceInventoryId);
     if (idx != -1) return idx;
@@ -321,7 +288,6 @@ List<InventoryItem> applyPurchase({
       id: newId,
       name: item.name,
       category: item.category,
-      shelfZone: item.shelfZone,
       shelfCode: item.shelfCode,
       quantityLabel: item.quantityLabel,
       purchasedAt: now,
@@ -335,8 +301,8 @@ List<InventoryItem> applyPurchase({
 class BudgetItem {
   final String id;
   String name;
-  int quantity;      // count, ≥ 1
-  double unitPrice;  // price per unit
+  int quantity; // count, ≥ 1
+  double unitPrice; // price per unit
 
   BudgetItem({
     required this.id,
@@ -373,8 +339,7 @@ class BudgetHistoryEntry {
     required this.items,
   });
 
-  double get totalAmount =>
-      items.fold(0.0, (sum, i) => sum + i.lineTotal);
+  double get totalAmount => items.fold(0.0, (sum, i) => sum + i.lineTotal);
 }
 
 // ─── App Settings ─────────────────────────────────────────────────────────────
@@ -382,7 +347,7 @@ class BudgetHistoryEntry {
 class AppSettings {
   int reminderThresholdDays; // 1–14, default 5
   bool restockReminderEnabled;
-  int reminderHour;   // 0–23
+  int reminderHour; // 0–23
   int reminderMinute; // 0–59
 
   AppSettings({
@@ -406,7 +371,6 @@ List<ShoppingItem> buildSampleShopping(List<Category> categories) {
       name: '香蕉',
       category: cat('produce'),
       quantityLabel: '1串',
-      shelfZone: '果蔬区',
       shelfCode: '货架B3',
     ),
     ShoppingItem(
@@ -414,7 +378,6 @@ List<ShoppingItem> buildSampleShopping(List<Category> categories) {
       name: '番茄',
       category: cat('produce'),
       quantityLabel: '6个',
-      shelfZone: '果蔬区',
       shelfCode: '货架B1',
     ),
     ShoppingItem(
@@ -422,7 +385,6 @@ List<ShoppingItem> buildSampleShopping(List<Category> categories) {
       name: '藻菜',
       category: cat('produce'),
       quantityLabel: '1把',
-      shelfZone: '果蔬区',
       shelfCode: '货架B2',
     ),
     ShoppingItem(
@@ -430,7 +392,6 @@ List<ShoppingItem> buildSampleShopping(List<Category> categories) {
       name: '牛奶',
       category: cat('dairy'),
       quantityLabel: '2盒',
-      shelfZone: '乳制品',
       shelfCode: '冷柜C2',
     ),
     ShoppingItem(
@@ -438,17 +399,16 @@ List<ShoppingItem> buildSampleShopping(List<Category> categories) {
       name: '鸡蛋',
       category: cat('dairy'),
       quantityLabel: '1打',
-      shelfZone: '乳制品',
       shelfCode: '冷柜C1',
     ),
   ];
 }
 
 List<BudgetItem> buildSampleBudget() => [
-      BudgetItem(id: 'b1', name: '牛奶', quantity: 2, unitPrice: 8.5),
-      BudgetItem(id: 'b2', name: '鸡蛋', quantity: 1, unitPrice: 15),
-      BudgetItem(id: 'b3', name: '香蕉', quantity: 3, unitPrice: 2.5),
-    ];
+  BudgetItem(id: 'b1', name: '牛奶', quantity: 2, unitPrice: 8.5),
+  BudgetItem(id: 'b2', name: '鸡蛋', quantity: 1, unitPrice: 15),
+  BudgetItem(id: 'b3', name: '香蕉', quantity: 3, unitPrice: 2.5),
+];
 
 List<InventoryItem> buildSampleInventory(List<Category> categories) {
   Category cat(String id) => categories.findById(id) ?? categories.fallback;
@@ -458,7 +418,6 @@ List<InventoryItem> buildSampleInventory(List<Category> categories) {
       id: 'i1',
       name: '牛奶',
       category: cat('dairy'),
-      shelfZone: '乳制品',
       shelfCode: '冷柜C2',
       quantityLabel: '2盒',
       purchasedAt: now.subtract(const Duration(days: 1)),
@@ -468,7 +427,6 @@ List<InventoryItem> buildSampleInventory(List<Category> categories) {
       id: 'i2',
       name: '鸡蛋',
       category: cat('dairy'),
-      shelfZone: '乳制品',
       shelfCode: '冷柜C1',
       quantityLabel: '1打',
       purchasedAt: now.subtract(const Duration(days: 8)),
@@ -478,7 +436,6 @@ List<InventoryItem> buildSampleInventory(List<Category> categories) {
       id: 'i3',
       name: '橙汁',
       category: cat('household'),
-      shelfZone: '饮料',
       shelfCode: '货架D1',
       quantityLabel: '1瓶',
       purchasedAt: now.subtract(const Duration(days: 30)),
@@ -488,7 +445,6 @@ List<InventoryItem> buildSampleInventory(List<Category> categories) {
       id: 'i4',
       name: '苹果',
       category: cat('grain'),
-      shelfZone: '水果区',
       shelfCode: '货架E2',
       quantityLabel: '6个',
       purchasedAt: now.subtract(const Duration(days: 10)),
@@ -498,7 +454,6 @@ List<InventoryItem> buildSampleInventory(List<Category> categories) {
       id: 'i5',
       name: '酸奶',
       category: cat('dairy'),
-      shelfZone: '乳制品',
       shelfCode: '冷柜C3',
       quantityLabel: '4杯',
       purchasedAt: now.subtract(const Duration(days: 8)),

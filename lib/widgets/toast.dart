@@ -268,8 +268,10 @@ class _CelebrationCardState extends State<_CelebrationCard>
     // absolute timing as before), the extra time all goes into the hold.
     _scale = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween(begin: 0.4, end: 1.12)
-            .chain(CurveTween(curve: Curves.easeOutBack)),
+        tween: Tween(
+          begin: 0.4,
+          end: 1.12,
+        ).chain(CurveTween(curve: Curves.easeOutBack)),
         weight: 24,
       ),
       TweenSequenceItem(tween: Tween(begin: 1.12, end: 1.0), weight: 9),
@@ -321,8 +323,11 @@ class _CelebrationCardState extends State<_CelebrationCard>
                     color: Color(0xFF8BD17C),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.check_rounded,
-                      color: Colors.white, size: 32),
+                  child: const Icon(
+                    Icons.check_rounded,
+                    color: Colors.white,
+                    size: 32,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 Text(

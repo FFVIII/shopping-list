@@ -30,7 +30,12 @@ class BatchBar extends StatelessWidget {
     this.onCancel,
   });
 
-  Widget _pill(String text, Color textColor, Color bgColor, VoidCallback? onTap) {
+  Widget _pill(
+    String text,
+    Color textColor,
+    Color bgColor,
+    VoidCallback? onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -62,7 +67,11 @@ class BatchBar extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         boxShadow: [
-          BoxShadow(color: Color(0x12000000), blurRadius: 12, offset: Offset(0, -3)),
+          BoxShadow(
+            color: Color(0x12000000),
+            blurRadius: 12,
+            offset: Offset(0, -3),
+          ),
         ],
       ),
       child: Column(
@@ -84,18 +93,27 @@ class BatchBar extends StatelessWidget {
               _pill(
                 l.selectAll,
                 allSelected ? AppColors.brand : AppColors.textSecondary,
-                allSelected ? AppColors.brand.withValues(alpha: 0.12) : AppColors.fieldBg,
+                allSelected
+                    ? AppColors.brand.withValues(alpha: 0.12)
+                    : AppColors.fieldBg,
                 onToggleAll,
               ),
               const Spacer(),
               if (onCancel != null) ...[
-                _pill(l.cancel, AppColors.textSecondary, AppColors.fieldBg, onCancel),
+                _pill(
+                  l.cancel,
+                  AppColors.textSecondary,
+                  AppColors.fieldBg,
+                  onCancel,
+                ),
                 const SizedBox(width: 8),
               ],
               _pill(
                 l.delete,
                 hasSelection ? AppColors.danger : AppColors.textDisabled,
-                hasSelection ? AppColors.danger.withValues(alpha: 0.10) : AppColors.fieldBg,
+                hasSelection
+                    ? AppColors.danger.withValues(alpha: 0.10)
+                    : AppColors.fieldBg,
                 onDelete,
               ),
             ],

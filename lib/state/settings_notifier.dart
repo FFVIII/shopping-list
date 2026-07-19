@@ -29,9 +29,11 @@ class SettingsNotifier extends ChangeNotifier {
 
   void persist() {
     notifyListeners();
-    unawaited(_repo
-        .saveSettings(settings)
-        .catchError((e) => debugPrint('save settings failed: $e')));
+    unawaited(
+      _repo
+          .saveSettings(settings)
+          .catchError((e) => debugPrint('save settings failed: $e')),
+    );
     afterPersist?.call();
   }
 }

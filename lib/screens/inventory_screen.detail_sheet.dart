@@ -17,7 +17,6 @@ class _DetailDraft {
   String quantity;
   String shelfCode;
   Category category;
-  String zone;
   bool dirty = false;
 
   _DetailDraft({
@@ -25,16 +24,14 @@ class _DetailDraft {
     required this.quantity,
     required this.shelfCode,
     required this.category,
-    required this.zone,
   });
 
   factory _DetailDraft.from(InventoryItem item) => _DetailDraft(
-        name: item.name,
-        quantity: item.quantityLabel,
-        shelfCode: item.shelfCode ?? '',
-        category: item.category,
-        zone: item.shelfZone,
-      );
+    name: item.name,
+    quantity: item.quantityLabel,
+    shelfCode: item.shelfCode ?? '',
+    category: item.category,
+  );
 }
 
 // ── Inventory detail sheet (inline-editable header + reset / restock / delete) ─
@@ -48,9 +45,8 @@ class _InventoryDetailSheet extends StatefulWidget {
   final VoidCallback onAddToList;
   final VoidCallback onDelete;
   final VoidCallback onSave;
-  final Category Function(
-      String name, Color color, String shelfZone, int defaultDays)
-      onAddCategory;
+  final Category Function(String name, Color color, int defaultDays)
+  onAddCategory;
   final List<String> shelfCodeOrder;
 
   const _InventoryDetailSheet({
@@ -115,19 +111,20 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
     super.dispose();
   }
 
-
   @override
   Widget build(BuildContext context) {
     final l = L10n.of(context);
     final status = widget.item.statusFor(widget.thresholdDays);
     final previewStatus = _resetPending
         ? (_selectedDays <= 0
-            ? StockStatus.empty
-            : _selectedDays <= widget.thresholdDays
-                ? StockStatus.low
-                : StockStatus.sufficient)
+              ? StockStatus.empty
+              : _selectedDays <= widget.thresholdDays
+              ? StockStatus.low
+              : StockStatus.sufficient)
         : status;
-    final previewDays = _resetPending ? _selectedDays : widget.item.daysRemaining;
+    final previewDays = _resetPending
+        ? _selectedDays
+        : widget.item.daysRemaining;
     return Padding(
       padding: EdgeInsets.only(
         left: 20,
@@ -151,13 +148,18 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.local_offer_outlined,
-                            size: 14, color: AppColors.textDisabled),
+                        const Icon(
+                          Icons.local_offer_outlined,
+                          size: 14,
+                          color: AppColors.textDisabled,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           l.categoryInlineLabel,
                           style: const TextStyle(
-                              fontSize: 14, color: AppColors.textMuted),
+                            fontSize: 14,
+                            color: AppColors.textMuted,
+                          ),
                         ),
                         const SizedBox(width: 6),
                         CategoryPickerField(
@@ -167,7 +169,6 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                           onChanged: (cat) => setState(() {
                             _draft
                               ..category = cat
-                              ..zone = cat.shelfZone
                               ..dirty = true;
                           }),
                         ),
@@ -183,7 +184,9 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.brand,
                       borderRadius: BorderRadius.circular(20),
@@ -205,7 +208,9 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: previewStatus.bgColor,
                     borderRadius: BorderRadius.circular(12),
@@ -248,8 +253,10 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                         controller: _nameCtrl,
                         maxLength: 30,
                         style: const TextStyle(fontSize: 15),
-                        decoration: fieldDecoration(l.productNameHint,
-                            verticalPadding: 10),
+                        decoration: fieldDecoration(
+                          l.productNameHint,
+                          verticalPadding: 10,
+                        ),
                         onChanged: (v) {
                           _draft
                             ..name = v
@@ -273,8 +280,10 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                         ],
                         maxLength: 10,
                         style: const TextStyle(fontSize: 15),
-                        decoration: fieldDecoration(l.quantityFieldLabel,
-                            verticalPadding: 10),
+                        decoration: fieldDecoration(
+                          l.quantityFieldLabel,
+                          verticalPadding: 10,
+                        ),
                         onChanged: (v) {
                           _draft
                             ..quantity = v
@@ -296,32 +305,39 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                   controller: _shelfCtrl,
                   maxLength: 20,
                   style: const TextStyle(fontSize: 15),
-                  decoration: fieldDecoration(l.shelfCodeFieldLabel,
-                          verticalPadding: 10)
-                      .copyWith(
-                          suffixIcon: widget.shelfCodeOrder.isEmpty
-                              ? null
-                              : Builder(
-                                  builder: (iconContext) => IconButton(
-                                    icon: const Icon(Icons.list_alt_rounded,
-                                        size: 20,
-                                        color: AppColors.textSecondary),
-                                    onPressed: () async {
-                                      final picked = await pickShelfCode(
-                                          iconContext, widget.shelfCodeOrder);
-                                      if (picked == null) return;
-                                      // Programmatic controller.text writes
-                                      // don't fire onChanged, so the draft
-                                      // needs updating explicitly here too.
-                                      setState(() {
-                                        _shelfCtrl.text = picked;
-                                        _draft
-                                          ..shelfCode = picked
-                                          ..dirty = true;
-                                      });
-                                    },
+                  decoration:
+                      fieldDecoration(
+                        l.shelfCodeFieldLabel,
+                        verticalPadding: 10,
+                      ).copyWith(
+                        suffixIcon: widget.shelfCodeOrder.isEmpty
+                            ? null
+                            : Builder(
+                                builder: (iconContext) => IconButton(
+                                  icon: const Icon(
+                                    Icons.list_alt_rounded,
+                                    size: 20,
+                                    color: AppColors.textSecondary,
                                   ),
-                                )),
+                                  onPressed: () async {
+                                    final picked = await pickShelfCode(
+                                      iconContext,
+                                      widget.shelfCodeOrder,
+                                    );
+                                    if (picked == null) return;
+                                    // Programmatic controller.text writes
+                                    // don't fire onChanged, so the draft
+                                    // needs updating explicitly here too.
+                                    setState(() {
+                                      _shelfCtrl.text = picked;
+                                      _draft
+                                        ..shelfCode = picked
+                                        ..dirty = true;
+                                    });
+                                  },
+                                ),
+                              ),
+                      ),
                   onChanged: (v) {
                     _draft
                       ..shelfCode = v
@@ -359,10 +375,12 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                 backgroundColor: _addedToList
                     ? AppColors.fieldBg
                     : AppColors.brand.withValues(alpha: 0.12),
-                foregroundColor:
-                    _addedToList ? AppColors.textMuted : AppColors.brand,
+                foregroundColor: _addedToList
+                    ? AppColors.textMuted
+                    : AppColors.brand,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 elevation: 0,
                 minimumSize: const Size(double.infinity, 50),
               ),
@@ -374,8 +392,10 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                     },
               child: Text(
                 _addedToList ? l.alreadyInList : l.addToPlanList,
-                style:
-                    const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
             const SizedBox(height: 8),
@@ -385,35 +405,38 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                 minimumSize: const Size(double.infinity, 44),
               ),
               onPressed: () async {
-                  final ok = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: Text(l.deleteFromInventory),
-                      content: Text(l.deleteConfirmMessage),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: Text(l.cancel),
+                final ok = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: Text(l.deleteFromInventory),
+                    content: Text(l.deleteConfirmMessage),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: Text(l.cancel),
+                      ),
+                      TextButton(
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.danger,
                         ),
-                        TextButton(
-                          style: TextButton.styleFrom(
-                              foregroundColor: AppColors.danger),
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: Text(l.delete),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (ok != true || !context.mounted) return;
-                  // Discard pending edits — the item is being removed.
-                  _draft.dirty = false;
-                  Navigator.pop(context);
-                  widget.onDelete();
-                },
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: Text(l.delete),
+                      ),
+                    ],
+                  ),
+                );
+                if (ok != true || !context.mounted) return;
+                // Discard pending edits — the item is being removed.
+                _draft.dirty = false;
+                Navigator.pop(context);
+                widget.onDelete();
+              },
               child: Text(
                 l.deleteFromInventory,
                 style: const TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w500),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ],

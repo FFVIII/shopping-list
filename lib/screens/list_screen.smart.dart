@@ -21,26 +21,25 @@ extension _SmartModeState on _ListScreenState {
     }
     final order = widget.shelfCodeOrder;
     final sorted = Map.fromEntries(
-      map.entries.toList()
-        ..sort((a, b) {
-          int cmp;
-          if (order.isNotEmpty) {
-            final ai = order.indexOf(a.key);
-            final bi = order.indexOf(b.key);
-            if (ai >= 0 && bi >= 0) {
-              cmp = ai.compareTo(bi);
-            } else if (ai >= 0) {
-              cmp = -1;
-            } else if (bi >= 0) {
-              cmp = 1;
-            } else {
-              cmp = a.key.compareTo(b.key);
-            }
+      map.entries.toList()..sort((a, b) {
+        int cmp;
+        if (order.isNotEmpty) {
+          final ai = order.indexOf(a.key);
+          final bi = order.indexOf(b.key);
+          if (ai >= 0 && bi >= 0) {
+            cmp = ai.compareTo(bi);
+          } else if (ai >= 0) {
+            cmp = -1;
+          } else if (bi >= 0) {
+            cmp = 1;
           } else {
             cmp = a.key.compareTo(b.key);
           }
-          return _smartGroupDir == SortDir.asc ? cmp : -cmp;
-        }),
+        } else {
+          cmp = a.key.compareTo(b.key);
+        }
+        return _smartGroupDir == SortDir.asc ? cmp : -cmp;
+      }),
     );
     // Untagged items always appear at the end regardless of direction.
     if (untagged.isNotEmpty) {
@@ -55,10 +54,11 @@ extension _SmartModeState on _ListScreenState {
       map.putIfAbsent(item.category.name, () => []).add(item);
     }
     return Map.fromEntries(
-      map.entries.toList()
-        ..sort((a, b) => _smartGroupDir == SortDir.asc
+      map.entries.toList()..sort(
+        (a, b) => _smartGroupDir == SortDir.asc
             ? a.key.compareTo(b.key)
-            : b.key.compareTo(a.key)),
+            : b.key.compareTo(a.key),
+      ),
     );
   }
 
@@ -93,7 +93,7 @@ extension _SmartModeState on _ListScreenState {
 
     if (_smartGroup == SmartGroupMode.manual) {
       // Manual mode: just reorder, no shelf/category change
-      widget.onReorderSmart(movedItem.id, null, null, orderedIds, null);
+      widget.onReorderSmart(movedItem.id, null, orderedIds, null);
     } else {
       String newGroup = '';
       for (int i = newIndex; i >= 0; i--) {
@@ -146,13 +146,13 @@ extension _SmartModeState on _ListScreenState {
           // the item back in its original aisle.
           if (proceed != true || !mounted) return;
         }
-        widget.onReorderSmart(movedItem.id, null, null, orderedIds, newCode);
+        widget.onReorderSmart(movedItem.id, null, orderedIds, newCode);
       } else {
         final newCat = widget.categories.firstWhere(
           (c) => c.name == newGroup,
           orElse: () => movedItem.category,
         );
-        widget.onReorderSmart(movedItem.id, null, newCat, orderedIds, null);
+        widget.onReorderSmart(movedItem.id, newCat, orderedIds, null);
       }
     }
   }
@@ -193,8 +193,8 @@ extension _SmartModeState on _ListScreenState {
         }
         final item = entry.item!;
         final zoneColor = item.category.color;
-        final isTutorialExampleItem =
-            TutorialController.instance.isExampleItemName(item.name);
+        final isTutorialExampleItem = TutorialController.instance
+            .isExampleItemName(item.name);
         final row = _SmartRow(
           key: isTutorialExampleItem ? null : Key('si_${item.id}'),
           item: item,
@@ -205,10 +205,13 @@ extension _SmartModeState on _ListScreenState {
             widget.onToggleSmart(item.id);
           },
           onDelete: () => _handleSwipeDelete(
-              id: item.id,
-              label: L10n.of(context).data(item.name),
-              realDelete: () => widget.onDeleteSmart(item.id)),
-          onLongPress: _smartBatchMode ? null : () => _enterSmartBatchWithItem(item.id),
+            id: item.id,
+            label: L10n.of(context).data(item.name),
+            realDelete: () => widget.onDeleteSmart(item.id),
+          ),
+          onLongPress: _smartBatchMode
+              ? null
+              : () => _enterSmartBatchWithItem(item.id),
           reorderIndex: i,
           batchMode: _smartBatchMode,
           selected: _smartSelected.contains(item.id),
@@ -237,8 +240,13 @@ extension _SmartModeState on _ListScreenState {
     );
   }
 
-  Widget _buildSectionHeader(String zone, int count,
-      {Key? key, Color? color, Widget? trailing}) {
+  Widget _buildSectionHeader(
+    String zone,
+    int count, {
+    Key? key,
+    Color? color,
+    Widget? trailing,
+  }) {
     final l = L10n.of(context);
     final color0 = color ?? AppColors.textMuted;
     return Padding(
@@ -249,8 +257,7 @@ extension _SmartModeState on _ListScreenState {
           Container(
             width: 10,
             height: 10,
-            decoration:
-                BoxDecoration(color: color0, shape: BoxShape.circle),
+            decoration: BoxDecoration(color: color0, shape: BoxShape.circle),
           ),
           const SizedBox(width: 8),
           ConstrainedBox(
@@ -269,8 +276,7 @@ extension _SmartModeState on _ListScreenState {
           ),
           const SizedBox(width: 8),
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
             decoration: BoxDecoration(
               color: color0.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
@@ -344,7 +350,9 @@ class _SmartRow extends StatelessWidget {
 
     return Dismissible(
       key: Key('smart_${item.id}'),
-      direction: batchMode ? DismissDirection.none : DismissDirection.endToStart,
+      direction: batchMode
+          ? DismissDirection.none
+          : DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 18),
@@ -353,8 +361,11 @@ class _SmartRow extends StatelessWidget {
           color: AppColors.danger,
           borderRadius: BorderRadius.circular(14),
         ),
-        child: const Icon(Icons.delete_outline_rounded,
-            color: Colors.white, size: 22),
+        child: const Icon(
+          Icons.delete_outline_rounded,
+          color: Colors.white,
+          size: 22,
+        ),
       ),
       onDismissed: (_) => onDelete(),
       child: Container(
@@ -383,7 +394,8 @@ class _SmartRow extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: zoneColor,
                   borderRadius: const BorderRadius.horizontal(
-                      left: Radius.circular(14)),
+                    left: Radius.circular(14),
+                  ),
                 ),
               ),
             ),
@@ -397,7 +409,9 @@ class _SmartRow extends StatelessWidget {
                     onTap: circleTap,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 16),
+                        horizontal: 14,
+                        vertical: 16,
+                      ),
                       child: _SelectCircle(selected: circleSelected),
                     ),
                   ),
@@ -432,8 +446,10 @@ class _SmartRow extends StatelessWidget {
                                 ],
                                 Flexible(
                                   child: Text(
-                                    l.days(item.estimatedDays ??
-                                        item.category.defaultDays),
+                                    l.days(
+                                      item.estimatedDays ??
+                                          item.category.defaultDays,
+                                    ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
@@ -448,7 +464,9 @@ class _SmartRow extends StatelessWidget {
                               const SizedBox(height: 5),
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 6, vertical: 2),
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
                                   color: zoneColor.withValues(alpha: 0.12),
                                   borderRadius: BorderRadius.circular(6),

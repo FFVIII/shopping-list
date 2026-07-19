@@ -27,23 +27,16 @@ class SettingsScreen extends StatefulWidget {
   final void Function(AppSettings) onChanged;
   final AppLanguage language;
   final void Function(AppLanguage) onLanguageChanged;
-  final List<ShelfZone> shelfZones;
-  final void Function(int oldIndex, int newIndex) onReorderShelfZones;
   final List<String> shelfCodeOrder;
   final void Function(int oldIndex, int newIndex) onReorderShelfCodes;
   final void Function(String code) onAddShelfCode;
   final void Function(String code) onDeleteShelfCode;
   final void Function(String oldCode, String newCode) onRenameShelfCode;
   final List<Category> categories;
-  final Category Function(String name, Color color, String shelfZone, int defaultDays)
-      onAddCategory;
-  final void Function(
-    String id,
-    String name,
-    Color color,
-    String shelfZone,
-    int defaultDays,
-  ) onEditCategory;
+  final Category Function(String name, Color color, int defaultDays)
+  onAddCategory;
+  final void Function(String id, String name, Color color, int defaultDays)
+  onEditCategory;
   final void Function(String id) onDeleteCategory;
   final void Function(int oldIndex, int newIndex) onReorderCategories;
   final List<int> Function() buildBackupBytes;
@@ -59,8 +52,6 @@ class SettingsScreen extends StatefulWidget {
     required this.onChanged,
     required this.language,
     required this.onLanguageChanged,
-    required this.shelfZones,
-    required this.onReorderShelfZones,
     required this.shelfCodeOrder,
     required this.onReorderShelfCodes,
     required this.onAddShelfCode,
@@ -133,8 +124,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) =>
-                        ProUpgradeScreen(purchaseService: widget.purchaseService),
+                    builder: (_) => ProUpgradeScreen(
+                      purchaseService: widget.purchaseService,
+                    ),
                   ),
                 ),
                 child: _buildProCard(l),
@@ -167,7 +159,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _navRow(
                 l.reminderTimeLabel,
                 trailing: l.reminderTimeDisplay(
-                    _settings.reminderHour, _settings.reminderMinute),
+                  _settings.reminderHour,
+                  _settings.reminderMinute,
+                ),
                 onTap: _pickReminderTime,
               ),
               _navRow(
@@ -198,8 +192,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Center(
               child: Text(
                 l.appFooter,
-                style:
-                    TextStyle(fontSize: 12, color: Colors.grey[400]),
+                style: TextStyle(fontSize: 12, color: Colors.grey[400]),
               ),
             ),
           ],
@@ -252,7 +245,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 7, vertical: 2),
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(6),
@@ -279,8 +274,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 14),
             Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 9),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
@@ -331,10 +325,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   rows[i],
                   if (i < rows.length - 1)
                     const Divider(
-                        height: 1,
-                        indent: 16,
-                        endIndent: 0,
-                        color: Color(0xFFF0F0F0)),
+                      height: 1,
+                      indent: 16,
+                      endIndent: 0,
+                      color: Color(0xFFF0F0F0),
+                    ),
                 ],
               ],
             ),
@@ -347,34 +342,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _navRow(String label, {String? trailing, VoidCallback? onTap}) {
     return ListTile(
       onTap: onTap,
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
       dense: true,
-      title: Text(label,
-          style: const TextStyle(fontSize: 15, color: AppColors.textPrimary)),
+      title: Text(
+        label,
+        style: const TextStyle(fontSize: 15, color: AppColors.textPrimary),
+      ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (trailing != null)
-            Text(trailing,
-                style: const TextStyle(
-                    fontSize: 14, color: AppColors.textMuted)),
+            Text(
+              trailing,
+              style: const TextStyle(fontSize: 14, color: AppColors.textMuted),
+            ),
           const SizedBox(width: 4),
-          const Icon(Icons.chevron_right_rounded,
-              color: AppColors.textDisabled, size: 20),
+          const Icon(
+            Icons.chevron_right_rounded,
+            color: AppColors.textDisabled,
+            size: 20,
+          ),
         ],
       ),
     );
   }
 
-  Widget _switchRow(
-      String label, bool value, ValueChanged<bool> onChanged) {
+  Widget _switchRow(String label, bool value, ValueChanged<bool> onChanged) {
     return ListTile(
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
       dense: true,
-      title: Text(label,
-          style: const TextStyle(fontSize: 15, color: AppColors.textPrimary)),
+      title: Text(
+        label,
+        style: const TextStyle(fontSize: 15, color: AppColors.textPrimary),
+      ),
       trailing: Switch(
         value: value,
         onChanged: onChanged,
@@ -405,22 +405,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   TextButton(
                     onPressed: () => Navigator.pop(ctx, false),
-                    child: Text(l.cancel,
-                        style: const TextStyle(
-                            fontSize: 17, color: AppColors.textMuted)),
-                  ),
-                  Text(l.advanceDays,
+                    child: Text(
+                      l.cancel,
                       style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary)),
+                        fontSize: 17,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    l.advanceDays,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
                   TextButton(
                     onPressed: () => Navigator.pop(ctx, true),
-                    child: Text(l.save,
-                        style: const TextStyle(
-                            fontSize: 17,
-                            color: AppColors.brand,
-                            fontWeight: FontWeight.w600)),
+                    child: Text(
+                      l.save,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        color: AppColors.brand,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -430,15 +440,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: CupertinoPicker(
                 itemExtent: 36,
                 scrollController: FixedExtentScrollController(
-                    initialItem: _settings.reminderThresholdDays - 1),
+                  initialItem: _settings.reminderThresholdDays - 1,
+                ),
                 onSelectedItemChanged: (i) => selected = i + 1,
                 children: [
                   for (var d = 1; d <= 14; d++)
                     Center(
-                        child: Text(l.days(d),
-                            style: const TextStyle(
-                                fontSize: 19,
-                                color: AppColors.textPrimary))),
+                      child: Text(
+                        l.days(d),
+                        style: const TextStyle(
+                          fontSize: 19,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -448,46 +463,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
     if (saved != true) return;
-    _update(AppSettings(
-      reminderThresholdDays: selected,
-      restockReminderEnabled: _settings.restockReminderEnabled,
-      reminderHour: _settings.reminderHour,
-      reminderMinute: _settings.reminderMinute,
-    ));
+    _update(
+      AppSettings(
+        reminderThresholdDays: selected,
+        restockReminderEnabled: _settings.restockReminderEnabled,
+        reminderHour: _settings.reminderHour,
+        reminderMinute: _settings.reminderMinute,
+      ),
+    );
   }
 
   void _openCategoryManage() {
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => CategoryManageScreen(
-        categories: widget.categories,
-        shelfZones: widget.shelfZones,
-        onAdd: widget.onAddCategory,
-        onEdit: widget.onEditCategory,
-        onDelete: widget.onDeleteCategory,
-        onReorder: widget.onReorderCategories,
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => CategoryManageScreen(
+          categories: widget.categories,
+          onAdd: widget.onAddCategory,
+          onEdit: widget.onEditCategory,
+          onDelete: widget.onDeleteCategory,
+          onReorder: widget.onReorderCategories,
+        ),
       ),
-    ));
+    );
   }
 
   void _openShelfOrder() {
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => ShelfOrderScreen(
-        shelfCodes: widget.shelfCodeOrder,
-        onReorderCodes: widget.onReorderShelfCodes,
-        onAddCode: widget.onAddShelfCode,
-        onDeleteCode: widget.onDeleteShelfCode,
-        onRenameCode: widget.onRenameShelfCode,
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ShelfOrderScreen(
+          shelfCodes: widget.shelfCodeOrder,
+          onReorderCodes: widget.onReorderShelfCodes,
+          onAddCode: widget.onAddShelfCode,
+          onDeleteCode: widget.onDeleteShelfCode,
+          onRenameCode: widget.onRenameShelfCode,
+        ),
       ),
-    ));
+    );
   }
 
   void _openSpendingHistory() {
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => SpendingHistoryScreen(
-        budgetHistory: widget.budgetHistory,
-        onDeleteEntry: widget.onDeleteBudgetHistoryEntry,
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => SpendingHistoryScreen(
+          budgetHistory: widget.budgetHistory,
+          onDeleteEntry: widget.onDeleteBudgetHistoryEntry,
+        ),
       ),
-    ));
+    );
   }
 
   Future<void> _onReminderToggle(bool enabled) async {
@@ -525,12 +547,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return;
       }
     }
-    _update(AppSettings(
-      reminderThresholdDays: _settings.reminderThresholdDays,
-      restockReminderEnabled: enabled,
-      reminderHour: _settings.reminderHour,
-      reminderMinute: _settings.reminderMinute,
-    ));
+    _update(
+      AppSettings(
+        reminderThresholdDays: _settings.reminderThresholdDays,
+        restockReminderEnabled: enabled,
+        reminderHour: _settings.reminderHour,
+        reminderMinute: _settings.reminderMinute,
+      ),
+    );
   }
 
   Future<void> _exportBackup() async {
@@ -540,15 +564,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final now = DateTime.now();
       String two(int n) => n.toString().padLeft(2, '0');
       final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/shopping_list_backup_'
-          '${now.year}-${two(now.month)}-${two(now.day)}.xlsx');
+      final file = File(
+        '${dir.path}/shopping_list_backup_'
+        '${now.year}-${two(now.month)}-${two(now.day)}.xlsx',
+      );
       await file.writeAsBytes(bytes);
       await SharePlus.instance.share(
-        ShareParams(files: [
-          XFile(file.path,
+        ShareParams(
+          files: [
+            XFile(
+              file.path,
               mimeType:
-                  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
-        ]),
+                  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ),
+          ],
+        ),
       );
     } catch (e) {
       debugPrint('backup export failed: $e');
@@ -607,8 +637,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     // hour/minute selection changes inside the double-tap window (framework
     // bug in _DialTimeSelectorControl's conditional onDoubleTap), so we use
     // a Cupertino time wheel in an app-style sheet instead.
-    var selected =
-        DateTime(2000, 1, 1, _settings.reminderHour, _settings.reminderMinute);
+    var selected = DateTime(
+      2000,
+      1,
+      1,
+      _settings.reminderHour,
+      _settings.reminderMinute,
+    );
     final saved = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: Colors.white,
@@ -626,22 +661,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   TextButton(
                     onPressed: () => Navigator.pop(ctx, false),
-                    child: Text(l.cancel,
-                        style: const TextStyle(
-                            fontSize: 17, color: AppColors.textMuted)),
-                  ),
-                  Text(l.reminderTimeLabel,
+                    child: Text(
+                      l.cancel,
                       style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary)),
+                        fontSize: 17,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    l.reminderTimeLabel,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
                   TextButton(
                     onPressed: () => Navigator.pop(ctx, true),
-                    child: Text(l.save,
-                        style: const TextStyle(
-                            fontSize: 17,
-                            color: AppColors.brand,
-                            fontWeight: FontWeight.w600)),
+                    child: Text(
+                      l.save,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        color: AppColors.brand,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -661,12 +706,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
     if (saved != true) return;
-    _update(AppSettings(
-      reminderThresholdDays: _settings.reminderThresholdDays,
-      restockReminderEnabled: _settings.restockReminderEnabled,
-      reminderHour: selected.hour,
-      reminderMinute: selected.minute,
-    ));
+    _update(
+      AppSettings(
+        reminderThresholdDays: _settings.reminderThresholdDays,
+        restockReminderEnabled: _settings.restockReminderEnabled,
+        reminderHour: selected.hour,
+        reminderMinute: selected.minute,
+      ),
+    );
   }
 
   void _showLanguageSheet(AppStrings l) {

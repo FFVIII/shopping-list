@@ -33,8 +33,9 @@ void main() {
     if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
   });
 
-  testWidgets('App smoke test (zh): renders bottom nav labels',
-      (WidgetTester tester) async {
+  testWidgets('App smoke test (zh): renders bottom nav labels', (
+    WidgetTester tester,
+  ) async {
     // Use a tall iPhone-sized surface so the list content does not overflow
     // the default 800x600 test viewport.
     tester.view.physicalSize = const Size(1290, 2796);
@@ -56,11 +57,14 @@ void main() {
     // flutter_test's fake-async pump loop, so a plain pumpAndSettle() hangs
     // forever. runAsync opens a real-time window so the in-flight I/O can
     // complete; pump() then applies the resulting setState.
-    for (var i = 0;
-        i < 20 && find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
-        i++) {
+    for (
+      var i = 0;
+      i < 20 && find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
+      i++
+    ) {
       await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 50)));
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
       await tester.pump();
     }
 
@@ -71,8 +75,9 @@ void main() {
     expect(find.text('设置'), findsOneWidget);
   });
 
-  testWidgets('App smoke test (en): renders bottom nav labels',
-      (WidgetTester tester) async {
+  testWidgets('App smoke test (en): renders bottom nav labels', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1290, 2796);
     tester.view.devicePixelRatio = 3.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -85,11 +90,14 @@ void main() {
         notifications: NotificationService(),
       ),
     );
-    for (var i = 0;
-        i < 20 && find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
-        i++) {
+    for (
+      var i = 0;
+      i < 20 && find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
+      i++
+    ) {
       await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 50)));
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
       await tester.pump();
     }
 

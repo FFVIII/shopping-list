@@ -51,8 +51,7 @@ class ListScreen extends StatefulWidget {
     String quantityLabel,
     String? shelfCode,
     int estimatedDays,
-    Category category,
-    String shelfZone, {
+    Category category, {
     double? unitPrice,
   })
   onAddSmart;
@@ -63,7 +62,6 @@ class ListScreen extends StatefulWidget {
   final void Function(List<String> orderedIds) onReorderSimple;
   final void Function(
     String movedId,
-    String? newShelfZone,
     Category? newCategory,
     List<String> orderedIds,
     String? newShelfCode,
@@ -75,8 +73,7 @@ class ListScreen extends StatefulWidget {
     String name,
     String quantityLabel,
     String? shelfCode,
-    Category category,
-    String shelfZone, {
+    Category category, {
     double? unitPrice,
   })
   onEditSmart;
@@ -101,12 +98,7 @@ class ListScreen extends StatefulWidget {
   // Restored from NavigationStore so a full app restart reopens on the
   // last-viewed mode instead of always Jot.
   final ListMode initialMode;
-  final Category Function(
-    String name,
-    Color color,
-    String shelfZone,
-    int defaultDays,
-  )
+  final Category Function(String name, Color color, int defaultDays)
   onAddCategory;
 
   const ListScreen({
@@ -523,5 +515,4 @@ class _ListScreenState extends State<ListScreen> {
       ),
     );
   }
-
 }

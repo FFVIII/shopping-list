@@ -38,7 +38,9 @@ extension _HeaderAndAddBarState on _ListScreenState {
                 onTap: _saveSmartBatch,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 7),
+                    horizontal: 12,
+                    vertical: 7,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.brand,
                     borderRadius: BorderRadius.circular(20),
@@ -69,7 +71,9 @@ extension _HeaderAndAddBarState on _ListScreenState {
                   onTap: _confirmCompleteTrip,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 7),
+                      horizontal: 12,
+                      vertical: 7,
+                    ),
                     decoration: BoxDecoration(
                       color: _isSmart ? AppColors.brand : AppColors.danger,
                       borderRadius: BorderRadius.circular(20),
@@ -96,7 +100,9 @@ extension _HeaderAndAddBarState on _ListScreenState {
                 onTap: _confirmClearBudget,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 7),
+                    horizontal: 12,
+                    vertical: 7,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.danger,
                     borderRadius: BorderRadius.circular(20),
@@ -193,12 +199,14 @@ extension _HeaderAndAddBarState on _ListScreenState {
               style: const TextStyle(fontSize: 15),
               decoration: InputDecoration(
                 hintText: _isListening
-                  ? l.listeningHint
-                  : _isBudget
-                      ? l.budgetAddHint
-                      : (_isSmart ? l.smartAddHint : l.simpleAddHint),
+                    ? l.listeningHint
+                    : _isBudget
+                    ? l.budgetAddHint
+                    : (_isSmart ? l.smartAddHint : l.simpleAddHint),
                 hintStyle: const TextStyle(
-                    color: AppColors.textDisabled, fontSize: 14),
+                  color: AppColors.textDisabled,
+                  fontSize: 14,
+                ),
                 filled: true,
                 fillColor: AppColors.fieldBg,
                 border: OutlineInputBorder(
@@ -206,7 +214,9 @@ extension _HeaderAndAddBarState on _ListScreenState {
                   borderSide: BorderSide.none,
                 ),
                 contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 12),
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 isDense: true,
                 counterText: '',
               ),
@@ -241,8 +251,11 @@ extension _HeaderAndAddBarState on _ListScreenState {
                     ),
                   ],
                 ),
-                child: const Icon(Icons.add_rounded,
-                    color: Colors.white, size: 24),
+                child: const Icon(
+                  Icons.add_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
             ),
           ),
@@ -265,10 +278,15 @@ extension _HeaderAndAddBarState on _ListScreenState {
               categories: widget.categories,
               shelfCodeOrder: widget.shelfCodeOrder,
               onAddCategory: widget.onAddCategory,
-              onConfirm: (name, quantity, shelfCode, category, zone, unitPrice) {
+              onConfirm: (name, quantity, shelfCode, category, unitPrice) {
                 widget.onEditSmart(
-                    item.id, name, quantity, shelfCode, category, zone,
-                    unitPrice: unitPrice);
+                  item.id,
+                  name,
+                  quantity,
+                  shelfCode,
+                  category,
+                  unitPrice: unitPrice,
+                );
               },
             )
           : _RenameSheet(
@@ -319,11 +337,18 @@ extension _HeaderAndAddBarState on _ListScreenState {
         categories: widget.categories,
         shelfCodeOrder: widget.shelfCodeOrder,
         onAddCategory: widget.onAddCategory,
-        onConfirm: (category, zone, quantityLabel, shelfCode, estimatedDays, unitPrice) {
-          widget.onAddSmart(name, quantityLabel, shelfCode, estimatedDays, category, zone,
-              unitPrice: unitPrice);
-          _nameCtrl.clear();
-        },
+        onConfirm:
+            (category, quantityLabel, shelfCode, estimatedDays, unitPrice) {
+              widget.onAddSmart(
+                name,
+                quantityLabel,
+                shelfCode,
+                estimatedDays,
+                category,
+                unitPrice: unitPrice,
+              );
+              _nameCtrl.clear();
+            },
       ),
     );
   }

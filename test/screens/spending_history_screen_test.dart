@@ -37,8 +37,9 @@ void main() {
     expect(find.text(ZhStrings().spendingHistoryEmpty), findsOneWidget);
   });
 
-  testWidgets('sums only current-month entries into the month total banner',
-      (tester) async {
+  testWidgets('sums only current-month entries into the month total banner', (
+    tester,
+  ) async {
     final now = DateTime.now();
     final thisMonth = BudgetHistoryEntry(
       id: 'h1',
@@ -95,8 +96,9 @@ void main() {
     expect(deleted, isFalse);
   });
 
-  testWidgets('confirming the delete dialog calls onDeleteEntry with the id',
-      (tester) async {
+  testWidgets('confirming the delete dialog calls onDeleteEntry with the id', (
+    tester,
+  ) async {
     final entry = BudgetHistoryEntry(
       id: 'h1',
       clearedAt: DateTime(2026, 7, 13, 9, 0),
@@ -118,49 +120,51 @@ void main() {
   });
 
   testWidgets(
-      'shows a zero month total when history exists but none is from this month',
-      (tester) async {
-    final lastYear = BudgetHistoryEntry(
-      id: 'h2',
-      clearedAt: DateTime(2020, 1, 1),
-      items: [BudgetHistoryLineItem(name: '旧的', quantity: 1, unitPrice: 999)],
-    );
+    'shows a zero month total when history exists but none is from this month',
+    (tester) async {
+      final lastYear = BudgetHistoryEntry(
+        id: 'h2',
+        clearedAt: DateTime(2020, 1, 1),
+        items: [BudgetHistoryLineItem(name: '旧的', quantity: 1, unitPrice: 999)],
+      );
 
-    await _pumpScreen(tester, budgetHistory: [lastYear]);
+      await _pumpScreen(tester, budgetHistory: [lastYear]);
 
-    expect(
-      find.text(ZhStrings().spendingHistoryMonthTotal(ZhStrings().money(0))),
-      findsOneWidget,
-    );
-    expect(find.text(ZhStrings().spendingHistoryEmpty), findsNothing);
-  });
+      expect(
+        find.text(ZhStrings().spendingHistoryMonthTotal(ZhStrings().money(0))),
+        findsOneWidget,
+      );
+      expect(find.text(ZhStrings().spendingHistoryEmpty), findsNothing);
+    },
+  );
 
   testWidgets(
-      'renders without layout exceptions at a large system text scale',
-      (tester) async {
-    final entries = [
-      BudgetHistoryEntry(
-        id: 'h1',
-        clearedAt: DateTime(2026, 7, 13, 9, 0),
-        items: [
-          BudgetHistoryLineItem(name: '牛奶', quantity: 2, unitPrice: 8.5),
-        ],
-      ),
-      BudgetHistoryEntry(
-        id: 'h2',
-        clearedAt: DateTime(2026, 6, 1, 8, 30),
-        items: [
-          BudgetHistoryLineItem(name: '鸡蛋', quantity: 1, unitPrice: 12.99),
-        ],
-      ),
-    ];
+    'renders without layout exceptions at a large system text scale',
+    (tester) async {
+      final entries = [
+        BudgetHistoryEntry(
+          id: 'h1',
+          clearedAt: DateTime(2026, 7, 13, 9, 0),
+          items: [
+            BudgetHistoryLineItem(name: '牛奶', quantity: 2, unitPrice: 8.5),
+          ],
+        ),
+        BudgetHistoryEntry(
+          id: 'h2',
+          clearedAt: DateTime(2026, 6, 1, 8, 30),
+          items: [
+            BudgetHistoryLineItem(name: '鸡蛋', quantity: 1, unitPrice: 12.99),
+          ],
+        ),
+      ];
 
-    await _pumpScreen(
-      tester,
-      budgetHistory: entries,
-      textScaler: const TextScaler.linear(3.0),
-    );
+      await _pumpScreen(
+        tester,
+        budgetHistory: entries,
+        textScaler: const TextScaler.linear(3.0),
+      );
 
-    expect(tester.takeException(), isNull);
-  });
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

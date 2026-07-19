@@ -294,7 +294,6 @@ class _AppShellState extends State<AppShell> {
       budgetHistory: [],
       categories: categories,
       settings: AppSettings(),
-      shelfZones: defaultShelfZones.toList(),
       shelfCodeOrder: [],
     );
   }
@@ -398,25 +397,6 @@ class _AppShellState extends State<AppShell> {
     _shoppingNotifier.persistSmart();
   }
 
-  void _reorderShelfZones(int oldIndex, int newIndex) {
-    // onReorderItem already adjusts newIndex; no manual correction needed.
-    _categoriesNotifier.reorderShelfZonesOnly(oldIndex, newIndex);
-    // Sort.List is stable: items within the same zone keep their order.
-    _shoppingNotifier.smart.sort(
-      (a, b) => _categoriesNotifier.shelfZones
-          .orderIndexOf(a.shelfZone)
-          .compareTo(_categoriesNotifier.shelfZones.orderIndexOf(b.shelfZone)),
-    );
-    _inventoryNotifier.items.sort(
-      (a, b) => _categoriesNotifier.shelfZones
-          .orderIndexOf(a.shelfZone)
-          .compareTo(_categoriesNotifier.shelfZones.orderIndexOf(b.shelfZone)),
-    );
-    _categoriesNotifier.persistShelfZones();
-    _shoppingNotifier.persistSmart();
-    _inventoryNotifier.persistItems();
-  }
-
   // ── 清单：智能模式勾选 → 弹出天数 → 更新清单条目（需要 BuildContext）──────
 
   void _toggleShoppingItem(BuildContext context, String id) {
@@ -439,7 +419,7 @@ class _AppShellState extends State<AppShell> {
         categories: _categoriesNotifier.categories,
         shelfCodeOrder: _orderedShelfCodes,
         onAddCategory: _categoriesNotifier.addCategory,
-        onConfirm: (days, name, quantity, shelfCode, category, zone) =>
+        onConfirm: (days, name, quantity, shelfCode, category) =>
             _shoppingNotifier.updateSmartItemFields(
               item.id,
               estimatedDays: days,
@@ -447,7 +427,6 @@ class _AppShellState extends State<AppShell> {
               quantity: quantity,
               shelfCode: shelfCode,
               category: category,
-              zone: zone,
             ),
         isOnlyItemInAisle: (code) => !_shoppingNotifier.smart.any(
           (i) => i.id != item.id && i.shelfCode == code,
@@ -501,17 +480,18 @@ class _AppShellState extends State<AppShell> {
 
   // ── 备份：导出快照 / 导入应用（跨域：全部数据）───────────────────────────────
 
-  List<int> _buildBackupBytes() => encodeBackupExcel(AppData(
-        shoppingSimple: _shoppingNotifier.simple,
-        shoppingSmart: _shoppingNotifier.smart,
-        inventory: _inventoryNotifier.items,
-        budget: _shoppingNotifier.budget,
-        budgetHistory: _shoppingNotifier.budgetHistory,
-        categories: _categoriesNotifier.categories,
-        settings: _settingsNotifier.settings,
-        shelfZones: _categoriesNotifier.shelfZones,
-        shelfCodeOrder: _categoriesNotifier.shelfCodeOrder,
-      ));
+  List<int> _buildBackupBytes() => encodeBackupExcel(
+    AppData(
+      shoppingSimple: _shoppingNotifier.simple,
+      shoppingSmart: _shoppingNotifier.smart,
+      inventory: _inventoryNotifier.items,
+      budget: _shoppingNotifier.budget,
+      budgetHistory: _shoppingNotifier.budgetHistory,
+      categories: _categoriesNotifier.categories,
+      settings: _settingsNotifier.settings,
+      shelfCodeOrder: _categoriesNotifier.shelfCodeOrder,
+    ),
+  );
 
   Future<void> _applyBackup(AppData data) async {
     try {
@@ -620,8 +600,6 @@ class _AppShellState extends State<AppShell> {
                     onChanged: _settingsNotifier.update,
                     language: widget.language,
                     onLanguageChanged: widget.onLanguageChanged,
-                    shelfZones: _categoriesNotifier.shelfZones,
-                    onReorderShelfZones: _reorderShelfZones,
                     shelfCodeOrder: shelfCodeOrder,
                     onReorderShelfCodes: _reorderShelfCodes,
                     onAddShelfCode: _addShelfCode,

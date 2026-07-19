@@ -9,21 +9,8 @@ import '../utils/day_input.dart';
 
 class CategoryManageScreen extends StatefulWidget {
   final List<Category> categories;
-  final List<ShelfZone> shelfZones;
-  final Category Function(
-    String name,
-    Color color,
-    String shelfZone,
-    int defaultDays,
-  )
-  onAdd;
-  final void Function(
-    String id,
-    String name,
-    Color color,
-    String shelfZone,
-    int defaultDays,
-  )
+  final Category Function(String name, Color color, int defaultDays) onAdd;
+  final void Function(String id, String name, Color color, int defaultDays)
   onEdit;
   final void Function(String id) onDelete;
   final void Function(int oldIndex, int newIndex) onReorder;
@@ -31,7 +18,6 @@ class CategoryManageScreen extends StatefulWidget {
   const CategoryManageScreen({
     super.key,
     required this.categories,
-    required this.shelfZones,
     required this.onAdd,
     required this.onEdit,
     required this.onDelete,
@@ -64,10 +50,9 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
       ),
       builder: (_) => _CategoryEditSheet(
         initial: cat,
-        shelfZones: widget.shelfZones,
         palette: Category.palette,
-        onSubmit: (name, color, zone, days) {
-          widget.onEdit(cat.id, name, color, zone, days);
+        onSubmit: (name, color, days) {
+          widget.onEdit(cat.id, name, color, days);
           setState(() => _categories = List<Category>.from(_categories));
         },
       ),
@@ -84,10 +69,9 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
       ),
       builder: (_) => _CategoryEditSheet(
         initial: null,
-        shelfZones: widget.shelfZones,
         palette: Category.palette,
-        onSubmit: (name, color, zone, days) {
-          final cat = widget.onAdd(name, color, zone, days);
+        onSubmit: (name, color, days) {
+          final cat = widget.onAdd(name, color, days);
           setState(() => _categories = [..._categories, cat]);
         },
       ),
@@ -317,19 +301,11 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
 
 class _CategoryEditSheet extends StatefulWidget {
   final Category? initial;
-  final List<ShelfZone> shelfZones;
   final List<Color> palette;
-  final void Function(
-    String name,
-    Color color,
-    String shelfZone,
-    int defaultDays,
-  )
-  onSubmit;
+  final void Function(String name, Color color, int defaultDays) onSubmit;
 
   const _CategoryEditSheet({
     required this.initial,
-    required this.shelfZones,
     required this.palette,
     required this.onSubmit,
   });
@@ -342,7 +318,6 @@ class _CategoryEditSheetState extends State<_CategoryEditSheet> {
   late final TextEditingController _nameCtrl;
   late final TextEditingController _daysCtrl;
   late Color _color;
-  late String _zone;
   late int _days;
   bool _daysOverflow = false;
   // The localized display text the name field started with — if the user
@@ -358,7 +333,6 @@ class _CategoryEditSheetState extends State<_CategoryEditSheet> {
     final init = widget.initial;
     _nameCtrl = TextEditingController();
     _color = init?.color ?? widget.palette.first;
-    _zone = init?.shelfZone ?? widget.shelfZones.first.name;
     _days = init?.defaultDays ?? 7;
     _daysCtrl = TextEditingController(text: '$_days');
   }
@@ -390,7 +364,7 @@ class _CategoryEditSheetState extends State<_CategoryEditSheet> {
         ? init.name
         : typed;
     Navigator.pop(context);
-    widget.onSubmit(name, _color, _zone, _days);
+    widget.onSubmit(name, _color, _days);
   }
 
   Widget _label(String text) => Padding(

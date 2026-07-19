@@ -33,37 +33,40 @@ void main() {
     expect(data.shoppingSimple, isEmpty);
     expect(data.shelfCodeOrder, isEmpty);
     expect(data.settings.reminderThresholdDays, 5);
-    expect(data.shelfZones, isNotEmpty);
   });
 
-  test('seeds canonical (zh) category names regardless of load language',
-      () async {
-    final repo = AppRepository();
-    await repo.init();
+  test(
+    'seeds canonical (zh) category names regardless of load language',
+    () async {
+      final repo = AppRepository();
+      await repo.init();
 
-    // Even when first loaded in English, category names are stored as the
-    // canonical Chinese; the UI localizes them at display time via l.data().
-    // Persisting translated names used to freeze them and break switching the
-    // UI language later.
-    final data = await repo.load(lang: Lang.en);
+      // Even when first loaded in English, category names are stored as the
+      // canonical Chinese; the UI localizes them at display time via l.data().
+      // Persisting translated names used to freeze them and break switching the
+      // UI language later.
+      final data = await repo.load(lang: Lang.en);
 
-    final produce = data.categories.findById('produce');
-    expect(produce, isNotNull);
-    expect(produce!.name, '果蔬');
-  });
+      final produce = data.categories.findById('produce');
+      expect(produce, isNotNull);
+      expect(produce!.name, '蔬菜');
+    },
+  );
 
   test('second load does not reseed — preserves saved changes', () async {
     final repo1 = AppRepository();
     await repo1.init();
     final firstData = await repo1.load(lang: Lang.zh);
 
-    final edited = [...firstData.shoppingSimple, ShoppingItem(
-      id: 'manual_1',
-      name: '手动添加',
-      category: firstData.categories.fallback,
-      quantityLabel: '',
-      shelfZone: '其他',
-    )];
+    final edited = [
+      ...firstData.shoppingSimple,
+      ShoppingItem(
+        id: 'manual_1',
+        name: '手动添加',
+        category: firstData.categories.fallback,
+        quantityLabel: '',
+      ),
+    ];
     await repo1.saveShoppingSimple(edited);
 
     final repo2 = AppRepository();
@@ -75,8 +78,7 @@ void main() {
     expect(secondData.categories.length, firstData.categories.length);
   });
 
-  test('saveCategories/saveSettings/saveShelfZones/saveShelfCodeOrder round-trip',
-      () async {
+  test('saveCategories/saveSettings/saveShelfCodeOrder round-trip', () async {
     final repo = AppRepository();
     await repo.init();
     final data = await repo.load(lang: Lang.zh);
@@ -99,8 +101,7 @@ void main() {
     expect(reloaded.shelfCodeOrder, ['货架A1', '货架B2']);
   });
 
-  test('saveHistory persists and round-trips budget history entries',
-      () async {
+  test('saveHistory persists and round-trips budget history entries', () async {
     final repo = AppRepository();
     await repo.init();
     await repo.load(lang: Lang.zh);
@@ -136,7 +137,9 @@ void main() {
         BudgetHistoryEntry(
           id: 'h1',
           clearedAt: DateTime(2026, 1, 1),
-          items: [BudgetHistoryLineItem(name: '旧记录', quantity: 1, unitPrice: 1)],
+          items: [
+            BudgetHistoryLineItem(name: '旧记录', quantity: 1, unitPrice: 1),
+          ],
         ),
       ],
       categories: categories,
@@ -146,7 +149,6 @@ void main() {
         reminderHour: 6,
         reminderMinute: 15,
       ),
-      shelfZones: defaultShelfZones.toList(),
       shelfCodeOrder: ['A1'],
     );
     await repo.replaceAll(replacement);

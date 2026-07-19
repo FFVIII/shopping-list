@@ -5,13 +5,22 @@ import 'package:shopping_list/l10n/app_language.dart';
 void main() {
   group('resolveLang', () {
     test('system + zh locale → Lang.zh', () {
-      expect(resolveLang(AppLanguage.system, const Locale('zh', 'CN')), Lang.zh);
+      expect(
+        resolveLang(AppLanguage.system, const Locale('zh', 'CN')),
+        Lang.zh,
+      );
     });
     test('system + en locale → Lang.en', () {
-      expect(resolveLang(AppLanguage.system, const Locale('en', 'US')), Lang.en);
+      expect(
+        resolveLang(AppLanguage.system, const Locale('en', 'US')),
+        Lang.en,
+      );
     });
     test('system + other locale → Lang.en (fallback)', () {
-      expect(resolveLang(AppLanguage.system, const Locale('fr', 'FR')), Lang.en);
+      expect(
+        resolveLang(AppLanguage.system, const Locale('fr', 'FR')),
+        Lang.en,
+      );
     });
     test('explicit zh always zh', () {
       expect(resolveLang(AppLanguage.zh, const Locale('en')), Lang.zh);

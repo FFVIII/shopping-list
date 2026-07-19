@@ -65,9 +65,10 @@ class _ProUpgradeScreenState extends State<ProUpgradeScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         foregroundColor: AppColors.textPrimary,
-        title: Text(l.proScreenTitle,
-            style:
-                const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+        title: Text(
+          l.proScreenTitle,
+          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+        ),
       ),
       body: SafeArea(
         child: Padding(
@@ -78,7 +79,9 @@ class _ProUpgradeScreenState extends State<ProUpgradeScreen> {
               Text(
                 l.proDesc,
                 style: const TextStyle(
-                    fontSize: 15, color: AppColors.textSecondary),
+                  fontSize: 15,
+                  color: AppColors.textSecondary,
+                ),
               ),
               const SizedBox(height: 24),
               SizedBox(
@@ -89,7 +92,8 @@ class _ProUpgradeScreenState extends State<ProUpgradeScreen> {
                     backgroundColor: AppColors.brand,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                     elevation: 0,
                   ),
                   onPressed: (_busy || product == null) ? null : _buy,
@@ -98,7 +102,9 @@ class _ProUpgradeScreenState extends State<ProUpgradeScreen> {
                         ? '${l.proBuyButton} · ${product.price}'
                         : l.proPriceUnavailable,
                     style: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w600),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),

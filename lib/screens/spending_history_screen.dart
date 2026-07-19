@@ -17,8 +17,9 @@ class SpendingHistoryScreen extends StatelessWidget {
   double _monthTotal() {
     final now = DateTime.now();
     return budgetHistory
-        .where((e) =>
-            e.clearedAt.year == now.year && e.clearedAt.month == now.month)
+        .where(
+          (e) => e.clearedAt.year == now.year && e.clearedAt.month == now.month,
+        )
         .fold(0.0, (sum, e) => sum + e.totalAmount);
   }
 
@@ -81,7 +82,9 @@ class SpendingHistoryScreen extends StatelessWidget {
                     child: Text(
                       l.spendingHistoryEmpty,
                       style: const TextStyle(
-                          fontSize: 15, color: AppColors.textMuted),
+                        fontSize: 15,
+                        color: AppColors.textMuted,
+                      ),
                     ),
                   )
                 : ListView.builder(
@@ -94,15 +97,19 @@ class SpendingHistoryScreen extends StatelessWidget {
                         title: Text(_formatDate(entry.clearedAt)),
                         subtitle: Text(l.money(entry.totalAmount)),
                         trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline,
-                              color: AppColors.danger),
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: AppColors.danger,
+                          ),
                           onPressed: () => _confirmDelete(context, entry.id),
                         ),
                         children: entry.items
-                            .map((i) => ListTile(
-                                  title: Text('${i.name} × ${i.quantity}'),
-                                  trailing: Text(l.money(i.unitPrice)),
-                                ))
+                            .map(
+                              (i) => ListTile(
+                                title: Text('${i.name} × ${i.quantity}'),
+                                trailing: Text(l.money(i.unitPrice)),
+                              ),
+                            )
                             .toList(),
                       );
                     },

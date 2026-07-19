@@ -43,6 +43,7 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
   static const double _ovalPadding = 10;
 
   Rect? _targetRect;
+
   /// The plan-list content area during the completeTrip step, kept visible
   /// (excluded from the dim layer) so the user can still see the example
   /// item they just added. Null on every other step.
@@ -119,8 +120,9 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
       return null;
     }
     for (final id in ids) {
-      final renderObject =
-          TutorialRegistry.keyFor(id).currentContext?.findRenderObject();
+      final renderObject = TutorialRegistry.keyFor(
+        id,
+      ).currentContext?.findRenderObject();
       if (renderObject is RenderBox && renderObject.attached) {
         final topLeft = renderObject.localToGlobal(Offset.zero);
         _matchedTargetId = id;
@@ -138,9 +140,9 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
     if (_matchedTargetId == 'confirm_trip_button') {
       return null;
     }
-    final renderObject = TutorialRegistry.keyFor('plan_list_area')
-        .currentContext
-        ?.findRenderObject();
+    final renderObject = TutorialRegistry.keyFor(
+      'plan_list_area',
+    ).currentContext?.findRenderObject();
     if (renderObject is RenderBox && renderObject.attached) {
       final topLeft = renderObject.localToGlobal(Offset.zero);
       return topLeft & renderObject.size;
@@ -189,100 +191,102 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
     );
     final arrowEnd = tooltipBelow ? oval.bottomCenter : oval.topCenter;
 
-    return Stack(children: [
-      widget.child,
-      // Single full-screen dim layer covering everything, including the
-      // target itself — no bright cutout there (the oval/arrow/bubble are
-      // what indicate the target, not a brightness contrast). The one
-      // exception is `_extraVisibleRect` (the example item's row during
-      // completeTrip), kept visible so the user can still see it.
-      Positioned.fill(
-        child: IgnorePointer(
-          child: _extraVisibleRect == null
-              ? Container(color: barColor)
-              : CustomPaint(
-                  painter: _DimExceptPainter(
-                    visible: _extraVisibleRect!,
-                    color: barColor,
+    return Stack(
+      children: [
+        widget.child,
+        // Single full-screen dim layer covering everything, including the
+        // target itself — no bright cutout there (the oval/arrow/bubble are
+        // what indicate the target, not a brightness contrast). The one
+        // exception is `_extraVisibleRect` (the example item's row during
+        // completeTrip), kept visible so the user can still see it.
+        Positioned.fill(
+          child: IgnorePointer(
+            child: _extraVisibleRect == null
+                ? Container(color: barColor)
+                : CustomPaint(
+                    painter: _DimExceptPainter(
+                      visible: _extraVisibleRect!,
+                      color: barColor,
+                    ),
                   ),
-                ),
-        ),
-      ),
-      // Invisible blockers matching the target rect: they intercept taps
-      // everywhere except `rect`, where taps pass through to the real
-      // widget underneath (so the target stays tappable even though it's
-      // visually dimmed like everything else). AbsorbPointer is what
-      // actually swallows the taps here — a plain colored/transparent box
-      // doesn't intercept hit-testing on its own (`hitTestSelf` defaults to
-      // false without a GestureDetector), so taps would otherwise fall
-      // straight through to the real app underneath.
-      Positioned(
-        left: 0,
-        top: 0,
-        right: 0,
-        height: rect.top,
-        child: const AbsorbPointer(),
-      ),
-      Positioned(
-        left: 0,
-        top: rect.bottom,
-        right: 0,
-        bottom: 0,
-        child: const AbsorbPointer(),
-      ),
-      Positioned(
-        left: 0,
-        top: rect.top,
-        width: rect.left,
-        height: rect.height,
-        child: const AbsorbPointer(),
-      ),
-      Positioned(
-        left: rect.right,
-        top: rect.top,
-        right: 0,
-        height: rect.height,
-        child: const AbsorbPointer(),
-      ),
-      Positioned.fill(
-        child: IgnorePointer(
-          child: CustomPaint(painter: _HandDrawnOvalPainter(oval)),
-        ),
-      ),
-      Positioned.fill(
-        child: IgnorePointer(
-          child: CustomPaint(
-            painter: _DashedArrowPainter(start: arrowStart, end: arrowEnd),
           ),
         ),
-      ),
-      Positioned(
-        left: 16,
-        right: 16,
-        top: tooltipBelow ? rect.bottom + _bubbleGap : null,
-        bottom: tooltipBelow ? null : size.height - rect.top + _bubbleGap,
-        child: _TutorialBubble(
-          text: stepText,
-          // The last step has no more "next" step to skip to — it's just
-          // acknowledging the message, so it gets "Got it"/finish. The
-          // itemAdded step needs an explicit user tap to move on (rather
-          // than skipping the tutorial), since it isn't triggered by an
-          // app action the way every other step is. Everything else gets
-          // "Skip"/skip.
-          skipLabel: switch (step) {
-            TutorialStep.finalMessage => l.tutorialGotIt,
-            TutorialStep.itemAdded => l.tutorialContinue,
-            _ => l.tutorialSkip,
-          },
-          onSkip: switch (step) {
-            TutorialStep.finalMessage => TutorialController.instance.finish,
-            TutorialStep.itemAdded =>
-              TutorialController.instance.advanceFromItemAdded,
-            _ => TutorialController.instance.skip,
-          },
+        // Invisible blockers matching the target rect: they intercept taps
+        // everywhere except `rect`, where taps pass through to the real
+        // widget underneath (so the target stays tappable even though it's
+        // visually dimmed like everything else). AbsorbPointer is what
+        // actually swallows the taps here — a plain colored/transparent box
+        // doesn't intercept hit-testing on its own (`hitTestSelf` defaults to
+        // false without a GestureDetector), so taps would otherwise fall
+        // straight through to the real app underneath.
+        Positioned(
+          left: 0,
+          top: 0,
+          right: 0,
+          height: rect.top,
+          child: const AbsorbPointer(),
         ),
-      ),
-    ]);
+        Positioned(
+          left: 0,
+          top: rect.bottom,
+          right: 0,
+          bottom: 0,
+          child: const AbsorbPointer(),
+        ),
+        Positioned(
+          left: 0,
+          top: rect.top,
+          width: rect.left,
+          height: rect.height,
+          child: const AbsorbPointer(),
+        ),
+        Positioned(
+          left: rect.right,
+          top: rect.top,
+          right: 0,
+          height: rect.height,
+          child: const AbsorbPointer(),
+        ),
+        Positioned.fill(
+          child: IgnorePointer(
+            child: CustomPaint(painter: _HandDrawnOvalPainter(oval)),
+          ),
+        ),
+        Positioned.fill(
+          child: IgnorePointer(
+            child: CustomPaint(
+              painter: _DashedArrowPainter(start: arrowStart, end: arrowEnd),
+            ),
+          ),
+        ),
+        Positioned(
+          left: 16,
+          right: 16,
+          top: tooltipBelow ? rect.bottom + _bubbleGap : null,
+          bottom: tooltipBelow ? null : size.height - rect.top + _bubbleGap,
+          child: _TutorialBubble(
+            text: stepText,
+            // The last step has no more "next" step to skip to — it's just
+            // acknowledging the message, so it gets "Got it"/finish. The
+            // itemAdded step needs an explicit user tap to move on (rather
+            // than skipping the tutorial), since it isn't triggered by an
+            // app action the way every other step is. Everything else gets
+            // "Skip"/skip.
+            skipLabel: switch (step) {
+              TutorialStep.finalMessage => l.tutorialGotIt,
+              TutorialStep.itemAdded => l.tutorialContinue,
+              _ => l.tutorialSkip,
+            },
+            onSkip: switch (step) {
+              TutorialStep.finalMessage => TutorialController.instance.finish,
+              TutorialStep.itemAdded =>
+                TutorialController.instance.advanceFromItemAdded,
+              _ => TutorialController.instance.skip,
+            },
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -389,10 +393,10 @@ class _DashedArrowPainter extends CustomPainter {
 
     final tip = tangent.position;
     final angle = tangent.angle;
-    final p1 = tip -
-        Offset(math.cos(angle - 0.5), math.sin(angle - 0.5)) * _arrowSize;
-    final p2 = tip -
-        Offset(math.cos(angle + 0.5), math.sin(angle + 0.5)) * _arrowSize;
+    final p1 =
+        tip - Offset(math.cos(angle - 0.5), math.sin(angle - 0.5)) * _arrowSize;
+    final p2 =
+        tip - Offset(math.cos(angle + 0.5), math.sin(angle + 0.5)) * _arrowSize;
 
     final fillPaint = Paint()
       ..color = AppColors.brand
@@ -461,8 +465,10 @@ class _TutorialBubble extends StatelessWidget {
               behavior: HitTestBehavior.opaque,
               child: Text(
                 skipLabel,
-                style:
-                    const TextStyle(fontSize: 13, color: AppColors.textMuted),
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textMuted,
+                ),
               ),
             ),
           ],
@@ -471,4 +477,3 @@ class _TutorialBubble extends StatelessWidget {
     );
   }
 }
-

@@ -11,7 +11,10 @@ import '../models/item.dart';
 /// days <= [thresholdDays]. Mirrors the math in [InventoryItem.statusFor]
 /// (covers both StockStatus.low and StockStatus.empty).
 List<InventoryItem> lowStockAt(
-    DateTime moment, List<InventoryItem> inventory, int thresholdDays) {
+  DateTime moment,
+  List<InventoryItem> inventory,
+  int thresholdDays,
+) {
   return inventory.where((item) {
     final elapsed = moment.difference(item.purchasedAt).inDays;
     final remaining = item.estimatedDays - elapsed;
@@ -52,15 +55,19 @@ class NotificationService {
     _initialized = true;
   }
 
-  IOSFlutterLocalNotificationsPlugin? get _ios =>
-      _plugin.resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin>();
+  IOSFlutterLocalNotificationsPlugin? get _ios => _plugin
+      .resolvePlatformSpecificImplementation<
+        IOSFlutterLocalNotificationsPlugin
+      >();
 
   /// Shows the system permission prompt (or returns the existing decision).
   Future<bool> requestPermission() async {
     if (!_initialized) return false;
-    final granted =
-        await _ios?.requestPermissions(alert: true, badge: true, sound: true);
+    final granted = await _ios?.requestPermissions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
     return granted ?? false;
   }
 
@@ -83,17 +90,24 @@ class NotificationService {
     final now = tz.TZDateTime.now(tz.local);
     for (int d = 0; d < kNotificationHorizonDays; d++) {
       final day = now.add(Duration(days: d));
-      final fireAt = tz.TZDateTime(tz.local, day.year, day.month, day.day,
-          settings.reminderHour, settings.reminderMinute);
+      final fireAt = tz.TZDateTime(
+        tz.local,
+        day.year,
+        day.month,
+        day.day,
+        settings.reminderHour,
+        settings.reminderMinute,
+      );
       if (!fireAt.isAfter(now)) continue; // today's slot already passed
-      final low =
-          lowStockAt(fireAt, inventory, settings.reminderThresholdDays);
+      final low = lowStockAt(fireAt, inventory, settings.reminderThresholdDays);
       if (low.isEmpty) continue;
       await _plugin.zonedSchedule(
         id: d, // one stable id per day-offset
         title: strings.notifRestockTitle,
         body: strings.notifRestockBody(
-            low.length, low.map((i) => strings.data(i.name)).toList()),
+          low.length,
+          low.map((i) => strings.data(i.name)).toList(),
+        ),
         scheduledDate: fireAt,
         notificationDetails: const NotificationDetails(
           iOS: DarwinNotificationDetails(

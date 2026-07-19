@@ -43,23 +43,32 @@ class _ShelfCodePickerSheetState extends State<_ShelfCodePickerSheet> {
               children: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text(l.cancel,
-                      style: const TextStyle(
-                          fontSize: 17, color: AppColors.textMuted)),
-                ),
-                Text(l.shelfCodeFieldLabel,
+                  child: Text(
+                    l.cancel,
                     style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary)),
+                      fontSize: 17,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ),
+                Text(
+                  l.shelfCodeFieldLabel,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
                 TextButton(
-                  onPressed: () =>
-                      Navigator.pop(context, widget.codes[_index]),
-                  child: Text(l.save,
-                      style: const TextStyle(
-                          fontSize: 17,
-                          color: AppColors.brand,
-                          fontWeight: FontWeight.w600)),
+                  onPressed: () => Navigator.pop(context, widget.codes[_index]),
+                  child: Text(
+                    l.save,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      color: AppColors.brand,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -70,18 +79,22 @@ class _ShelfCodePickerSheetState extends State<_ShelfCodePickerSheet> {
               itemExtent: 40,
               onSelectedItemChanged: (i) => _index = i,
               children: widget.codes
-                  .map((code) => Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: Text(
-                            l.data(code),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                fontSize: 19, color: AppColors.textPrimary),
+                  .map(
+                    (code) => Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Text(
+                          l.data(code),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 19,
+                            color: AppColors.textPrimary,
                           ),
                         ),
-                      ))
+                      ),
+                    ),
+                  )
                   .toList(),
             ),
           ),

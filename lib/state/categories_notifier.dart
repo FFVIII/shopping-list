@@ -16,47 +16,40 @@ class CategoriesNotifier extends ChangeNotifier {
   final AppRepository _repo;
 
   List<Category> categories = [];
-  List<ShelfZone> shelfZones = [];
   List<String> shelfCodeOrder = [];
 
   Category get fallback => categories.fallback;
 
   void load(AppData data) {
     categories = data.categories;
-    shelfZones = data.shelfZones;
     shelfCodeOrder = data.shelfCodeOrder;
     notifyListeners();
   }
 
   void persistCategories() {
     notifyListeners();
-    unawaited(_repo
-        .saveCategories(categories)
-        .catchError((e) => debugPrint('save categories failed: $e')));
-  }
-
-  void persistShelfZones() {
-    notifyListeners();
-    unawaited(_repo
-        .saveShelfZones(shelfZones)
-        .catchError((e) => debugPrint('save shelfZones failed: $e')));
+    unawaited(
+      _repo
+          .saveCategories(categories)
+          .catchError((e) => debugPrint('save categories failed: $e')),
+    );
   }
 
   void persistShelfCodeOrder() {
     notifyListeners();
-    unawaited(_repo
-        .saveShelfCodeOrder(shelfCodeOrder)
-        .catchError((e) => debugPrint('save shelfCodeOrder failed: $e')));
+    unawaited(
+      _repo
+          .saveShelfCodeOrder(shelfCodeOrder)
+          .catchError((e) => debugPrint('save shelfCodeOrder failed: $e')),
+    );
   }
 
-  Category addCategory(
-      String name, Color color, String shelfZone, int defaultDays) {
+  Category addCategory(String name, Color color, int defaultDays) {
     final cat = Category(
       id: generateId('cat'),
       name: name,
       color: color,
       bgColor: Category.tintOf(color),
-      shelfZone: shelfZone,
       defaultDays: defaultDays,
     );
     categories = [...categories, cat];
@@ -64,20 +57,13 @@ class CategoriesNotifier extends ChangeNotifier {
     return cat;
   }
 
-  void editCategory(
-    String id,
-    String name,
-    Color color,
-    String shelfZone,
-    int defaultDays,
-  ) {
+  void editCategory(String id, String name, Color color, int defaultDays) {
     final cat = categories.findById(id);
     if (cat == null) return;
     cat
       ..name = name
       ..color = color
       ..bgColor = Category.tintOf(color)
-      ..shelfZone = shelfZone
       ..defaultDays = defaultDays;
     persistCategories();
   }
@@ -91,10 +77,5 @@ class CategoriesNotifier extends ChangeNotifier {
   void reorderCategoriesOnly(int oldIndex, int newIndex) {
     final cat = categories.removeAt(oldIndex);
     categories.insert(newIndex, cat);
-  }
-
-  void reorderShelfZonesOnly(int oldIndex, int newIndex) {
-    final zone = shelfZones.removeAt(oldIndex);
-    shelfZones.insert(newIndex, zone);
   }
 }

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 /// 全局 UI 通用色（品牌、文字、背景、分隔线等）。
 ///
-/// 注意：分类色、库存状态色、货架色等领域语义色定义在 `models/item.dart`
-/// （`Category.color/bgColor`、`StockStatus.color/bgColor`、`kShelfZones`），
+/// 注意：分类色、库存状态色等领域语义色定义在 `models/item.dart`
+/// （`Category.color/bgColor`、`StockStatus.color/bgColor`），
 /// 不在此处重复。
 class AppColors {
   AppColors._();

@@ -16,10 +16,10 @@ class PurchaseService extends ChangeNotifier {
   PurchaseService({
     Stream<List<PurchaseDetails>>? purchaseStream,
     Future<void> Function(PurchaseDetails)? completePurchase,
-  })  : _purchaseStream =
-            purchaseStream ?? InAppPurchase.instance.purchaseStream,
-        _completePurchase =
-            completePurchase ?? InAppPurchase.instance.completePurchase;
+  }) : _purchaseStream =
+           purchaseStream ?? InAppPurchase.instance.purchaseStream,
+       _completePurchase =
+           completePurchase ?? InAppPurchase.instance.completePurchase;
 
   final Stream<List<PurchaseDetails>> _purchaseStream;
   final Future<void> Function(PurchaseDetails) _completePurchase;
@@ -40,8 +40,9 @@ class PurchaseService extends ChangeNotifier {
 
   Future<void> _loadProduct() async {
     try {
-      final response =
-          await InAppPurchase.instance.queryProductDetails({kProProductId});
+      final response = await InAppPurchase.instance.queryProductDetails({
+        kProProductId,
+      });
       if (response.productDetails.isNotEmpty) {
         proProduct = response.productDetails.first;
         notifyListeners();
@@ -83,8 +84,9 @@ class PurchaseService extends ChangeNotifier {
     final product = proProduct;
     if (product == null) return;
     lastError = null;
-    await InAppPurchase.instance
-        .buyNonConsumable(purchaseParam: PurchaseParam(productDetails: product));
+    await InAppPurchase.instance.buyNonConsumable(
+      purchaseParam: PurchaseParam(productDetails: product),
+    );
   }
 
   Future<void> restorePurchases() async {

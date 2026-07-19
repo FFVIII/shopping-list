@@ -53,8 +53,12 @@ class _DragHandleState extends State<DragHandle> {
         setState(() => _pressed = true);
         HapticFeedback.mediumImpact();
       },
-      onPointerUp: (_) { if (mounted) setState(() => _pressed = false); },
-      onPointerCancel: (_) { if (mounted) setState(() => _pressed = false); },
+      onPointerUp: (_) {
+        if (mounted) setState(() => _pressed = false);
+      },
+      onPointerCancel: (_) {
+        if (mounted) setState(() => _pressed = false);
+      },
       child: widget.index != null
           ? ReorderableDragStartListener(index: widget.index!, child: bar)
           : bar,

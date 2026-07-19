@@ -37,7 +37,11 @@ class TutorialRectReporter extends StatefulWidget {
   final String id;
   final Widget child;
 
-  const TutorialRectReporter({super.key, required this.id, required this.child});
+  const TutorialRectReporter({
+    super.key,
+    required this.id,
+    required this.child,
+  });
 
   @override
   State<TutorialRectReporter> createState() => _TutorialRectReporterState();

@@ -12,19 +12,19 @@ import 'package:shopping_list/screens/inventory_screen.dart';
 // always-visible search filter.
 
 Category _category(String id) => Category(
-      id: id,
-      name: id,
-      color: const Color(0xFF000000),
-      bgColor: const Color(0xFFFFFFFF),
-      shelfZone: '其他',
-      defaultDays: 7,
-    );
+  id: id,
+  name: id,
+  color: const Color(0xFF000000),
+  bgColor: const Color(0xFFFFFFFF),
+  defaultDays: 7,
+);
 
-InventoryItem _inv(String id, String name) => InventoryItem(
+InventoryItem _inv(String id, String name, {String? shelfCode}) =>
+    InventoryItem(
       id: id,
       name: name,
       category: _category('other'),
-      shelfZone: '其他',
+      shelfCode: shelfCode,
       quantityLabel: '1',
       purchasedAt: DateTime.now(),
       estimatedDays: 10,
@@ -55,12 +55,12 @@ Future<void> _pumpInventory(
             onRestock: (_, _) {},
             onDelete: (_) {},
             onAddToShoppingList: (_) {},
-            onReorder: (_, _, _, _, _) {},
-            onEdit: (_, _, _, _, _, _) {},
+            onReorder: (_, _, _, _) {},
+            onEdit: (_, _, _, _, _) {},
             onBatchDelete: (_) {},
             onBatchAddToRestock: (_) {},
             shelfCodeOrder: const [],
-            onAddCategory: (_, _, _, _) => _category('new'),
+            onAddCategory: (_, _, _) => _category('new'),
           ),
         ),
       ),
@@ -71,20 +71,14 @@ Future<void> _pumpInventory(
 
 void main() {
   testWidgets('renders each inventory item name', (tester) async {
-    await _pumpInventory(tester, items: [
-      _inv('a', '牛奶'),
-      _inv('b', '鸡蛋'),
-    ]);
+    await _pumpInventory(tester, items: [_inv('a', '牛奶'), _inv('b', '鸡蛋')]);
 
     expect(find.text('牛奶'), findsOneWidget);
     expect(find.text('鸡蛋'), findsOneWidget);
   });
 
   testWidgets('search narrows the list to matching items', (tester) async {
-    await _pumpInventory(tester, items: [
-      _inv('a', '牛奶'),
-      _inv('b', '鸡蛋'),
-    ]);
+    await _pumpInventory(tester, items: [_inv('a', '牛奶'), _inv('b', '鸡蛋')]);
 
     await tester.enterText(find.byType(TextField), '牛奶');
     await tester.pumpAndSettle();
@@ -98,6 +92,31 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets(
+    'search matches by shelf code (aisle), as the search hint promises',
+    (tester) async {
+      // The search hint says "Search items or aisle" — the filter must actually
+      // match against shelfCode (the visible aisle value like "A1"), not just
+      // the item name.
+      await _pumpInventory(
+        tester,
+        items: [
+          _inv('a', '牛奶', shelfCode: 'A1'),
+          _inv('b', '鸡蛋', shelfCode: 'B2'),
+        ],
+      );
+
+      await tester.enterText(find.byType(TextField), 'A1');
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byWidgetPredicate((w) => w is Text && w.data == '牛奶'),
+        findsOneWidget,
+      );
+      expect(find.text('鸡蛋'), findsNothing);
+    },
+  );
 
   testWidgets(
     'renders without layout exceptions at a large system text scale',

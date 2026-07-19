@@ -35,8 +35,7 @@ class _QuickAddCategorySheet extends StatefulWidget {
   });
 
   @override
-  State<_QuickAddCategorySheet> createState() =>
-      _QuickAddCategorySheetState();
+  State<_QuickAddCategorySheet> createState() => _QuickAddCategorySheetState();
 }
 
 class _QuickAddCategorySheetState extends State<_QuickAddCategorySheet> {
@@ -53,8 +52,9 @@ class _QuickAddCategorySheetState extends State<_QuickAddCategorySheet> {
   void _submit() {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) return;
-    final duplicate = widget.existingNames
-        .any((existing) => existing.toLowerCase() == name.toLowerCase());
+    final duplicate = widget.existingNames.any(
+      (existing) => existing.toLowerCase() == name.toLowerCase(),
+    );
     if (duplicate) {
       setState(() => _errorText = L10n.of(context).categoryNameDuplicate);
       return;
@@ -64,16 +64,16 @@ class _QuickAddCategorySheetState extends State<_QuickAddCategorySheet> {
   }
 
   Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(top: 14, bottom: 6),
-        child: Text(
-          text,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.only(top: 14, bottom: 6),
+    child: Text(
+      text,
+      style: const TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textSecondary,
+      ),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -110,10 +110,14 @@ class _QuickAddCategorySheetState extends State<_QuickAddCategorySheet> {
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 counterStyle: const TextStyle(
-                    fontSize: 10, color: AppColors.textDisabled),
+                  fontSize: 10,
+                  color: AppColors.textDisabled,
+                ),
                 isDense: true,
               ),
               onChanged: (_) {
@@ -140,8 +144,11 @@ class _QuickAddCategorySheetState extends State<_QuickAddCategorySheet> {
                           : null,
                     ),
                     child: sel
-                        ? const Icon(Icons.check_rounded,
-                            size: 18, color: Colors.white)
+                        ? const Icon(
+                            Icons.check_rounded,
+                            size: 18,
+                            color: Colors.white,
+                          )
                         : null,
                   ),
                 );
@@ -153,15 +160,18 @@ class _QuickAddCategorySheetState extends State<_QuickAddCategorySheet> {
                 backgroundColor: AppColors.brand,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 elevation: 0,
                 minimumSize: const Size(double.infinity, 48),
               ),
               onPressed: _submit,
               child: Text(
                 l.addToList,
-                style:
-                    const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
