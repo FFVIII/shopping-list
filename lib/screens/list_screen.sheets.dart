@@ -26,16 +26,16 @@ class _CompleteTripSheetState extends State<_CompleteTripSheet> {
     _selected = Set<String>.from(widget.initialSelected);
   }
 
+  // Title + hint + spacing + button — everything in the Column besides the
+  // item list itself. Used to size the list so the Column's total height
+  // never exceeds what the sheet actually has available (which shrinks
+  // when the keyboard is up, or on shorter screens) — a static fraction of
+  // the full screen height ignored both of those and could overflow.
+  static const _reservedHeight = 170.0;
+
   @override
   Widget build(BuildContext context) {
     final l = L10n.of(context);
-    // The item list can be arbitrarily long, so it gets its own height cap
-    // (unlike the app's other, few-field sheets) — otherwise its content
-    // grows past the screen and the header gets pushed off the top instead
-    // of the list becoming scrollable. Only the item list itself is capped +
-    // scrollable (as a shrink-wrapped ListView); the header and Save button
-    // are plain Column children so they always stay fully visible.
-    final listMaxHeight = MediaQuery.of(context).size.height * 0.5;
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.only(
@@ -44,90 +44,118 @@ class _CompleteTripSheetState extends State<_CompleteTripSheet> {
           top: 20,
           bottom: MediaQuery.of(context).viewInsets.bottom + 24,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l.addToInventoryButton,
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              l.tripInventoryHint,
-              style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
-            ),
-            const SizedBox(height: 16),
-            ConstrainedBox(
-              constraints: BoxConstraints(maxHeight: listMaxHeight),
-              child: ListView(
-                shrinkWrap: true,
-                children: widget.items.map((item) {
-                  final sel = _selected.contains(item.id);
-                  final qty = item.quantityLabel;
-                  return GestureDetector(
-                    onTap: () => setState(() {
-                      if (sel) {
-                        _selected.remove(item.id);
-                      } else {
-                        _selected.add(item.id);
-                      }
-                    }),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Row(
-                        children: [
-                          _SelectCircle(selected: sel),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              l.data(item.name),
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                                color: sel
-                                    ? AppColors.textPrimary
-                                    : AppColors.textDisabled,
-                              ),
-                            ),
-                          ),
-                          if (qty.isNotEmpty)
-                            Text(
-                              l.data(qty),
-                              style: const TextStyle(
-                                  fontSize: 13, color: AppColors.textMuted),
-                            ),
-                        ],
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TutorialTarget(
-              id: 'confirm_trip_button',
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.brand,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                  elevation: 0,
-                  minimumSize: const Size(double.infinity, 50),
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                  widget.onConfirm(_selected.toList());
-                },
-                child: Text(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // The item list can be arbitrarily long, so it gets its own
+            // height cap (unlike the app's other, few-field sheets) —
+            // otherwise its content grows past the screen and the header
+            // gets pushed off the top instead of the list becoming
+            // scrollable. Only the item list itself is capped + scrollable
+            // (as a shrink-wrapped ListView); the header and Save button
+            // are plain Column children so they always stay fully visible.
+            final listMaxHeight = constraints.hasBoundedHeight
+                ? (constraints.maxHeight - _reservedHeight).clamp(
+                    80.0,
+                    double.infinity,
+                  )
+                : MediaQuery.of(context).size.height * 0.5;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
                   l.addToInventoryButton,
                   style: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w600),
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-            ),
-          ],
+                const SizedBox(height: 6),
+                Text(
+                  l.tripInventoryHint,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: listMaxHeight),
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: widget.items.map((item) {
+                      final sel = _selected.contains(item.id);
+                      final qty = item.quantityLabel;
+                      return GestureDetector(
+                        onTap: () => setState(() {
+                          if (sel) {
+                            _selected.remove(item.id);
+                          } else {
+                            _selected.add(item.id);
+                          }
+                        }),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: Row(
+                            children: [
+                              _SelectCircle(selected: sel),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  l.data(item.name),
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                    color: sel
+                                        ? AppColors.textPrimary
+                                        : AppColors.textDisabled,
+                                  ),
+                                ),
+                              ),
+                              if (qty.isNotEmpty)
+                                Text(
+                                  l.data(qty),
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.textMuted,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TutorialTarget(
+                  id: 'confirm_trip_button',
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.brand,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      elevation: 0,
+                      minimumSize: const Size(double.infinity, 50),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      widget.onConfirm(_selected.toList());
+                    },
+                    child: Text(
+                      l.addToInventoryButton,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -140,10 +168,22 @@ class _SmartAddSheet extends StatefulWidget {
   final String name;
   final List<Category> categories;
   final List<String> shelfCodeOrder;
-  final void Function(Category category, String zone, String quantityLabel, String? shelfCode, int estimatedDays, double? unitPrice) onConfirm;
+  final void Function(
+    Category category,
+    String zone,
+    String quantityLabel,
+    String? shelfCode,
+    int estimatedDays,
+    double? unitPrice,
+  )
+  onConfirm;
   final Category Function(
-      String name, Color color, String shelfZone, int defaultDays)
-      onAddCategory;
+    String name,
+    Color color,
+    String shelfZone,
+    int defaultDays,
+  )
+  onAddCategory;
 
   const _SmartAddSheet({
     required this.name,
@@ -162,7 +202,6 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
   late String _selectedZone;
   late final TextEditingController _qtyCtrl;
   late final TextEditingController _shelfCtrl;
-  late final TextEditingController _priceCtrl;
   late int _days;
 
   @override
@@ -173,30 +212,14 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
     _days = _selectedCategory.defaultDays;
     _qtyCtrl = TextEditingController();
     _shelfCtrl = TextEditingController();
-    _priceCtrl = TextEditingController();
   }
 
   @override
   void dispose() {
     _qtyCtrl.dispose();
     _shelfCtrl.dispose();
-    _priceCtrl.dispose();
     super.dispose();
   }
-
-  InputDecoration _fieldDecoration(String hint) => InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textDisabled),
-        filled: true,
-        fillColor: AppColors.fieldBg,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        isDense: true,
-      );
 
   @override
   Widget build(BuildContext context) {
@@ -219,78 +242,27 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
               style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: Text(
-                          l.quantityFieldLabel,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                      TextField(
-                        controller: _qtyCtrl,
-                        // Skip autofocus while the tutorial is running: the
-                        // user should follow the tutorial's prescribed
-                        // sequence rather than jump ahead into a field the
-                        // current step hasn't pointed at yet.
-                        autofocus:
-                            TutorialController.instance.step == TutorialStep.done,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly
-                        ],
-                        maxLength: 10,
-                        style: const TextStyle(fontSize: 15),
-                        decoration: _fieldDecoration('1').copyWith(
-                            counterStyle: const TextStyle(
-                                fontSize: 10, color: AppColors.textDisabled)),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: Text(
-                          l.unitPriceFieldLabel,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                      TextField(
-                        controller: _priceCtrl,
-                        keyboardType:
-                            const TextInputType.numberWithOptions(decimal: true),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(
-                              RegExp(r'^\d*\.?\d*$')),
-                        ],
-                        maxLength: 8,
-                        style: const TextStyle(fontSize: 15),
-                        decoration: _fieldDecoration(l.currencySymbol).copyWith(
-                            counterStyle: const TextStyle(
-                                fontSize: 10, color: AppColors.textDisabled)),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            Text(
+              l.quantityFieldLabel,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _qtyCtrl,
+              // Skip autofocus while the tutorial is running: the user
+              // should follow the tutorial's prescribed sequence rather
+              // than jump ahead into a field the current step hasn't
+              // pointed at yet.
+              autofocus: TutorialController.instance.step == TutorialStep.done,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              maxLength: 10,
+              style: const TextStyle(fontSize: 15),
+              decoration: fieldDecoration('1'),
             ),
             const SizedBox(height: 14),
             Text(
@@ -306,24 +278,28 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
               controller: _shelfCtrl,
               maxLength: 20,
               style: const TextStyle(fontSize: 15),
-              decoration: _fieldDecoration(l.shelfCodeFieldHint).copyWith(
-                  counterStyle: const TextStyle(
-                      fontSize: 10, color: AppColors.textDisabled),
-                  suffixIcon: widget.shelfCodeOrder.isEmpty
-                      ? null
-                      : Builder(
-                          builder: (iconContext) => IconButton(
-                            icon: const Icon(Icons.list_alt_rounded,
-                                size: 20, color: AppColors.textSecondary),
-                            onPressed: () async {
-                              final picked = await pickShelfCode(
-                                  iconContext, widget.shelfCodeOrder);
-                              if (picked != null) {
-                                setState(() => _shelfCtrl.text = picked);
-                              }
-                            },
+              decoration: fieldDecoration(l.shelfCodeFieldHint).copyWith(
+                suffixIcon: widget.shelfCodeOrder.isEmpty
+                    ? null
+                    : Builder(
+                        builder: (iconContext) => IconButton(
+                          icon: const Icon(
+                            Icons.inventory_outlined,
+                            size: 20,
+                            color: AppColors.textSecondary,
                           ),
-                        )),
+                          onPressed: () async {
+                            final picked = await pickShelfCode(
+                              iconContext,
+                              widget.shelfCodeOrder,
+                            );
+                            if (picked != null) {
+                              setState(() => _shelfCtrl.text = picked);
+                            }
+                          },
+                        ),
+                      ),
+              ),
             ),
             const SizedBox(height: 14),
             Text(
@@ -378,13 +354,13 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
                   backgroundColor: AppColors.brand,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   elevation: 0,
                   minimumSize: const Size(double.infinity, 48),
                 ),
                 onPressed: () {
                   final shelf = _shelfCtrl.text.trim();
-                  final price = double.tryParse(_priceCtrl.text.trim());
                   Navigator.pop(context);
                   widget.onConfirm(
                     _selectedCategory,
@@ -392,13 +368,15 @@ class _SmartAddSheetState extends State<_SmartAddSheet> {
                     _qtyCtrl.text.trim(),
                     shelf.isEmpty ? null : shelf,
                     _days,
-                    price,
+                    null,
                   );
                 },
                 child: Text(
                   l.addToList,
                   style: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w600),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -421,10 +399,15 @@ class _EditSmartSheet extends StatefulWidget {
     Category category,
     String shelfZone,
     double? unitPrice,
-  ) onConfirm;
+  )
+  onConfirm;
   final Category Function(
-      String name, Color color, String shelfZone, int defaultDays)
-      onAddCategory;
+    String name,
+    Color color,
+    String shelfZone,
+    int defaultDays,
+  )
+  onAddCategory;
   final List<String> shelfCodeOrder;
 
   const _EditSmartSheet({
@@ -462,9 +445,10 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
     _qtyCtrl = TextEditingController();
     _shelfCtrl = TextEditingController();
     _priceCtrl = TextEditingController(
-        text: widget.item.unitPrice == null
-            ? ''
-            : _trimNum(widget.item.unitPrice!));
+      text: widget.item.unitPrice == null
+          ? ''
+          : _trimNum(widget.item.unitPrice!),
+    );
     _category = widget.item.category;
     _zone = widget.item.shelfZone;
   }
@@ -499,12 +483,22 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
   void _confirm() {
     final typedName = _nameCtrl.text.trim();
     if (typedName.isEmpty) return;
-    final name = resolveCanonicalEdit(typedName, _nameDisplay, widget.item.name);
+    final name = resolveCanonicalEdit(
+      typedName,
+      _nameDisplay,
+      widget.item.name,
+    );
     final typedShelf = _shelfCtrl.text.trim();
     final shelf = resolveCanonicalEdit(
-        typedShelf, _shelfDisplay, widget.item.shelfCode ?? '');
+      typedShelf,
+      _shelfDisplay,
+      widget.item.shelfCode ?? '',
+    );
     final qty = resolveCanonicalEdit(
-        _qtyCtrl.text.trim(), _qtyDisplay, widget.item.quantityLabel);
+      _qtyCtrl.text.trim(),
+      _qtyDisplay,
+      widget.item.quantityLabel,
+    );
     final price = double.tryParse(_priceCtrl.text.trim());
     Navigator.pop(context);
     widget.onConfirm(
@@ -517,31 +511,17 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
     );
   }
 
-  InputDecoration _fieldDecoration(String hint) => InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textDisabled),
-        filled: true,
-        fillColor: AppColors.fieldBg,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        isDense: true,
-      );
-
   Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 6, top: 14),
-        child: Text(
-          text,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.only(bottom: 6, top: 14),
+    child: Text(
+      text,
+      style: const TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textSecondary,
+      ),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -564,7 +544,9 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
                 Text(
                   l.editItem,
                   style: const TextStyle(
-                      fontSize: 17, fontWeight: FontWeight.w700),
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 Flexible(
                   child: FittedBox(
@@ -599,9 +581,7 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
                         autofocus: true,
                         maxLength: 30,
                         style: const TextStyle(fontSize: 15),
-                        decoration: _fieldDecoration('').copyWith(
-                            counterStyle: const TextStyle(
-                                fontSize: 10, color: AppColors.textDisabled)),
+                        decoration: fieldDecoration(''),
                         onSubmitted: (_) => _confirm(),
                       ),
                     ],
@@ -617,13 +597,11 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
                         controller: _qtyCtrl,
                         keyboardType: TextInputType.number,
                         inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly
+                          FilteringTextInputFormatter.digitsOnly,
                         ],
                         maxLength: 10,
                         style: const TextStyle(fontSize: 15),
-                        decoration: _fieldDecoration('1').copyWith(
-                            counterStyle: const TextStyle(
-                                fontSize: 10, color: AppColors.textDisabled)),
+                        decoration: fieldDecoration('1'),
                       ),
                     ],
                   ),
@@ -644,26 +622,30 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
                         controller: _shelfCtrl,
                         maxLength: 20,
                         style: const TextStyle(fontSize: 15),
-                        decoration: _fieldDecoration('').copyWith(
-                            counterStyle: const TextStyle(
-                                fontSize: 10, color: AppColors.textDisabled),
-                            suffixIcon: widget.shelfCodeOrder.isEmpty
-                                ? null
-                                : Builder(
-                                    builder: (iconContext) => IconButton(
-                                      icon: const Icon(Icons.list_alt_rounded,
-                                          size: 20,
-                                          color: AppColors.textSecondary),
-                                      onPressed: () async {
-                                        final picked = await pickShelfCode(
-                                            iconContext, widget.shelfCodeOrder);
-                                        if (picked != null) {
-                                          setState(
-                                              () => _shelfCtrl.text = picked);
-                                        }
-                                      },
+                        decoration: fieldDecoration('').copyWith(
+                          suffixIcon: widget.shelfCodeOrder.isEmpty
+                              ? null
+                              : Builder(
+                                  builder: (iconContext) => IconButton(
+                                    icon: const Icon(
+                                      Icons.inventory_outlined,
+                                      size: 20,
+                                      color: AppColors.textSecondary,
                                     ),
-                                  )),
+                                    onPressed: () async {
+                                      final picked = await pickShelfCode(
+                                        iconContext,
+                                        widget.shelfCodeOrder,
+                                      );
+                                      if (picked != null) {
+                                        setState(
+                                          () => _shelfCtrl.text = picked,
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ),
+                        ),
                       ),
                     ],
                   ),
@@ -677,16 +659,16 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
                       TextField(
                         controller: _priceCtrl,
                         keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true),
+                          decimal: true,
+                        ),
                         inputFormatters: [
                           FilteringTextInputFormatter.allow(
-                              RegExp(r'^\d*\.?\d*$')),
+                            RegExp(r'^\d*\.?\d*$'),
+                          ),
                         ],
                         maxLength: 8,
                         style: const TextStyle(fontSize: 15),
-                        decoration: _fieldDecoration(l.currencySymbol).copyWith(
-                            counterStyle: const TextStyle(
-                                fontSize: 10, color: AppColors.textDisabled)),
+                        decoration: fieldDecoration(l.currencySymbol),
                       ),
                     ],
                   ),
@@ -699,7 +681,8 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
                 backgroundColor: AppColors.brand,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 elevation: 0,
                 minimumSize: const Size(double.infinity, 48),
               ),
@@ -707,7 +690,9 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
               child: Text(
                 l.confirmEdit,
                 style: const TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.w600),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],

@@ -115,21 +115,6 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
     super.dispose();
   }
 
-  InputDecoration _dec(String hint) => InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textDisabled),
-        filled: true,
-        fillColor: AppColors.fieldBg,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        isDense: true,
-        counterStyle: const TextStyle(
-            fontSize: 10, color: AppColors.textDisabled),
-      );
 
   @override
   Widget build(BuildContext context) {
@@ -259,7 +244,7 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                     controller: _nameCtrl,
                     maxLength: 30,
                     style: const TextStyle(fontSize: 15),
-                    decoration: _dec(l.productNameHint),
+                    decoration: fieldDecoration(l.productNameHint, verticalPadding: 10),
                     onChanged: (v) {
                       _draft
                         ..name = v
@@ -275,7 +260,7 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     maxLength: 10,
                     style: const TextStyle(fontSize: 15),
-                    decoration: _dec(l.quantityFieldLabel),
+                    decoration: fieldDecoration(l.quantityFieldLabel, verticalPadding: 10),
                     onChanged: (v) {
                       _draft
                         ..quantity = v
@@ -291,7 +276,7 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
               controller: _shelfCtrl,
               maxLength: 20,
               style: const TextStyle(fontSize: 15),
-              decoration: _dec(l.shelfCodeFieldLabel).copyWith(
+              decoration: fieldDecoration(l.shelfCodeFieldLabel, verticalPadding: 10).copyWith(
                   suffixIcon: widget.shelfCodeOrder.isEmpty
                       ? null
                       : Builder(

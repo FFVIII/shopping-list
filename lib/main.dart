@@ -13,6 +13,8 @@ import 'l10n/language_store.dart';
 import 'l10n/canonical_edit.dart';
 import 'widgets/shelf_code_picker.dart';
 import 'widgets/category_picker_field.dart';
+import 'widgets/responsive_width.dart';
+import 'utils/field_decoration.dart';
 import 'services/navigation_store.dart';
 import 'services/tutorial_controller.dart';
 import 'widgets/tutorial_overlay.dart';
@@ -58,16 +60,20 @@ Future<void> main() async {
   // Clamped defensively: a stale value from a future/rolled-back build
   // shouldn't be able to index out of range.
   final initialTab = (await NavigationStore.loadTab()).clamp(0, 3);
-  final initialListModeIndex =
-      (await NavigationStore.loadListMode()).clamp(0, ListMode.values.length - 1);
-  runApp(ShoppingListApp(
-    initialLanguage: lang,
-    repository: repository,
-    notifications: notifications,
-    storageAvailable: storageAvailable,
-    initialTab: initialTab,
-    initialListModeIndex: initialListModeIndex,
-  ));
+  final initialListModeIndex = (await NavigationStore.loadListMode()).clamp(
+    0,
+    ListMode.values.length - 1,
+  );
+  runApp(
+    ShoppingListApp(
+      initialLanguage: lang,
+      repository: repository,
+      notifications: notifications,
+      storageAvailable: storageAvailable,
+      initialTab: initialTab,
+      initialListModeIndex: initialListModeIndex,
+    ),
+  );
 }
 
 class ShoppingListApp extends StatefulWidget {
@@ -101,8 +107,7 @@ class _ShoppingListAppState extends State<ShoppingListApp> {
 
   @override
   Widget build(BuildContext context) {
-    final deviceLocale =
-        WidgetsBinding.instance.platformDispatcher.locale;
+    final deviceLocale = WidgetsBinding.instance.platformDispatcher.locale;
     final lang = resolveLang(_language, deviceLocale);
     final AppStrings strings = lang == Lang.zh ? ZhStrings() : EnStrings();
 
@@ -129,7 +134,8 @@ class _ShoppingListAppState extends State<ShoppingListApp> {
           scaffoldBackgroundColor: AppColors.scaffoldBg,
           dialogTheme: const DialogThemeData(backgroundColor: Colors.white),
         ),
-        builder: (context, child) => TutorialOverlay(child: child!),
+        builder: (context, child) =>
+            TutorialOverlay(child: ResponsiveWidth(child: child!)),
         home: AppShell(
           language: _language,
           onLanguageChanged: _setLanguage,
@@ -170,14 +176,17 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   late int _tab = widget.initialTab;
   int _smartModeRequest = 0;
+  // Dot badge on the Inventory tab — set whenever a Plan trip adds items to
+  // inventory, cleared once the user actually opens that tab.
+  bool _hasUnseenInventoryUpdate = false;
   bool _loading = true;
   late bool _storageUnavailable = widget.storageInitFailed;
 
-  late final ShoppingListNotifier _shoppingNotifier =
-      ShoppingListNotifier(_repo);
+  late final ShoppingListNotifier _shoppingNotifier = ShoppingListNotifier(
+    _repo,
+  );
   late final InventoryNotifier _inventoryNotifier = InventoryNotifier(_repo);
-  late final CategoriesNotifier _categoriesNotifier =
-      CategoriesNotifier(_repo);
+  late final CategoriesNotifier _categoriesNotifier = CategoriesNotifier(_repo);
   late final SettingsNotifier _settingsNotifier = SettingsNotifier(_repo);
   late final PurchaseService _purchaseService = PurchaseService();
 
@@ -190,13 +199,15 @@ class _AppShellState extends State<AppShell> {
         : EnStrings();
   }
 
-  void _rescheduleNotifications() => unawaited(widget.notifications
-      .reschedule(
-        inventory: _inventoryNotifier.items,
-        settings: _settingsNotifier.settings,
-        strings: _currentStrings,
-      )
-      .catchError((e) => debugPrint('notification reschedule failed: $e')));
+  void _rescheduleNotifications() => unawaited(
+    widget.notifications
+        .reschedule(
+          inventory: _inventoryNotifier.items,
+          settings: _settingsNotifier.settings,
+          strings: _currentStrings,
+        )
+        .catchError((e) => debugPrint('notification reschedule failed: $e')),
+  );
 
   void _onDomainChanged() {
     if (mounted) setState(() {});
@@ -243,7 +254,9 @@ class _AppShellState extends State<AppShell> {
     try {
       data = await _repo.load(lang: lang);
     } catch (e) {
-      debugPrint('Failed to load persisted data, falling back to in-memory sample data: $e');
+      debugPrint(
+        'Failed to load persisted data, falling back to in-memory sample data: $e',
+      );
       data = _buildFallbackData(lang);
       loadFailed = true;
     }
@@ -258,7 +271,8 @@ class _AppShellState extends State<AppShell> {
       if (loadFailed) _storageUnavailable = true;
     });
     await TutorialController.instance.resolveInitialStep(
-      dataIsEmpty: data.shoppingSmart.isEmpty &&
+      dataIsEmpty:
+          data.shoppingSmart.isEmpty &&
           data.inventory.isEmpty &&
           data.budget.isEmpty,
     );
@@ -321,10 +335,12 @@ class _AppShellState extends State<AppShell> {
     // Keep "group by category" rendering consistent with the new order.
     int idx(Category c) =>
         _categoriesNotifier.categories.indexWhere((x) => x.id == c.id);
-    _shoppingNotifier.smart
-        .sort((a, b) => idx(a.category).compareTo(idx(b.category)));
-    _inventoryNotifier.items
-        .sort((a, b) => idx(a.category).compareTo(idx(b.category)));
+    _shoppingNotifier.smart.sort(
+      (a, b) => idx(a.category).compareTo(idx(b.category)),
+    );
+    _inventoryNotifier.items.sort(
+      (a, b) => idx(a.category).compareTo(idx(b.category)),
+    );
     _categoriesNotifier.persistCategories();
     _shoppingNotifier.persistSmart();
     _inventoryNotifier.persistItems();
@@ -359,14 +375,16 @@ class _AppShellState extends State<AppShell> {
   }
 
   void _addShelfCode(String code) {
-    if (code.isEmpty || _categoriesNotifier.shelfCodeOrder.contains(code)) return;
+    if (code.isEmpty || _categoriesNotifier.shelfCodeOrder.contains(code))
+      return;
     _categoriesNotifier.shelfCodeOrder = [..._orderedShelfCodes, code];
     _categoriesNotifier.persistShelfCodeOrder();
   }
 
   void _deleteShelfCode(String code) {
-    _categoriesNotifier.shelfCodeOrder =
-        _orderedShelfCodes.where((c) => c != code).toList();
+    _categoriesNotifier.shelfCodeOrder = _orderedShelfCodes
+        .where((c) => c != code)
+        .toList();
     _categoriesNotifier.persistShelfCodeOrder();
   }
 
@@ -384,12 +402,16 @@ class _AppShellState extends State<AppShell> {
     // onReorderItem already adjusts newIndex; no manual correction needed.
     _categoriesNotifier.reorderShelfZonesOnly(oldIndex, newIndex);
     // Sort.List is stable: items within the same zone keep their order.
-    _shoppingNotifier.smart.sort((a, b) => _categoriesNotifier.shelfZones
-        .orderIndexOf(a.shelfZone)
-        .compareTo(_categoriesNotifier.shelfZones.orderIndexOf(b.shelfZone)));
-    _inventoryNotifier.items.sort((a, b) => _categoriesNotifier.shelfZones
-        .orderIndexOf(a.shelfZone)
-        .compareTo(_categoriesNotifier.shelfZones.orderIndexOf(b.shelfZone)));
+    _shoppingNotifier.smart.sort(
+      (a, b) => _categoriesNotifier.shelfZones
+          .orderIndexOf(a.shelfZone)
+          .compareTo(_categoriesNotifier.shelfZones.orderIndexOf(b.shelfZone)),
+    );
+    _inventoryNotifier.items.sort(
+      (a, b) => _categoriesNotifier.shelfZones
+          .orderIndexOf(a.shelfZone)
+          .compareTo(_categoriesNotifier.shelfZones.orderIndexOf(b.shelfZone)),
+    );
     _categoriesNotifier.persistShelfZones();
     _shoppingNotifier.persistSmart();
     _inventoryNotifier.persistItems();
@@ -419,33 +441,19 @@ class _AppShellState extends State<AppShell> {
         onAddCategory: _categoriesNotifier.addCategory,
         onConfirm: (days, name, quantity, shelfCode, category, zone) =>
             _shoppingNotifier.updateSmartItemFields(
-          item.id,
-          estimatedDays: days,
-          name: name,
-          quantity: quantity,
-          shelfCode: shelfCode,
-          category: category,
-          zone: zone,
+              item.id,
+              estimatedDays: days,
+              name: name,
+              quantity: quantity,
+              shelfCode: shelfCode,
+              category: category,
+              zone: zone,
+            ),
+        isOnlyItemInAisle: (code) => !_shoppingNotifier.smart.any(
+          (i) => i.id != item.id && i.shelfCode == code,
         ),
       ),
     );
-  }
-
-  // ── 清单 → 库存：批量标记买到 / 完成购物（跨域）─────────────────────────────
-
-  void _batchMarkBought(List<String> ids) {
-    for (final id in ids) {
-      final idx = _shoppingNotifier.smart.indexWhere((i) => i.id == id);
-      if (idx == -1) continue;
-      final item = _shoppingNotifier.smart[idx];
-      if (item.checked) continue;
-      item.checked = true;
-      item.addedToInventory = true;
-      // Update or create inventory entry using category default days
-      _inventoryNotifier.applyPurchaseFor(item, item.category.defaultDays);
-    }
-    _shoppingNotifier.persistSmart();
-    _inventoryNotifier.persistItems();
   }
 
   void _completeTripSmart(List<String> selectedIds) {
@@ -456,11 +464,16 @@ class _AppShellState extends State<AppShell> {
     final purchasedNames = purchased.map((item) => item.name).toList();
     for (final item in purchased) {
       _inventoryNotifier.applyPurchaseFor(
-          item, item.estimatedDays ?? item.category.defaultDays);
+        item,
+        item.estimatedDays ?? item.category.defaultDays,
+      );
     }
-    _shoppingNotifier.smart.removeWhere((item) => selectedSet.contains(item.id));
+    _shoppingNotifier.smart.removeWhere(
+      (item) => selectedSet.contains(item.id),
+    );
     _inventoryNotifier.persistItems();
     _shoppingNotifier.persistSmart();
+    if (purchased.isNotEmpty) setState(() => _hasUnseenInventoryUpdate = true);
     TutorialController.instance.onTripCompleted(purchasedNames);
   }
 
@@ -476,8 +489,11 @@ class _AppShellState extends State<AppShell> {
     final threshold = _settingsNotifier.settings.reminderThresholdDays;
     final toAdd = _inventoryNotifier.items
         .where((i) => i.statusFor(threshold) != StockStatus.sufficient)
-        .where((i) => !_shoppingNotifier.smart
-            .any((s) => !s.checked && sameProduct(s, i)))
+        .where(
+          (i) => !_shoppingNotifier.smart.any(
+            (s) => !s.checked && sameProduct(s, i),
+          ),
+        )
         .toList();
     final added = _shoppingNotifier.addAllFromInventory(toAdd);
     if (added > 0) setState(() => _smartModeRequest++);
@@ -518,9 +534,7 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     final threshold = _settingsNotifier.settings.reminderThresholdDays;
     final reminderCount = _inventoryNotifier.items
@@ -545,7 +559,9 @@ class _AppShellState extends State<AppShell> {
                     onToggleSimple: _shoppingNotifier.toggleSimple,
                     onToggleSmart: (id) => _toggleShoppingItem(ctx, id),
                     onAddSimple: (name) => _shoppingNotifier.addSimple(
-                        name, _categoriesNotifier.fallback),
+                      name,
+                      _categoriesNotifier.fallback,
+                    ),
                     onAddSmart: _shoppingNotifier.addSmart,
                     onDeleteSimple: _shoppingNotifier.deleteSimpleItem,
                     onDeleteSmart: _shoppingNotifier.deleteSmartItem,
@@ -567,7 +583,6 @@ class _AppShellState extends State<AppShell> {
                     },
                     onBatchDeleteSimple: _shoppingNotifier.batchDeleteSimple,
                     onBatchDeleteSmart: _shoppingNotifier.batchDeleteSmart,
-                    onBatchMarkBought: _batchMarkBought,
                     onBatchDeleteBudget: _shoppingNotifier.batchDeleteBudget,
                     smartModeRequest: _smartModeRequest,
                     shelfCodeOrder: shelfCodeOrder,
@@ -635,11 +650,15 @@ class _AppShellState extends State<AppShell> {
       bottomNavigationBar: _BottomNav(
         currentIndex: _tab,
         onTap: (i) {
-          setState(() => _tab = i);
+          setState(() {
+            _tab = i;
+            if (i == 1) _hasUnseenInventoryUpdate = false;
+          });
           TutorialController.instance.onTabChanged(i);
           unawaited(NavigationStore.saveTab(i));
         },
         reminderBadge: reminderCount,
+        inventoryDot: _hasUnseenInventoryUpdate,
       ),
     );
   }

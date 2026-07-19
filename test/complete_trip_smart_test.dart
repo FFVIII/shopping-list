@@ -140,6 +140,9 @@ void main() {
     await tester.runAsync(
         () => Future.delayed(const Duration(milliseconds: 50)));
     await tester.pumpAndSettle();
+    // Completing a trip shows a toast with its own dismiss Timer — let it
+    // fire so it doesn't outlive the widget tree at test teardown.
+    await tester.pump(const Duration(milliseconds: 1600));
 
     // The purchased items are gone from the Plan list, but the unselected
     // one must still be there for next time — this is the regression check:

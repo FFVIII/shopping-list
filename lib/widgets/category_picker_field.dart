@@ -149,11 +149,12 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
                 TextButton(
                   onPressed: () => Navigator.pop(context),
                   child: Text(l.cancel,
-                      style: const TextStyle(color: AppColors.textMuted)),
+                      style: const TextStyle(
+                          fontSize: 17, color: AppColors.textMuted)),
                 ),
                 Text(l.categoryLabel,
                     style: const TextStyle(
-                        fontSize: 15,
+                        fontSize: 17,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary)),
                 Row(
@@ -170,6 +171,7 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
                           Navigator.pop(context, _categories[_index]),
                       child: Text(l.save,
                           style: const TextStyle(
+                              fontSize: 17,
                               color: AppColors.brand,
                               fontWeight: FontWeight.w600)),
                     ),
@@ -206,7 +208,7 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
-                                      fontSize: 16,
+                                      fontSize: 19,
                                       color: AppColors.textPrimary),
                                 ),
                               ),

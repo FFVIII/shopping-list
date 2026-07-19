@@ -57,7 +57,7 @@ Future<void> _pumpList(
   void Function(String id)? onToggleSmart,
   void Function(String name)? onAddSimple,
   void Function(List<String> ids)? onBatchDeleteSimple,
-  void Function(List<String> ids)? onBatchMarkBought,
+  void Function(List<String> ids)? onBatchDeleteSmart,
   VoidCallback? onCompleteSimple,
   void Function(List<String> ids)? onCompleteSmart,
   void Function(List<BudgetItem> snapshot)? onRecordBudgetPurchase,
@@ -99,8 +99,7 @@ Future<void> _pumpList(
             onReorderBudget: (_) {},
             onRecordBudgetPurchase: onRecordBudgetPurchase ?? (_) {},
             onBatchDeleteSimple: onBatchDeleteSimple ?? (_) {},
-            onBatchDeleteSmart: (_) {},
-            onBatchMarkBought: onBatchMarkBought ?? (_) {},
+            onBatchDeleteSmart: onBatchDeleteSmart ?? (_) {},
             onBatchDeleteBudget: onBatchDeleteBudget ?? (_) {},
             smartModeRequest: 0,
             shelfCodeOrder: const [],
@@ -256,29 +255,109 @@ void main() {
     expect(toggled, 'a');
   });
 
-  testWidgets('batch-selecting a smart item and tapping "Mark bought" calls '
-      'onBatchMarkBought', (tester) async {
-    List<String>? markedIds;
-    await _pumpList(
-      tester,
-      smartItems: [_smart('a', '牛奶')],
-      onBatchMarkBought: (ids) => markedIds = ids,
-    );
+  testWidgets(
+    'batch-selecting a smart item and deleting it calls onBatchDeleteSmart',
+    (tester) async {
+      List<String>? deletedIds;
+      await _pumpList(
+        tester,
+        smartItems: [_smart('a', '牛奶')],
+        onBatchDeleteSmart: (ids) => deletedIds = ids,
+      );
 
-    await tester.tap(find.text('计划'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('计划'));
+      await tester.pumpAndSettle();
 
-    // Tap the row's drag handle to enter batch mode with this item selected.
-    await tester.tap(find.byType(DragHandle));
-    await tester.pump();
+      // Tap the row's drag handle to enter batch mode with this item
+      // selected. The smart batch bar (unlike simple/budget) doesn't show
+      // a "selected N" count label, so there's nothing to assert there.
+      await tester.tap(find.byType(DragHandle));
+      await tester.pump();
 
-    expect(find.text(ZhStrings().batchMarkBought), findsOneWidget);
+      await tester.tap(find.text(ZhStrings().delete));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(ZhStrings().delete).last);
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text(ZhStrings().batchMarkBought));
-    await tester.pump();
+      expect(deletedIds, ['a']);
+    },
+  );
 
-    expect(markedIds, ['a']);
-  });
+  testWidgets(
+    'Save in batch mode only commits the selection — it does NOT purchase; '
+    'only Add writes to inventory',
+    (tester) async {
+      // Save persists "which items are checked" into the trip-selection and
+      // exits batch mode. It must not call onCompleteSmart (no inventory
+      // write). Only the later Add button does that, reading whatever Save
+      // committed.
+      List<String>? completedIds;
+      await _pumpList(
+        tester,
+        smartItems: [_smart('a', '牛奶'), _smart('b', '鸡蛋')],
+        onCompleteSmart: (ids) => completedIds = ids,
+      );
+
+      await tester.tap(find.text('计划'));
+      await tester.pumpAndSettle();
+
+      // Enter batch mode (both selected), deselect b, then Save.
+      await tester.tap(find.byType(DragHandle).first);
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.check_rounded).last);
+      await tester.pump();
+      await tester.tap(find.text(ZhStrings().batchSave));
+      await tester.pump();
+
+      // Save purchased nothing and left batch mode.
+      expect(completedIds, isNull);
+      expect(find.text(ZhStrings().batchSave), findsNothing);
+
+      // Now Add completes the trip using exactly what Save committed (just a).
+      await tester.tap(find.text(ZhStrings().addToInventoryButton));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(
+          ElevatedButton, ZhStrings().addToInventoryButton));
+      await tester.pump();
+
+      expect(completedIds, ['a']);
+      await tester.pump(const Duration(milliseconds: 1600));
+    },
+  );
+
+  testWidgets(
+    'deselecting an item in batch mode survives exiting and re-entering '
+    'batch mode', (tester) async {
+      // Regression test: _enterSmartBatchWithItem used to unconditionally
+      // reset _smartSelected to "everything selected" every time batch mode
+      // was entered, silently reselecting anything the user had deselected
+      // and then exited (via Cancel) without acting on.
+      await _pumpList(
+        tester,
+        smartItems: [_smart('a', '牛奶'), _smart('b', '鸡蛋')],
+      );
+
+      await tester.tap(find.text('计划'));
+      await tester.pumpAndSettle();
+
+      // Enter batch mode — both items start selected.
+      await tester.tap(find.byType(DragHandle).first);
+      await tester.pump();
+      expect(find.byIcon(Icons.check_rounded), findsNWidgets(2));
+
+      // Deselect the second item, then exit via Cancel.
+      await tester.tap(find.byIcon(Icons.check_rounded).last);
+      await tester.pump();
+      expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+      await tester.tap(find.text(ZhStrings().cancel));
+      await tester.pump();
+
+      // Re-enter batch mode — the deselection must have survived.
+      await tester.tap(find.byType(DragHandle).first);
+      await tester.pump();
+      expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+    },
+  );
 
   // ── Budget mode ('记账' = budgetMode in zh) ──────────────────────────────────
 
@@ -486,7 +565,8 @@ void main() {
   );
 
   testWidgets(
-    'completing a smart-mode trip shows the completion celebration',
+    'completing a smart-mode trip calls onCompleteSmart and shows a '
+    'confirmation toast',
     (tester) async {
       List<String>? completedIds;
       await _pumpList(
@@ -505,6 +585,74 @@ void main() {
 
       expect(completedIds, ['a']);
       expect(find.text(ZhStrings().addedToInventoryCelebration), findsOneWidget);
+      // The toast has its own dismiss Timer — let it fire before teardown.
+      await tester.pump(const Duration(milliseconds: 1600));
+    },
+  );
+
+  testWidgets(
+    'unchecking an item on the Plan list before tapping Add keeps it out of '
+    'the trip', (tester) async {
+      // Regression test: _confirmCompleteTrip used to unconditionally
+      // re-add every item id to _tripSelected right before opening the
+      // confirm sheet, silently re-selecting anything the user had just
+      // deselected via the row's own checkmark circle.
+      List<String>? completedIds;
+      await _pumpList(
+        tester,
+        smartItems: [_smart('a', '牛奶'), _smart('b', '鸡蛋')],
+        onCompleteSmart: (ids) => completedIds = ids,
+      );
+
+      await tester.tap(find.text('计划'));
+      await tester.pumpAndSettle();
+
+      // Both items start checked (selected) by default — uncheck the first.
+      await tester.tap(find.byIcon(Icons.check_rounded).first);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text(ZhStrings().addToInventoryButton));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(
+          ElevatedButton, ZhStrings().addToInventoryButton));
+      await tester.pump();
+
+      expect(completedIds, ['b']);
+      // The toast has its own dismiss Timer — let it fire before teardown.
+      await tester.pump(const Duration(milliseconds: 1600));
+    },
+  );
+
+  testWidgets(
+    'a deselected item stays unchecked after a sibling item is purchased '
+    'and the list rebuilds', (tester) async {
+      // Regression test: after confirming a trip, the code used to collapse
+      // _tripSelected down to just the purchased ids. Once the parent
+      // rebuilt with those items removed, didUpdateWidget's "any id present
+      // but missing from _tripSelected must be new, default-select it"
+      // logic couldn't tell a deselected leftover item apart from a truly
+      // new one, and silently re-checked it.
+      await _pumpList(
+        tester,
+        smartItems: [_smart('a', '牛奶'), _smart('b', '鸡蛋')],
+      );
+
+      await tester.tap(find.text('计划'));
+      await tester.pumpAndSettle();
+
+      // Uncheck '牛奶' (a) — only '鸡蛋' (b) stays selected.
+      await tester.tap(find.byIcon(Icons.check_rounded).first);
+      await tester.pumpAndSettle();
+
+      // Simulate 'b' having been purchased and removed elsewhere (e.g. via
+      // the confirm sheet), causing the parent to rebuild ListScreen with
+      // an updated smartItems list — this is what triggers didUpdateWidget.
+      // Already in smart mode from above (state carries over across pumps).
+      await _pumpList(tester, smartItems: [_smart('a', '牛奶')]);
+      await tester.pumpAndSettle();
+
+      // 'a' must still be unchecked — not silently re-selected.
+      expect(find.byIcon(Icons.check_rounded), findsNothing);
     },
   );
 
@@ -540,6 +688,8 @@ void main() {
       await tester.tap(saveButton);
       await tester.pump();
       expect(find.text(ZhStrings().addedToInventoryCelebration), findsOneWidget);
+      // The toast has its own dismiss Timer — let it fire before teardown.
+      await tester.pump(const Duration(milliseconds: 1600));
     },
   );
 

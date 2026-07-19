@@ -15,6 +15,7 @@ import '../widgets/tutorial_target.dart';
 import '../widgets/category_chip_picker.dart';
 import '../widgets/category_picker_field.dart';
 import '../widgets/shelf_code_picker.dart';
+import '../utils/field_decoration.dart';
 
 part 'inventory_screen.card.dart';
 part 'inventory_screen.detail_sheet.dart';
@@ -41,7 +42,8 @@ class InventoryScreen extends StatefulWidget {
     Category? newCategory,
     List<String> orderedIds,
     String? newShelfCode,
-  ) onReorder;
+  )
+  onReorder;
   final void Function(
     String id,
     String name,
@@ -49,15 +51,20 @@ class InventoryScreen extends StatefulWidget {
     String? shelfCode,
     Category category,
     String shelfZone,
-  ) onEdit;
+  )
+  onEdit;
   final void Function(List<String> ids) onBatchDelete;
   final void Function(List<InventoryItem> items) onBatchAddToRestock;
   // Custom shelf-code ordering from the Shelf Order screen. Used to sort
   // "by aisle" groups; empty = fall back to alphabetical.
   final List<String> shelfCodeOrder;
   final Category Function(
-      String name, Color color, String shelfZone, int defaultDays)
-      onAddCategory;
+    String name,
+    Color color,
+    String shelfZone,
+    int defaultDays,
+  )
+  onAddCategory;
 
   const InventoryScreen({
     super.key,
@@ -122,15 +129,18 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   List<InventoryItem> get _filtered {
-    final visible =
-        widget.items.where((i) => !_pendingDeleteIds.contains(i.id));
+    final visible = widget.items.where(
+      (i) => !_pendingDeleteIds.contains(i.id),
+    );
     if (_query.isEmpty) return visible.toList();
     final q = _query.toLowerCase();
     return visible
-        .where((i) =>
-            i.name.contains(q) ||
-            i.shelfZone.contains(q) ||
-            i.category.name.contains(q))
+        .where(
+          (i) =>
+              i.name.contains(q) ||
+              i.shelfZone.contains(q) ||
+              i.category.name.contains(q),
+        )
         .toList();
   }
 
@@ -141,9 +151,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
         map.putIfAbsent(item.category.name, () => []).add(item);
       }
       final entries = map.entries.toList()
-        ..sort((a, b) => _invGroupDir == SortDir.asc
-            ? a.key.compareTo(b.key)
-            : b.key.compareTo(a.key));
+        ..sort(
+          (a, b) => _invGroupDir == SortDir.asc
+              ? a.key.compareTo(b.key)
+              : b.key.compareTo(a.key),
+        );
       return Map.fromEntries(entries);
     }
 
@@ -205,8 +217,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   int get _needRestockCount => widget.items
-      .where((i) =>
-          i.statusFor(widget.thresholdDays) != StockStatus.sufficient)
+      .where((i) => i.statusFor(widget.thresholdDays) != StockStatus.sufficient)
       .length;
 
   // Trailing summary text ("2 stocked · 1 to restock"), tucked onto the
@@ -330,10 +341,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
               child: _filtered.isEmpty
                   ? _emptyState()
                   : _invSort != InvSortMode.none
-                      ? _buildSortedFlatList()
-                      : _query.isEmpty
-                          ? _buildReorderableGroupedList()
-                          : _buildGroupedList(),
+                  ? _buildSortedFlatList()
+                  : _query.isEmpty
+                  ? _buildReorderableGroupedList()
+                  : _buildGroupedList(),
             ),
             if (_batchMode) _buildBatchBar(),
           ],
@@ -384,8 +395,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       }
                     : null,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 9,
+                  ),
                   decoration: BoxDecoration(
                     color: _selected.isNotEmpty
                         ? AppColors.brand
@@ -425,8 +438,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     ),
                   ],
                 ),
-                child: const Icon(Icons.add_rounded,
-                    color: Colors.white, size: 24),
+                child: const Icon(
+                  Icons.add_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
             ),
           const SizedBox(width: 4),
@@ -445,10 +461,15 @@ class _InventoryScreenState extends State<InventoryScreen> {
         style: const TextStyle(fontSize: 14),
         decoration: InputDecoration(
           hintText: l.searchHint,
-          hintStyle:
-              const TextStyle(color: AppColors.textDisabled, fontSize: 14),
-          prefixIcon: const Icon(Icons.search_rounded,
-              color: AppColors.textDisabled, size: 20),
+          hintStyle: const TextStyle(
+            color: AppColors.textDisabled,
+            fontSize: 14,
+          ),
+          prefixIcon: const Icon(
+            Icons.search_rounded,
+            color: AppColors.textDisabled,
+            size: 20,
+          ),
           filled: true,
           fillColor: AppColors.fieldBg,
           border: OutlineInputBorder(
@@ -456,11 +477,16 @@ class _InventoryScreenState extends State<InventoryScreen> {
             borderSide: BorderSide.none,
           ),
           contentPadding: const EdgeInsets.symmetric(
-              vertical: 12, horizontal: 4),
+            vertical: 12,
+            horizontal: 4,
+          ),
           suffixIcon: _query.isNotEmpty
               ? IconButton(
-                  icon: const Icon(Icons.close_rounded,
-                      color: AppColors.textDisabled, size: 18),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: AppColors.textDisabled,
+                    size: 18,
+                  ),
                   onPressed: () {
                     _searchCtrl.clear();
                     setState(() => _query = '');

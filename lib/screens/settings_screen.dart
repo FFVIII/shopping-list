@@ -406,17 +406,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   TextButton(
                     onPressed: () => Navigator.pop(ctx, false),
                     child: Text(l.cancel,
-                        style: const TextStyle(color: AppColors.textMuted)),
+                        style: const TextStyle(
+                            fontSize: 17, color: AppColors.textMuted)),
                   ),
                   Text(l.advanceDays,
                       style: const TextStyle(
-                          fontSize: 15,
+                          fontSize: 17,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary)),
                   TextButton(
                     onPressed: () => Navigator.pop(ctx, true),
                     child: Text(l.save,
                         style: const TextStyle(
+                            fontSize: 17,
                             color: AppColors.brand,
                             fontWeight: FontWeight.w600)),
                   ),
@@ -432,7 +434,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onSelectedItemChanged: (i) => selected = i + 1,
                 children: [
                   for (var d = 1; d <= 14; d++)
-                    Center(child: Text(l.days(d))),
+                    Center(
+                        child: Text(l.days(d),
+                            style: const TextStyle(
+                                fontSize: 19,
+                                color: AppColors.textPrimary))),
                 ],
               ),
             ),
@@ -621,17 +627,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   TextButton(
                     onPressed: () => Navigator.pop(ctx, false),
                     child: Text(l.cancel,
-                        style: const TextStyle(color: AppColors.textMuted)),
+                        style: const TextStyle(
+                            fontSize: 17, color: AppColors.textMuted)),
                   ),
                   Text(l.reminderTimeLabel,
                       style: const TextStyle(
-                          fontSize: 15,
+                          fontSize: 17,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary)),
                   TextButton(
                     onPressed: () => Navigator.pop(ctx, true),
                     child: Text(l.save,
                         style: const TextStyle(
+                            fontSize: 17,
                             color: AppColors.brand,
                             fontWeight: FontWeight.w600)),
                   ),

@@ -78,13 +78,27 @@ extension _ListBatch on _ListScreenState {
     );
   }
 
-  void _enterSmartBatchWithItem(String id) {
+  // Commits the batch-mode selection to the outer trip-selection circles and
+  // exits batch mode. This does NOT purchase or add anything to inventory —
+  // it only persists "which items are checked". The trip-selection is what the
+  // "Add" button later reads to actually complete a trip; Save just makes the
+  // outer checkmarks match exactly what was checked in batch mode.
+  void _saveSmartBatch() {
     setState(() {
-      _smartBatchMode = true;
-      _smartSelected
+      _tripSelected
         ..clear()
-        ..addAll(widget.smartItems.map((i) => i.id));
+        ..addAll(_smartSelected);
+      _smartBatchMode = false;
     });
+    HapticFeedback.selectionClick();
+  }
+
+  void _enterSmartBatchWithItem(String id) {
+    // _smartSelected is not reset here — it already carries over whatever
+    // was left checked/unchecked from the last time batch mode was used
+    // (kept in sync by didUpdateWidget), so re-entering doesn't wipe out
+    // previous deselections.
+    setState(() => _smartBatchMode = true);
   }
 
   void _toggleSmartSelection(String id) {
@@ -191,10 +205,7 @@ extension _ListBatch on _ListScreenState {
     return BatchBar(
       allSelected: allSelected,
       selectedCount: _smartSelected.length,
-      onCancel: () => setState(() {
-        _smartBatchMode = false;
-        _smartSelected.clear();
-      }),
+      onCancel: () => setState(() => _smartBatchMode = false),
       onToggleAll: () => setState(() {
         if (allSelected) {
           _smartSelected.clear();
@@ -220,9 +231,13 @@ extension _ListBatch on _ListScreenState {
                 ),
               );
               if (ok != true) return;
-              widget.onBatchDeleteSmart(_smartSelected.toList());
+              final deletedIds = _smartSelected.toList();
+              widget.onBatchDeleteSmart(deletedIds);
               setState(() {
-                _smartSelected.clear();
+                // Only drop the deleted ids — items left unselected must
+                // keep their state for the next time batch mode opens.
+                _smartSelected.removeAll(deletedIds);
+                _knownSmartBatchIds.removeAll(deletedIds);
                 _smartBatchMode = false;
               });
             }

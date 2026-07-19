@@ -32,40 +32,25 @@ extension _HeaderAndAddBarState on _ListScreenState {
           if (_isSmart && _smartBatchMode)
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 160),
+              // Always tappable — saving an empty selection ("I want nothing
+              // checked for the next trip") is a valid, intended action.
               child: GestureDetector(
-                onTap: _smartSelected.isNotEmpty
-                    ? () {
-                        widget.onBatchMarkBought(_smartSelected.toList());
-                        // False positive: this extension method runs on the
-                        // real _ListScreenState instance, but the analyzer
-                        // doesn't treat extension bodies as members of the
-                        // extended class.
-                        // ignore: invalid_use_of_protected_member
-                        setState(() {
-                          _smartSelected.clear();
-                          _smartBatchMode = false;
-                        });
-                      }
-                    : null,
+                onTap: _saveSmartBatch,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 12, vertical: 7),
                   decoration: BoxDecoration(
-                    color: _smartSelected.isNotEmpty
-                        ? AppColors.brand
-                        : AppColors.fieldBg,
+                    color: AppColors.brand,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      l.batchMarkBought,
-                      style: TextStyle(
+                      l.batchSave,
+                      style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: _smartSelected.isNotEmpty
-                            ? Colors.white
-                            : AppColors.textDisabled,
+                        color: Colors.white,
                       ),
                     ),
                   ),

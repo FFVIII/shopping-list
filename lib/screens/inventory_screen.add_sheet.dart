@@ -53,21 +53,6 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
     ));
   }
 
-  InputDecoration _fieldDecoration(String hint) => InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textDisabled),
-        filled: true,
-        fillColor: AppColors.fieldBg,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        isDense: true,
-        counterStyle: const TextStyle(
-            fontSize: 10, color: AppColors.textDisabled),
-      );
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +84,7 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
                   autofocus: true,
                   maxLength: 30,
                   style: const TextStyle(fontSize: 15),
-                  decoration: _fieldDecoration(l.productNameHint),
+                  decoration: fieldDecoration(l.productNameHint),
                   onChanged: (_) => setState(() {}),
                   onSubmitted: (_) => _submit(),
                 ),
@@ -112,7 +97,7 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   maxLength: 10,
                   style: const TextStyle(fontSize: 15),
-                  decoration: _fieldDecoration(l.quantityFieldLabel),
+                  decoration: fieldDecoration(l.quantityFieldLabel),
                 ),
               ),
             ],
@@ -123,7 +108,7 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
             controller: _shelfCtrl,
             maxLength: 20,
             style: const TextStyle(fontSize: 15),
-            decoration: _fieldDecoration(l.shelfCodeFieldLabel).copyWith(
+            decoration: fieldDecoration(l.shelfCodeFieldLabel).copyWith(
                 suffixIcon: widget.shelfCodeOrder.isEmpty
                     ? null
                     : Builder(

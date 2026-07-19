@@ -44,11 +44,12 @@ class _ShelfCodePickerSheetState extends State<_ShelfCodePickerSheet> {
                 TextButton(
                   onPressed: () => Navigator.pop(context),
                   child: Text(l.cancel,
-                      style: const TextStyle(color: AppColors.textMuted)),
+                      style: const TextStyle(
+                          fontSize: 17, color: AppColors.textMuted)),
                 ),
                 Text(l.shelfCodeFieldLabel,
                     style: const TextStyle(
-                        fontSize: 15,
+                        fontSize: 17,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary)),
                 TextButton(
@@ -56,6 +57,7 @@ class _ShelfCodePickerSheetState extends State<_ShelfCodePickerSheet> {
                       Navigator.pop(context, widget.codes[_index]),
                   child: Text(l.save,
                       style: const TextStyle(
+                          fontSize: 17,
                           color: AppColors.brand,
                           fontWeight: FontWeight.w600)),
                 ),
@@ -76,7 +78,7 @@ class _ShelfCodePickerSheetState extends State<_ShelfCodePickerSheet> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                                fontSize: 16, color: AppColors.textPrimary),
+                                fontSize: 19, color: AppColors.textPrimary),
                           ),
                         ),
                       ))
