@@ -240,70 +240,95 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
               children: [
                 Expanded(
                   flex: 2,
-                  child: TextField(
-                    controller: _nameCtrl,
-                    maxLength: 30,
-                    style: const TextStyle(fontSize: 15),
-                    decoration: fieldDecoration(l.productNameHint, verticalPadding: 10),
-                    onChanged: (v) {
-                      _draft
-                        ..name = v
-                        ..dirty = true;
-                    },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _invFieldLabel(l.productNameHint),
+                      TextField(
+                        controller: _nameCtrl,
+                        maxLength: 30,
+                        style: const TextStyle(fontSize: 15),
+                        decoration: fieldDecoration(l.productNameHint,
+                            verticalPadding: 10),
+                        onChanged: (v) {
+                          _draft
+                            ..name = v
+                            ..dirty = true;
+                        },
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: TextField(
-                    controller: _qtyCtrl,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    maxLength: 10,
-                    style: const TextStyle(fontSize: 15),
-                    decoration: fieldDecoration(l.quantityFieldLabel, verticalPadding: 10),
-                    onChanged: (v) {
-                      _draft
-                        ..quantity = v
-                        ..dirty = true;
-                    },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _invFieldLabel(l.quantityFieldLabel),
+                      TextField(
+                        controller: _qtyCtrl,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        maxLength: 10,
+                        style: const TextStyle(fontSize: 15),
+                        decoration: fieldDecoration(l.quantityFieldLabel,
+                            verticalPadding: 10),
+                        onChanged: (v) {
+                          _draft
+                            ..quantity = v
+                            ..dirty = true;
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             // ── Shelf code ─────────────────────────────────────────────────
-            TextField(
-              controller: _shelfCtrl,
-              maxLength: 20,
-              style: const TextStyle(fontSize: 15),
-              decoration: fieldDecoration(l.shelfCodeFieldLabel, verticalPadding: 10).copyWith(
-                  suffixIcon: widget.shelfCodeOrder.isEmpty
-                      ? null
-                      : Builder(
-                          builder: (iconContext) => IconButton(
-                            icon: const Icon(Icons.list_alt_rounded,
-                                size: 20, color: AppColors.textSecondary),
-                            onPressed: () async {
-                              final picked = await pickShelfCode(
-                                  iconContext, widget.shelfCodeOrder);
-                              if (picked == null) return;
-                              // Programmatic controller.text writes don't
-                              // fire onChanged, so the draft needs updating
-                              // explicitly here too.
-                              setState(() {
-                                _shelfCtrl.text = picked;
-                                _draft
-                                  ..shelfCode = picked
-                                  ..dirty = true;
-                              });
-                            },
-                          ),
-                        )),
-              onChanged: (v) {
-                _draft
-                  ..shelfCode = v
-                  ..dirty = true;
-              },
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _invFieldLabel(l.shelfCodeFieldLabel),
+                TextField(
+                  controller: _shelfCtrl,
+                  maxLength: 20,
+                  style: const TextStyle(fontSize: 15),
+                  decoration: fieldDecoration(l.shelfCodeFieldLabel,
+                          verticalPadding: 10)
+                      .copyWith(
+                          suffixIcon: widget.shelfCodeOrder.isEmpty
+                              ? null
+                              : Builder(
+                                  builder: (iconContext) => IconButton(
+                                    icon: const Icon(Icons.list_alt_rounded,
+                                        size: 20,
+                                        color: AppColors.textSecondary),
+                                    onPressed: () async {
+                                      final picked = await pickShelfCode(
+                                          iconContext, widget.shelfCodeOrder);
+                                      if (picked == null) return;
+                                      // Programmatic controller.text writes
+                                      // don't fire onChanged, so the draft
+                                      // needs updating explicitly here too.
+                                      setState(() {
+                                        _shelfCtrl.text = picked;
+                                        _draft
+                                          ..shelfCode = picked
+                                          ..dirty = true;
+                                      });
+                                    },
+                                  ),
+                                )),
+                  onChanged: (v) {
+                    _draft
+                      ..shelfCode = v
+                      ..dirty = true;
+                  },
+                ),
+              ],
             ),
             const SizedBox(height: 20),
             const Divider(height: 1, color: Color(0xFFF0F0EA)),

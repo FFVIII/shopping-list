@@ -22,6 +22,22 @@ part 'inventory_screen.detail_sheet.dart';
 part 'inventory_screen.add_sheet.dart';
 part 'inventory_screen.list.dart';
 
+// Persistent field label shown above each editable input in the inventory
+// add/detail sheets, so the field's purpose stays visible once it has a value
+// (a bare hint disappears as soon as you type). Matches the section-label
+// style used for "Category" / "Estimated days" lower in the same sheets.
+Widget _invFieldLabel(String text) => Padding(
+  padding: const EdgeInsets.only(left: 2, bottom: 6),
+  child: Text(
+    text,
+    style: const TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      color: AppColors.textSecondary,
+    ),
+  ),
+);
+
 /// Grouping mode (base view): items shown under section headers, draggable.
 enum InvGroupMode { shelf, category }
 

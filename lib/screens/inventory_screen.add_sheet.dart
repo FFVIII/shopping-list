@@ -79,51 +79,71 @@ class _AddInventorySheetState extends State<_AddInventorySheet> {
             children: [
               Expanded(
                 flex: 2,
-                child: TextField(
-                  controller: _nameCtrl,
-                  autofocus: true,
-                  maxLength: 30,
-                  style: const TextStyle(fontSize: 15),
-                  decoration: fieldDecoration(l.productNameHint),
-                  onChanged: (_) => setState(() {}),
-                  onSubmitted: (_) => _submit(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _invFieldLabel(l.productNameHint),
+                    TextField(
+                      controller: _nameCtrl,
+                      autofocus: true,
+                      maxLength: 30,
+                      style: const TextStyle(fontSize: 15),
+                      decoration: fieldDecoration(l.productNameHint),
+                      onChanged: (_) => setState(() {}),
+                      onSubmitted: (_) => _submit(),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: TextField(
-                  controller: _qtyCtrl,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  maxLength: 10,
-                  style: const TextStyle(fontSize: 15),
-                  decoration: fieldDecoration(l.quantityFieldLabel),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _invFieldLabel(l.quantityFieldLabel),
+                    TextField(
+                      controller: _qtyCtrl,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
+                      maxLength: 10,
+                      style: const TextStyle(fontSize: 15),
+                      decoration: fieldDecoration(l.quantityFieldLabel),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
           // ── Shelf code ─────────────────────────────────────────────────
-          TextField(
-            controller: _shelfCtrl,
-            maxLength: 20,
-            style: const TextStyle(fontSize: 15),
-            decoration: fieldDecoration(l.shelfCodeFieldLabel).copyWith(
-                suffixIcon: widget.shelfCodeOrder.isEmpty
-                    ? null
-                    : Builder(
-                        builder: (iconContext) => IconButton(
-                          icon: const Icon(Icons.list_alt_rounded,
-                              size: 20, color: AppColors.textSecondary),
-                          onPressed: () async {
-                            final picked = await pickShelfCode(
-                                iconContext, widget.shelfCodeOrder);
-                            if (picked != null) {
-                              setState(() => _shelfCtrl.text = picked);
-                            }
-                          },
-                        ),
-                      )),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _invFieldLabel(l.shelfCodeFieldLabel),
+              TextField(
+                controller: _shelfCtrl,
+                maxLength: 20,
+                style: const TextStyle(fontSize: 15),
+                decoration: fieldDecoration(l.shelfCodeFieldLabel).copyWith(
+                    suffixIcon: widget.shelfCodeOrder.isEmpty
+                        ? null
+                        : Builder(
+                            builder: (iconContext) => IconButton(
+                              icon: const Icon(Icons.list_alt_rounded,
+                                  size: 20, color: AppColors.textSecondary),
+                              onPressed: () async {
+                                final picked = await pickShelfCode(
+                                    iconContext, widget.shelfCodeOrder);
+                                if (picked != null) {
+                                  setState(() => _shelfCtrl.text = picked);
+                                }
+                              },
+                            ),
+                          )),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           Text(
