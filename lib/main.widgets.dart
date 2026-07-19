@@ -181,25 +181,58 @@ class _DaysSheetState extends State<_DaysSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  l.editItem,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                // Title + category share one Flexible so the Save pill sits
+                // hard against the right edge, matching the inventory detail
+                // sheet's header. The FittedBox scales the pair down together
+                // at large text sizes instead of overflowing.
                 Flexible(
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerRight,
-                    child: CategoryPickerField(
-                      categories: widget.categories,
-                      selected: _category,
-                      onAddCategory: widget.onAddCategory,
-                      onChanged: (cat) => setState(() {
-                        _category = cat;
-                        _zone = cat.shelfZone;
-                      }),
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          l.editItem,
+                          maxLines: 1,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        CategoryPickerField(
+                          categories: widget.categories,
+                          selected: _category,
+                          onAddCategory: widget.onAddCategory,
+                          onChanged: (cat) => setState(() {
+                            _category = cat;
+                            _zone = cat.shelfZone;
+                          }),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: _confirm,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.brand,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      l.save,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
@@ -299,26 +332,6 @@ class _DaysSheetState extends State<_DaysSheet> {
             DaysSelector(
               initialDays: _days,
               onChanged: (d) => setState(() => _days = d),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brand,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                elevation: 0,
-                minimumSize: const Size(double.infinity, 50),
-              ),
-              onPressed: _confirm,
-              child: Text(
-                l.confirmEdit,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
             ),
           ],
         ),

@@ -73,7 +73,11 @@ extension _SmartModeState on _ListScreenState {
     return entries;
   }
 
-  void _onSmartReorder(int oldIndex, int newIndex, List<_FlatEntry> flat) {
+  Future<void> _onSmartReorder(
+    int oldIndex,
+    int newIndex,
+    List<_FlatEntry> flat,
+  ) async {
     if (flat[oldIndex].isHeader) return;
     HapticFeedback.lightImpact();
     final movedItem = flat[oldIndex].item!;
@@ -111,6 +115,37 @@ extension _SmartModeState on _ListScreenState {
       if (_byShelf) {
         final l = L10n.of(context);
         final newCode = newGroup == l.untaggedShelf ? '' : newGroup;
+        final oldCode = movedItem.shelfCode;
+        // Dragging the last item out of an aisle makes that aisle group vanish
+        // from the By-aisle view. Confirm first — same warning the edit sheet
+        // already shows for the equivalent change made by typing.
+        if (oldCode != null &&
+            oldCode.isNotEmpty &&
+            newCode != oldCode &&
+            !widget.smartItems.any(
+              (i) => i.id != movedItem.id && i.shelfCode == oldCode,
+            )) {
+          final proceed = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: Text(l.shelfGroupWillDisappearTitle),
+              content: Text(l.shelfGroupWillDisappearMessage(l.data(oldCode))),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: Text(l.cancel),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: Text(l.continueAction),
+                ),
+              ],
+            ),
+          );
+          // Declining leaves the parent's list untouched, so the rebuild puts
+          // the item back in its original aisle.
+          if (proceed != true || !mounted) return;
+        }
         widget.onReorderSmart(movedItem.id, null, null, orderedIds, newCode);
       } else {
         final newCat = widget.categories.firstWhere(
