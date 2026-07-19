@@ -244,6 +244,8 @@ class _BudgetRow extends StatelessWidget {
                           children: [
                             Text(
                               l.data(item.name),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
