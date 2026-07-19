@@ -33,14 +33,16 @@ ShoppingItem _simple(String id, String name, {bool checked = false}) =>
       checked: checked,
     );
 
-ShoppingItem _smart(String id, String name) => ShoppingItem(
-  id: id,
-  name: name,
-  category: _category('other'),
-  quantityLabel: '1',
-  shelfZone: '其他',
-  estimatedDays: 7,
-);
+ShoppingItem _smart(String id, String name, {String? shelfCode}) =>
+    ShoppingItem(
+      id: id,
+      name: name,
+      category: _category('other'),
+      quantityLabel: '1',
+      shelfZone: '其他',
+      shelfCode: shelfCode,
+      estimatedDays: 7,
+    );
 
 BudgetItem _budget(String id, String name) =>
     BudgetItem(id: id, name: name, quantity: 1, unitPrice: 10);
@@ -62,6 +64,8 @@ Future<void> _pumpList(
   void Function(List<String> ids)? onCompleteSmart,
   void Function(List<BudgetItem> snapshot)? onRecordBudgetPurchase,
   void Function(List<String> ids)? onBatchDeleteBudget,
+  void Function(String, String?, Category?, List<String>, String?)?
+  onReorderSmart,
   TextScaler textScaler = TextScaler.noScaling,
 }) async {
   tester.view.physicalSize = const Size(1290, 2796);
@@ -89,7 +93,7 @@ Future<void> _pumpList(
             onCompleteSimple: onCompleteSimple ?? () {},
             onCompleteSmart: onCompleteSmart ?? (_) {},
             onReorderSimple: (_) {},
-            onReorderSmart: (_, _, _, _, _) {},
+            onReorderSmart: onReorderSmart ?? (_, _, _, _, _) {},
             onRenameSimple: (_, _) {},
             onEditSmart: (_, _, _, _, _, _, {unitPrice}) {},
             budgetItems: budgetItems,
@@ -616,6 +620,41 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('还差 0 件'), findsOneWidget);
       expect(find.textContaining('买齐啦'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'dragging the last item out of an aisle warns the group will vanish, and '
+    'declining leaves the item put',
+    (tester) async {
+      String? movedCode;
+      await _pumpList(
+        tester,
+        smartItems: [
+          _smart('a', '牛奶', shelfCode: 'A1'),
+          _smart('b', '鸡蛋', shelfCode: 'B2'),
+        ],
+        onReorderSmart: (id, zone, cat, ids, code) => movedCode = code,
+      );
+      await tester.tap(find.text('计划'));
+      await tester.pumpAndSettle();
+
+      // Drag 牛奶 (sole item of aisle A1) down into the B2 group.
+      final handle = find.byType(DragHandle).first;
+      final gesture = await tester.startGesture(tester.getCenter(handle));
+      await tester.pump(const Duration(milliseconds: 200));
+      await gesture.moveBy(const Offset(0, 160));
+      await tester.pump(const Duration(milliseconds: 200));
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      // The aisle-will-vanish warning must appear, and declining it must not
+      // push the move through to the parent.
+      expect(find.text(ZhStrings().shelfGroupWillDisappearTitle),
+          findsOneWidget);
+      await tester.tap(find.text(ZhStrings().cancel));
+      await tester.pumpAndSettle();
+      expect(movedCode, isNull);
     },
   );
 

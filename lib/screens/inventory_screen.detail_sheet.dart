@@ -151,11 +151,11 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.location_on_outlined,
+                        const Icon(Icons.local_offer_outlined,
                             size: 14, color: AppColors.textDisabled),
                         const SizedBox(width: 4),
                         Text(
-                          l.aisleLabel,
+                          l.categoryInlineLabel,
                           style: const TextStyle(
                               fontSize: 14, color: AppColors.textMuted),
                         ),
@@ -373,7 +373,7 @@ class _InventoryDetailSheetState extends State<_InventoryDetailSheet> {
                       setState(() => _addedToList = true);
                     },
               child: Text(
-                _addedToList ? l.alreadyInList : l.addToRestockList,
+                _addedToList ? l.alreadyInList : l.addToPlanList,
                 style:
                     const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
               ),

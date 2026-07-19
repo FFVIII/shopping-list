@@ -72,7 +72,7 @@ abstract class AppStrings {
   String get simpleAddHint;
   String addItemTitle(String name);
   String shelfZoneInline(String zoneDisplay); // "货架区：果蔬区" / "Aisle: Produce"
-  String get aisleLabel; // "货架区：" / "Aisle:" — prefix only, value shown separately
+  String get categoryInlineLabel; // "分类：" / "Category:" — prefix in the inventory detail sheet header, value shown separately
   String get addToList;
   String get rename;
   String get confirmEdit;
@@ -82,6 +82,7 @@ abstract class AppStrings {
   String get shelfCodeFieldHint; // example placeholder, e.g. "货架B1" / "Shelf B1"
   String get shelfGroupWillDisappearTitle; // confirm dialog shown when changing the shelf code would remove the aisle group it's currently the last item of
   String shelfGroupWillDisappearMessage(String code); // explains that "{code}" group will vanish from the By-aisle view (item itself isn't lost)
+  String get continueAction; // "继续" / "Continue" — confirm button on the drag version of that dialog
 
   // ── Days sheet (main.dart) ──
   String days(int n); // "7天" / "7 days"
@@ -98,7 +99,7 @@ abstract class AppStrings {
   String daysRemainingLong(int n); // "还剩约 N 天" / "About N days left"
   String daysShort(int n); // "N天"
   String get resetTimerSection; // "重新购买，重置计时"
-  String get addToRestockList; // "加入补货清单"
+  String get addToPlanList; // "加入计划清单" / "Add to Plan List"
   String get deleteFromInventory; // "从库存删除"
   String get addToInventoryTitle; // "添加到库存"
   String get productNameHint; // "商品名称"
@@ -118,7 +119,7 @@ abstract class AppStrings {
   String get usedUpNeedRestock; // "已用完，需要补货"
   String daysLeftApprox(int n); // "还剩约N天" / "~N days left"
   String get add; // "加入" / "Add"
-  String get alreadyInList; // "已在清单" / "In list"
+  String get alreadyInList; // "已在计划清单" / "In Plan List"
   String get addedToListToast; // "已加入清单" / "Added to list"
   String get removedFromListToast; // "已从清单移除" / "Removed from list"
   String addedAllToListToast(int n); // "已加入 N 件到清单" / "Added N items"
@@ -283,7 +284,7 @@ class ZhStrings extends AppStrings {
   @override String get simpleAddHint => '随手记，添加到清单...';
   @override String addItemTitle(String name) => '添加「$name」';
   @override String shelfZoneInline(String z) => '货架区：$z';
-  @override String get aisleLabel => '货架区：';
+  @override String get categoryInlineLabel => '分类：';
   @override String get addToList => '加入清单';
   @override String get rename => '重命名';
   @override String get confirmEdit => '确认修改';
@@ -294,6 +295,7 @@ class ZhStrings extends AppStrings {
   @override String get shelfGroupWillDisappearTitle => '货架分组会消失？';
   @override String shelfGroupWillDisappearMessage(String code) =>
       '这是「$code」分组下最后一件商品，移走后这个货架分组会从"按货架"视图中消失（商品本身不会丢失）。';
+  @override String get continueAction => '继续';
 
   @override String days(int n) => '$n天';
 
@@ -308,7 +310,7 @@ class ZhStrings extends AppStrings {
   @override String daysRemainingLong(int n) => '还剩约 $n 天';
   @override String daysShort(int n) => '$n天';
   @override String get resetTimerSection => '重新购买，重置计时';
-  @override String get addToRestockList => '加入补货清单';
+  @override String get addToPlanList => '加入计划清单';
   @override String get deleteFromInventory => '从库存删除';
   @override String get addToInventoryTitle => '添加到库存';
   @override String get productNameHint => '商品名称';
@@ -327,7 +329,7 @@ class ZhStrings extends AppStrings {
   @override String get usedUpNeedRestock => '已用完，需要补货';
   @override String daysLeftApprox(int n) => '还剩约$n天';
   @override String get add => '加入';
-  @override String get alreadyInList => '已在清单';
+  @override String get alreadyInList => '已在计划清单';
   @override String get addedToListToast => '已加入计划清单';
   @override String get removedFromListToast => '已从计划清单移除';
   @override String addedAllToListToast(int n) => '已加入 $n 件到计划清单';
@@ -511,7 +513,7 @@ class EnStrings extends AppStrings {
   @override String get simpleAddHint => 'Jot it down, add to list...';
   @override String addItemTitle(String name) => 'Add "$name"';
   @override String shelfZoneInline(String z) => 'Aisle: $z';
-  @override String get aisleLabel => 'Aisle:';
+  @override String get categoryInlineLabel => 'Category:';
   @override String get addToList => 'Add to list';
   @override String get rename => 'Rename';
   @override String get confirmEdit => 'Save';
@@ -522,6 +524,7 @@ class EnStrings extends AppStrings {
   @override String get shelfGroupWillDisappearTitle => 'Remove this aisle group?';
   @override String shelfGroupWillDisappearMessage(String code) =>
       'This is the last item in "$code" — moving it will remove that aisle group from the By-aisle view (the item itself isn\'t lost).';
+  @override String get continueAction => 'Continue';
 
   @override String days(int n) => '$n days';
 
@@ -536,7 +539,7 @@ class EnStrings extends AppStrings {
   @override String daysRemainingLong(int n) => 'About $n days left';
   @override String daysShort(int n) => '${n}d';
   @override String get resetTimerSection => 'Repurchase, reset the timer';
-  @override String get addToRestockList => 'Add to restock list';
+  @override String get addToPlanList => 'Add to Plan List';
   @override String get deleteFromInventory => 'Delete from inventory';
   @override String get addToInventoryTitle => 'Add to inventory';
   @override String get productNameHint => 'Item name';
@@ -555,7 +558,7 @@ class EnStrings extends AppStrings {
   @override String get usedUpNeedRestock => 'Used up, needs restocking';
   @override String daysLeftApprox(int n) => '~$n days left';
   @override String get add => 'Add';
-  @override String get alreadyInList => 'In list';
+  @override String get alreadyInList => 'In Plan List';
   @override String get addedToListToast => 'Added to Plan List';
   @override String get removedFromListToast => 'Removed from Plan List';
   @override String addedAllToListToast(int n) =>

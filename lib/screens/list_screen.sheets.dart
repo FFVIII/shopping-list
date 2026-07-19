@@ -87,6 +87,11 @@ class _CompleteTripSheetState extends State<_CompleteTripSheet> {
                       final sel = _selected.contains(item.id);
                       final qty = item.quantityLabel;
                       return GestureDetector(
+                        // Opaque so the row's padding is part of the tap
+                        // target — the default (deferToChild) only registers
+                        // hits on the painted circle/text, leaving a ~24pt
+                        // target. With this, it's 24 + 12*2 = 48pt.
+                        behavior: HitTestBehavior.opaque,
                         onTap: () => setState(() {
                           if (sel) {
                             _selected.remove(item.id);
@@ -95,7 +100,7 @@ class _CompleteTripSheetState extends State<_CompleteTripSheet> {
                           }
                         }),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           child: Row(
                             children: [
                               _SelectCircle(selected: sel),

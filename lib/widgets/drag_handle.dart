@@ -33,7 +33,7 @@ class _DragHandleState extends State<DragHandle> {
     // defer hit-testing to the child's painted bounds.
     Widget bar = Container(
       color: Colors.transparent,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       child: AnimatedContainer(
         duration: _pressed
             ? const Duration(milliseconds: 80)
