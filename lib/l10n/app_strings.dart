@@ -72,6 +72,7 @@ abstract class AppStrings {
   String get simpleAddHint;
   String addItemTitle(String name);
   String shelfZoneInline(String zoneDisplay); // "货架区：果蔬区" / "Aisle: Produce"
+  String get aisleLabel; // "货架区：" / "Aisle:" — prefix only, value shown separately
   String get addToList;
   String get rename;
   String get confirmEdit;
@@ -280,6 +281,7 @@ class ZhStrings extends AppStrings {
   @override String get simpleAddHint => '随手记，添加到清单...';
   @override String addItemTitle(String name) => '添加「$name」';
   @override String shelfZoneInline(String z) => '货架区：$z';
+  @override String get aisleLabel => '货架区：';
   @override String get addToList => '加入清单';
   @override String get rename => '重命名';
   @override String get confirmEdit => '确认修改';
@@ -504,6 +506,7 @@ class EnStrings extends AppStrings {
   @override String get simpleAddHint => 'Jot it down, add to list...';
   @override String addItemTitle(String name) => 'Add "$name"';
   @override String shelfZoneInline(String z) => 'Aisle: $z';
+  @override String get aisleLabel => 'Aisle:';
   @override String get addToList => 'Add to list';
   @override String get rename => 'Rename';
   @override String get confirmEdit => 'Save';
