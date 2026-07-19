@@ -478,6 +478,35 @@ void main() {
   );
 
   testWidgets(
+    'Plan "N left" tracks how many items are selected, not how many exist',
+    (tester) async {
+      await _pumpList(
+        tester,
+        smartItems: [_smart('a', '牛奶'), _smart('b', '鸡蛋')],
+      );
+      await tester.tap(find.text('计划'));
+      await tester.pumpAndSettle();
+
+      // Both selected by default → "还差 2 件".
+      expect(find.textContaining('还差 2 件'), findsOneWidget);
+
+      // Deselect one row's checkmark → count drops to 1, even though both
+      // items are still in the list.
+      await tester.tap(find.byIcon(Icons.check_rounded).first);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('还差 1 件'), findsOneWidget);
+      expect(find.textContaining('还差 2 件'), findsNothing);
+
+      // Deselect the other → 0 left. Plan mode shows "还差 0 件", NOT the
+      // Simple-mode "买齐啦" celebration (items are still in the list).
+      await tester.tap(find.byIcon(Icons.check_rounded).first);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('还差 0 件'), findsOneWidget);
+      expect(find.textContaining('买齐啦'), findsNothing);
+    },
+  );
+
+  testWidgets(
     'unchecking an item on the Plan list before tapping Add keeps it out of '
     'the trip', (tester) async {
       // Regression test: _confirmCompleteTrip used to unconditionally

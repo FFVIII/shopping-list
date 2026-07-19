@@ -302,7 +302,12 @@ class _ListScreenState extends State<ListScreen> {
 
   List<ShoppingItem> get _activeItems =>
       _isSmart ? widget.smartItems : widget.simpleItems;
-  int get _pendingCount => _activeItems.where((i) => !i.checked).length;
+  // Plan (smart) mode: "N left" tracks how many items are currently selected
+  // (the trip-selection circles) — one checkmark, one "left". Simple mode has
+  // no trip-selection, so it counts items not yet checked off as before.
+  int get _pendingCount => _isSmart
+      ? _activeItems.where((i) => _tripSelected.contains(i.id)).length
+      : _activeItems.where((i) => !i.checked).length;
 
   // Trailing summary text ("1 left · Jul 3"), tucked onto the first section
   // header of the Simple/Plan lists rather than the page header, so it only
@@ -311,7 +316,10 @@ class _ListScreenState extends State<ListScreen> {
     final l = L10n.of(context);
     final today = DateTime.now();
     return Text(
-      _pendingCount > 0
+      // Plan mode always shows the selected-count ("N left"), even at 0 — the
+      // "all done" celebration only makes sense in Simple mode, where checking
+      // items off is how a trip completes.
+      (_isSmart || _pendingCount > 0)
           ? l.listSubtitlePending(_pendingCount, today)
           : l.listSubtitleDone(today),
       maxLines: 1,
