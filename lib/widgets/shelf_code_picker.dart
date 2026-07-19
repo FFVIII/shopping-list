@@ -1,61 +1,91 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoPicker;
 import '../theme/app_colors.dart';
 import '../l10n/l10n.dart';
-import 'anchored_picker.dart';
 
-/// Shows a small popup, anchored to [anchorContext] (pass a context scoped
-/// to the tapped icon, e.g. via a [Builder]), listing the shelf codes
-/// already set up via the Aisle Order screen — so a shelf-code field can
-/// be filled by picking instead of retyping the same location every time.
-/// Returns the tapped code, or null if dismissed without picking one.
-Future<String?> pickShelfCode(BuildContext anchorContext, List<String> codes) {
-  return showAnchoredPicker<String>(
-    anchorContext,
-    builder: (ctx) {
-      final l = L10n.of(ctx);
-      return Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l.shelfCodeFieldLabel,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: codes.map((code) {
-                return GestureDetector(
-                  onTap: () => Navigator.pop(ctx, code),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 7),
-                    decoration: BoxDecoration(
-                      color: AppColors.fieldBg,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      l.data(code),
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
-        ),
-      );
-    },
+/// Shows a Cancel/Save sheet (matching the Reminder-time / Category
+/// pickers elsewhere in the app) with a scroll wheel listing the shelf
+/// codes already set up via the Aisle Order screen. Returns the picked
+/// code, or null if dismissed without saving.
+Future<String?> pickShelfCode(BuildContext context, List<String> codes) {
+  return showModalBottomSheet<String>(
+    context: context,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (ctx) => _ShelfCodePickerSheet(codes: codes),
   );
+}
+
+class _ShelfCodePickerSheet extends StatefulWidget {
+  final List<String> codes;
+  const _ShelfCodePickerSheet({required this.codes});
+
+  @override
+  State<_ShelfCodePickerSheet> createState() => _ShelfCodePickerSheetState();
+}
+
+class _ShelfCodePickerSheetState extends State<_ShelfCodePickerSheet> {
+  int _index = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = L10n.of(context);
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(l.cancel,
+                      style: const TextStyle(color: AppColors.textMuted)),
+                ),
+                Text(l.shelfCodeFieldLabel,
+                    style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary)),
+                TextButton(
+                  onPressed: () =>
+                      Navigator.pop(context, widget.codes[_index]),
+                  child: Text(l.save,
+                      style: const TextStyle(
+                          color: AppColors.brand,
+                          fontWeight: FontWeight.w600)),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            height: 216,
+            child: CupertinoPicker(
+              itemExtent: 40,
+              onSelectedItemChanged: (i) => _index = i,
+              children: widget.codes
+                  .map((code) => Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Text(
+                            l.data(code),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                fontSize: 16, color: AppColors.textPrimary),
+                          ),
+                        ),
+                      ))
+                  .toList(),
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
 }

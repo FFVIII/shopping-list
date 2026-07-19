@@ -127,7 +127,7 @@ class _CategoryChipPickerState extends State<CategoryChipPicker> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    color: sel ? cat.color : cat.bgColor,
+                    color: sel ? cat.color : AppColors.fieldBg,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -135,7 +135,7 @@ class _CategoryChipPickerState extends State<CategoryChipPicker> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: sel ? Colors.white : cat.color,
+                      color: sel ? Colors.white : AppColors.textSecondary,
                     ),
                   ),
                 ),

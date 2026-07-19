@@ -566,14 +566,20 @@ class _EditSmartSheetState extends State<_EditSmartSheet> {
                   style: const TextStyle(
                       fontSize: 17, fontWeight: FontWeight.w700),
                 ),
-                CategoryPickerField(
-                  categories: widget.categories,
-                  selected: _category,
-                  onAddCategory: widget.onAddCategory,
-                  onChanged: (cat) => setState(() {
-                    _category = cat;
-                    _zone = cat.shelfZone;
-                  }),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: CategoryPickerField(
+                      categories: widget.categories,
+                      selected: _category,
+                      onAddCategory: widget.onAddCategory,
+                      onChanged: (cat) => setState(() {
+                        _category = cat;
+                        _zone = cat.shelfZone;
+                      }),
+                    ),
+                  ),
                 ),
               ],
             ),

@@ -145,9 +145,30 @@ class _DaysSheetState extends State<_DaysSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Header ────────────────────────────────────────────────────
-            Text(
-              l.editItem,
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  l.editItem,
+                  style: const TextStyle(
+                      fontSize: 17, fontWeight: FontWeight.w700),
+                ),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: CategoryPickerField(
+                      categories: widget.categories,
+                      selected: _category,
+                      onAddCategory: widget.onAddCategory,
+                      onChanged: (cat) => setState(() {
+                        _category = cat;
+                        _zone = cat.shelfZone;
+                      }),
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 14),
             // ── Name + Qty row ───────────────────────────────────────────
@@ -197,63 +218,31 @@ class _DaysSheetState extends State<_DaysSheet> {
               ],
             ),
             const SizedBox(height: 14),
-            // ── Shelf code + Category row ─────────────────────────────────
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _fieldLabel(l.shelfCodeFieldLabel),
-                      TextField(
-                        controller: _shelfCtrl,
-                        maxLength: 20,
-                        style: const TextStyle(fontSize: 15),
-                        decoration: _dec('').copyWith(
-                          counterStyle: const TextStyle(
-                              fontSize: 10, color: AppColors.textDisabled),
-                          suffixIcon: widget.shelfCodeOrder.isEmpty
-                              ? null
-                              : Builder(
-                                  builder: (iconContext) => IconButton(
-                                    icon: const Icon(Icons.list_alt_rounded,
-                                        size: 20,
-                                        color: AppColors.textSecondary),
-                                    onPressed: () async {
-                                      final picked = await pickShelfCode(
-                                          iconContext, widget.shelfCodeOrder);
-                                      if (picked != null) {
-                                        setState(
-                                            () => _shelfCtrl.text = picked);
-                                      }
-                                    },
-                                  ),
-                                ),
+            // ── Shelf code ─────────────────────────────────────────────────
+            _fieldLabel(l.shelfCodeFieldLabel),
+            TextField(
+              controller: _shelfCtrl,
+              maxLength: 20,
+              style: const TextStyle(fontSize: 15),
+              decoration: _dec('').copyWith(
+                counterStyle: const TextStyle(
+                    fontSize: 10, color: AppColors.textDisabled),
+                suffixIcon: widget.shelfCodeOrder.isEmpty
+                    ? null
+                    : Builder(
+                        builder: (iconContext) => IconButton(
+                          icon: const Icon(Icons.list_alt_rounded,
+                              size: 20, color: AppColors.textSecondary),
+                          onPressed: () async {
+                            final picked = await pickShelfCode(
+                                iconContext, widget.shelfCodeOrder);
+                            if (picked != null) {
+                              setState(() => _shelfCtrl.text = picked);
+                            }
+                          },
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _fieldLabel(l.categoryLabel),
-                      CategoryPickerField(
-                        categories: widget.categories,
-                        selected: _category,
-                        onAddCategory: widget.onAddCategory,
-                        onChanged: (cat) => setState(() {
-                          _category = cat;
-                          _zone = cat.shelfZone;
-                        }),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
             const SizedBox(height: 14),
             // ── Days section ──────────────────────────────────────────────
